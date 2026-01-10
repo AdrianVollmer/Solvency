@@ -19,7 +19,7 @@ impl Config {
             port: env::var("PORT")
                 .ok()
                 .and_then(|p| p.parse().ok())
-                .unwrap_or(3000),
+                .unwrap_or(7070),
             database_path: env::var("DATABASE_PATH")
                 .map(PathBuf::from)
                 .unwrap_or_else(|_| PathBuf::from("data/moneymapper.db")),
