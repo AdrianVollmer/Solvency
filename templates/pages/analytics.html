@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="/static/js/dist/{{ manifest.get("charts.js") }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold">Analytics</h1>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <form id="analytics-filter" class="flex flex-wrap gap-4">
+            <div>
+                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">From</label>
+                <input type="date" name="from_date" id="from_date"
+                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">To</label>
+                <input type="date" name="to_date" id="to_date"
+                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+            </div>
+            <div class="flex items-end">
+                <button type="button" onclick="updateCharts()"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                    Update
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">Spending by Category</h2>
+            <div class="aspect-square max-h-[400px]">
+                <canvas id="category-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">Spending Over Time</h2>
+            <div class="aspect-video">
+                <canvas id="time-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold mb-4">Monthly Summary</h2>
+        <div class="aspect-[2/1]">
+            <canvas id="monthly-chart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}

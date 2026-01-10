@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold">Settings</h1>
+
+    <form hx-post="/settings/update" hx-target="#settings-message" hx-swap="innerHTML" class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+            <h2 class="text-lg font-semibold">Appearance</h2>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Theme</label>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="theme" value="system" {% if settings.is_theme("system") %}checked{% endif %}
+                            class="w-4 h-4 text-primary-600 focus:ring-primary-500">
+                        <span>System</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="theme" value="light" {% if settings.is_theme("light") %}checked{% endif %}
+                            class="w-4 h-4 text-primary-600 focus:ring-primary-500">
+                        <span>Light</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="theme" value="dark" {% if settings.is_theme("dark") %}checked{% endif %}
+                            class="w-4 h-4 text-primary-600 focus:ring-primary-500">
+                        <span>Dark</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+            <h2 class="text-lg font-semibold">Regional</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Default Currency</label>
+                    <select name="currency" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                        <option value="USD" {% if settings.is_currency("USD") %}selected{% endif %}>US Dollar ($)</option>
+                        <option value="EUR" {% if settings.is_currency("EUR") %}selected{% endif %}>Euro (€)</option>
+                        <option value="GBP" {% if settings.is_currency("GBP") %}selected{% endif %}>British Pound (£)</option>
+                        <option value="JPY" {% if settings.is_currency("JPY") %}selected{% endif %}>Japanese Yen (¥)</option>
+                        <option value="CAD" {% if settings.is_currency("CAD") %}selected{% endif %}>Canadian Dollar (C$)</option>
+                        <option value="AUD" {% if settings.is_currency("AUD") %}selected{% endif %}>Australian Dollar (A$)</option>
+                        <option value="CHF" {% if settings.is_currency("CHF") %}selected{% endif %}>Swiss Franc (CHF)</option>
+                        <option value="CNY" {% if settings.is_currency("CNY") %}selected{% endif %}>Chinese Yuan (¥)</option>
+                        <option value="INR" {% if settings.is_currency("INR") %}selected{% endif %}>Indian Rupee (₹)</option>
+                        <option value="BRL" {% if settings.is_currency("BRL") %}selected{% endif %}>Brazilian Real (R$)</option>
+                        <option value="MXN" {% if settings.is_currency("MXN") %}selected{% endif %}>Mexican Peso (MX$)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Format</label>
+                    <select name="date_format" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                        <option value="YYYY-MM-DD" {% if settings.is_date_format("YYYY-MM-DD") %}selected{% endif %}>2024-01-15</option>
+                        <option value="MM/DD/YYYY" {% if settings.is_date_format("MM/DD/YYYY") %}selected{% endif %}>01/15/2024</option>
+                        <option value="DD/MM/YYYY" {% if settings.is_date_format("DD/MM/YYYY") %}selected{% endif %}>15/01/2024</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Locale</label>
+                    <select name="locale" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                        <option value="en-US" {% if settings.is_locale("en-US") %}selected{% endif %}>English (US)</option>
+                        <option value="en-GB" {% if settings.is_locale("en-GB") %}selected{% endif %}>English (UK)</option>
+                        <option value="de-DE" {% if settings.is_locale("de-DE") %}selected{% endif %}>German</option>
+                        <option value="fr-FR" {% if settings.is_locale("fr-FR") %}selected{% endif %}>French</option>
+                        <option value="es-ES" {% if settings.is_locale("es-ES") %}selected{% endif %}>Spanish</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+            <h2 class="text-lg font-semibold">Display</h2>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Items per Page</label>
+                <select name="page_size" class="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                    <option value="10" {% if settings.page_size == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if settings.page_size == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if settings.page_size == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if settings.page_size == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="settings-message"></div>
+
+        <button type="submit" class="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
+            Save Settings
+        </button>
+    </form>
+</div>
+{% endblock %}

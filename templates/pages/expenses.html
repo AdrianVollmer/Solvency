@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="text-2xl font-bold">Expenses</h1>
+        <button
+            hx-get="/expenses/new"
+            hx-target="#expense-modal"
+            hx-swap="innerHTML"
+            onclick="document.getElementById('expense-modal').classList.remove('hidden')"
+            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Expense
+        </button>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <form hx-get="/expenses/table" hx-target="#expense-table" hx-trigger="change, keyup delay:300ms from:input[name='search']" class="flex flex-wrap gap-4">
+            <input type="text" name="search" placeholder="Search expenses..." value="{{ filter.search.as_deref().unwrap_or("") }}"
+                class="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+
+            <select name="category_id" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.category.id }}" {% if filter.matches_category(cat.category.id) %}selected{% endif %}>
+                    {{ cat.display_name() }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <input type="date" name="from_date" value="{{ filter.from_date.as_deref().unwrap_or("") }}"
+                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+
+            <input type="date" name="to_date" value="{{ filter.to_date.as_deref().unwrap_or("") }}"
+                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+        </form>
+    </div>
+
+    <div id="expense-table">
+        {% include "partials/expense_table.html" %}
+    </div>
+</div>
+
+<div id="expense-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('expense-modal').classList.add('hidden')"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full p-6">
+        </div>
+    </div>
+</div>
+{% endblock %}

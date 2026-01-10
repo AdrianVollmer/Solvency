@@ -1,0 +1,35 @@
+# Build artifacts
+/target/
+/node_modules/
+
+# Generated frontend assets
+/static/css/tailwind.css
+/static/js/dist/
+/static/icons/
+
+# Database
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Package lock (keep package-lock.json)
+yarn.lock
+pnpm-lock.yaml

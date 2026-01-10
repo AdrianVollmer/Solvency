@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">Tags</h1>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <form hx-post="/tags/create" hx-target="#tags-container" hx-swap="beforeend" hx-on::after-request="this.reset()" class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                <input type="text" name="name" required class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
+                <input type="color" name="color" value="#6b7280" class="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                Add Tag
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="font-semibold mb-4">All Tags</h2>
+        <div id="tags-container" class="flex flex-wrap gap-2">
+            {% for tag in tags %}
+            {% include "components/tag_badge.html" %}
+            {% else %}
+            <p class="text-gray-500 dark:text-gray-400">No tags yet. Create one above.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

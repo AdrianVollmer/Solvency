@@ -1,0 +1,35 @@
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    {% if imported_count > 0 %}
+    <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <div>
+            <h3 class="font-semibold text-lg">Import Successful</h3>
+            <p class="text-gray-600 dark:text-gray-400">{{ imported_count }} expense(s) imported successfully.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if error_count > 0 %}
+    <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+        <h4 class="font-medium text-red-800 dark:text-red-200 mb-2">{{ error_count }} Error(s)</h4>
+        <ul class="text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+            {% for error in errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="mt-6 flex gap-4">
+        <a href="/expenses" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+            View Expenses
+        </a>
+        <a href="/import" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            Import More
+        </a>
+    </div>
+</div>
