@@ -17,9 +17,16 @@
     <link rel="stylesheet" href="/static/css/tailwind.css">
     <script src="/static/js/dist/htmx.min.js" defer></script>
     <script src="/static/js/dist/{{ manifest.get("main.js") }}" defer></script>
+    <script src="/static/vendor/sortablejs/Sortable.min.js" defer></script>
     {% block head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+    <div id="lucide-sprite" class="hidden"></div>
+    <script>
+        fetch('/static/vendor/lucide/sprite.svg')
+            .then(r => r.text())
+            .then(svg => document.getElementById('lucide-sprite').innerHTML = svg);
+    </script>
     {% include "components/navbar.html" %}
 
     <div class="flex">

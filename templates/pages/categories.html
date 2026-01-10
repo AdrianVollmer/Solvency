@@ -4,51 +4,334 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">Categories</h1>
+        <button onclick="openAddModal()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2">
+            <svg class="w-5 h-5"><use href="#plus"/></svg>
+            Add Category
+        </button>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <form hx-post="/categories/create" hx-target="#categories-table tbody" hx-swap="beforeend" hx-on::after-request="this.reset()" class="flex flex-wrap gap-4 items-end">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-                <input type="text" name="name" required class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Parent</label>
-                <select name="parent_id" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
-                    <option value="">No Parent</option>
-                    {% for cat in categories %}
-                    {% if cat.depth == 0 %}
-                    <option value="{{ cat.category.id }}">{{ cat.category.name }}</option>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div id="categories-tree" class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for category in categories %}
+            {% if category.depth == 0 %}
+            <div class="category-item" data-id="{{ category.category.id }}" data-parent="">
+                <div class="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 group">
+                    <div class="drag-handle cursor-grab active:cursor-grabbing p-2 -ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-none">
+                        <svg class="w-5 h-5"><use href="#grip-vertical"/></svg>
+                    </div>
+                    <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="openEditModal({{ category.category.id }})">
+                        <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: {{ category.category.color }}20; color: {{ category.category.color }};">
+                            <svg class="w-5 h-5"><use href="#{{ category.category.icon }}"/></svg>
+                        </span>
+                        <span class="font-medium truncate">{{ category.category.name }}</span>
+                    </div>
+                    <button onclick="event.stopPropagation(); deleteCategory({{ category.category.id }}, '{{ category.category.name }}')"
+                        class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-5 h-5"><use href="#trash-2"/></svg>
+                    </button>
+                </div>
+                <div class="children pl-8 border-l border-gray-200 dark:border-gray-700 ml-6" data-parent-id="{{ category.category.id }}">
+                    {% for child in categories %}
+                    {% if child.is_child_of(category.category.id) %}
+                    <div class="category-item" data-id="{{ child.category.id }}" data-parent="{{ child.parent_id_or_empty() }}">
+                        <div class="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 group">
+                            <div class="drag-handle cursor-grab active:cursor-grabbing p-2 -ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-none">
+                                <svg class="w-5 h-5"><use href="#grip-vertical"/></svg>
+                            </div>
+                            <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="openEditModal({{ child.category.id }})">
+                                <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: {{ child.category.color }}20; color: {{ child.category.color }};">
+                                    <svg class="w-5 h-5"><use href="#{{ child.category.icon }}"/></svg>
+                                </span>
+                                <span class="font-medium truncate">{{ child.category.name }}</span>
+                            </div>
+                            <button onclick="event.stopPropagation(); deleteCategory({{ child.category.id }}, '{{ child.category.name }}')"
+                                class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg class="w-5 h-5"><use href="#trash-2"/></svg>
+                            </button>
+                        </div>
+                    </div>
                     {% endif %}
                     {% endfor %}
-                </select>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
-                <input type="color" name="color" value="#6b7280" class="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-            </div>
-            <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                Add Category
-            </button>
-        </form>
-    </div>
+            {% endif %}
+            {% endfor %}
+        </div>
 
-    <div id="categories-table" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <table class="w-full">
-            <thead class="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Color</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Icon</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                {% for category in categories %}
-                {% include "components/category_row.html" %}
-                {% endfor %}
-            </tbody>
-        </table>
+        {% if categories.is_empty() %}
+        <div class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+            <svg class="w-12 h-12 mx-auto mb-4 opacity-50"><use href="#folder"/></svg>
+            <p>No categories yet. Create one to get started.</p>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<!-- Add/Edit Modal -->
+<div id="category-modal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/50" onclick="closeModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md pointer-events-auto">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 id="modal-title" class="text-lg font-semibold">Add Category</h2>
+                <button onclick="closeModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <svg class="w-5 h-5"><use href="#x"/></svg>
+                </button>
+            </div>
+            <form id="category-form" class="p-6 space-y-4">
+                <input type="hidden" id="category-id" name="id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                    <input type="text" id="category-name" name="name" required
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Parent Category</label>
+                    <select id="category-parent" name="parent_id"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">No Parent (Top Level)</option>
+                        {% for cat in categories %}
+                        {% if cat.depth == 0 %}
+                        <option value="{{ cat.category.id }}">{{ cat.category.name }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="category-color" name="color" value="#6b7280"
+                                class="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                            <input type="text" id="category-color-text" value="#6b7280"
+                                class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm font-mono"
+                                onchange="document.getElementById('category-color').value = this.value">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon</label>
+                        <div class="relative">
+                            <button type="button" id="icon-picker-btn" onclick="toggleIconPicker()"
+                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 flex items-center gap-2">
+                                <svg id="selected-icon" class="w-5 h-5"><use href="#folder"/></svg>
+                                <span id="selected-icon-name" class="text-sm">folder</span>
+                            </button>
+                            <input type="hidden" id="category-icon" name="icon" value="folder">
+                        </div>
+                    </div>
+                </div>
+                <div id="icon-picker" class="hidden border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <div class="grid grid-cols-8 gap-1" id="icon-grid">
+                    </div>
+                </div>
+            </form>
+            <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <button type="button" onclick="closeModal()"
+                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="saveCategory()"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CATEGORY_ICONS = [
+    'folder', 'home', 'car', 'utensils', 'shopping-cart', 'shopping-bag',
+    'heart', 'zap', 'film', 'music', 'gamepad-2', 'plane', 'train', 'bus',
+    'fuel', 'parking-meter', 'gift', 'coffee', 'pizza', 'apple', 'beer',
+    'wine', 'pill', 'stethoscope', 'graduation-cap', 'book', 'briefcase',
+    'building', 'landmark', 'banknote', 'credit-card', 'wallet', 'piggy-bank',
+    'receipt', 'calculator', 'percent', 'tag', 'tags', 'scissors', 'shirt',
+    'smartphone', 'tv', 'monitor', 'laptop', 'headphones', 'camera',
+    'wrench', 'hammer', 'paintbrush', 'brush', 'baby', 'dog', 'cat',
+    'tree', 'flower', 'sun', 'cloud', 'umbrella', 'sparkles', 'star',
+    'more-horizontal', 'circle', 'square', 'triangle', 'hexagon'
+];
+
+const categories = [
+    {% for cat in categories %}
+    { id: {{ cat.category.id }}, name: "{{ cat.category.name }}", parentId: {% match cat.category.parent_id %}{% when Some with (id) %}{{ id }}{% when None %}null{% endmatch %}, color: "{{ cat.category.color }}", icon: "{{ cat.category.icon }}" },
+    {% endfor %}
+];
+
+let editingId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initSortable();
+    initIconPicker();
+
+    document.getElementById('category-color').addEventListener('input', function() {
+        document.getElementById('category-color-text').value = this.value;
+    });
+});
+
+function initSortable() {
+    const tree = document.getElementById('categories-tree');
+    if (!tree) return;
+
+    new Sortable(tree, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'opacity-50',
+        dragClass: 'bg-primary-50 dark:bg-primary-900/20',
+        delay: 100,
+        delayOnTouchOnly: true,
+        touchStartThreshold: 3,
+        onEnd: function(evt) {
+            const item = evt.item;
+            const id = item.dataset.id;
+            const newParent = item.closest('.children') ? item.closest('.category-item[data-parent=""]')?.dataset.id || '' : '';
+            updateCategoryParent(id, newParent || null);
+        }
+    });
+
+    document.querySelectorAll('.children').forEach(children => {
+        new Sortable(children, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'opacity-50',
+            group: 'categories',
+            delay: 100,
+            delayOnTouchOnly: true,
+            touchStartThreshold: 3
+        });
+    });
+}
+
+function initIconPicker() {
+    const grid = document.getElementById('icon-grid');
+    if (!grid) return;
+
+    CATEGORY_ICONS.forEach(icon => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors';
+        btn.innerHTML = `<svg class="w-5 h-5"><use href="#${icon}"/></svg>`;
+        btn.onclick = () => selectIcon(icon);
+        grid.appendChild(btn);
+    });
+}
+
+function toggleIconPicker() {
+    document.getElementById('icon-picker').classList.toggle('hidden');
+}
+
+function selectIcon(icon) {
+    document.getElementById('category-icon').value = icon;
+    document.getElementById('selected-icon').innerHTML = `<use href="#${icon}"/>`;
+    document.getElementById('selected-icon-name').textContent = icon;
+    document.getElementById('icon-picker').classList.add('hidden');
+}
+
+function openAddModal() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Add Category';
+    document.getElementById('category-form').reset();
+    document.getElementById('category-color').value = '#6b7280';
+    document.getElementById('category-color-text').value = '#6b7280';
+    selectIcon('folder');
+    document.getElementById('category-modal').classList.remove('hidden');
+}
+
+function openEditModal(id) {
+    const cat = categories.find(c => c.id === id);
+    if (!cat) return;
+
+    editingId = id;
+    document.getElementById('modal-title').textContent = 'Edit Category';
+    document.getElementById('category-id').value = id;
+    document.getElementById('category-name').value = cat.name;
+    document.getElementById('category-parent').value = cat.parentId || '';
+    document.getElementById('category-color').value = cat.color;
+    document.getElementById('category-color-text').value = cat.color;
+    selectIcon(cat.icon);
+    document.getElementById('category-modal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('category-modal').classList.add('hidden');
+    document.getElementById('icon-picker').classList.add('hidden');
+}
+
+async function saveCategory() {
+    const name = document.getElementById('category-name').value;
+    const parentId = document.getElementById('category-parent').value || '';
+    const color = document.getElementById('category-color').value;
+    const icon = document.getElementById('category-icon').value;
+
+    const formData = new FormData();
+    formData.append('name', name);
+    if (parentId) formData.append('parent_id', parentId);
+    formData.append('color', color);
+    formData.append('icon', icon);
+
+    try {
+        let response;
+        if (editingId) {
+            response = await fetch(`/categories/${editingId}`, {
+                method: 'PUT',
+                body: formData
+            });
+        } else {
+            response = await fetch('/categories/create', {
+                method: 'POST',
+                body: formData
+            });
+        }
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('Failed to save category');
+        }
+    } catch (e) {
+        alert('Error saving category: ' + e.message);
+    }
+}
+
+async function deleteCategory(id, name) {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+        const response = await fetch(`/categories/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            document.querySelector(`.category-item[data-id="${id}"]`)?.remove();
+        } else {
+            alert('Failed to delete category');
+        }
+    } catch (e) {
+        alert('Error deleting category: ' + e.message);
+    }
+}
+
+async function updateCategoryParent(id, parentId) {
+    const cat = categories.find(c => c.id == id);
+    if (!cat) return;
+
+    const formData = new FormData();
+    formData.append('name', cat.name);
+    if (parentId) formData.append('parent_id', parentId);
+    formData.append('color', cat.color);
+    formData.append('icon', cat.icon);
+
+    try {
+        await fetch(`/categories/${id}`, {
+            method: 'PUT',
+            body: formData
+        });
+    } catch (e) {
+        console.error('Error updating category:', e);
+    }
+}
+</script>
 {% endblock %}

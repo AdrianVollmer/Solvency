@@ -31,6 +31,17 @@ impl CategoryWithPath {
             self.category.name.clone()
         }
     }
+
+    pub fn is_child_of(&self, parent_id: &i64) -> bool {
+        self.category.parent_id == Some(*parent_id)
+    }
+
+    pub fn parent_id_or_empty(&self) -> String {
+        self.category
+            .parent_id
+            .map(|id| id.to_string())
+            .unwrap_or_default()
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
