@@ -1,52 +1,99 @@
 {% extends "base.html" %}
 
+{% block head %}
+<style>
+    /* Ensure Lucide icons inherit color via stroke */
+    .lucide-icon {
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+    }
+    /* Tree structure styling */
+    .tree-children {
+        position: relative;
+        margin-left: 1.25rem;
+        padding-left: 1.25rem;
+    }
+    .tree-children::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0.75rem;
+        width: 2px;
+        background-color: #e5e7eb;
+    }
+    .dark .tree-children::before {
+        background-color: #4b5563;
+    }
+    .tree-children .category-item::before {
+        content: '';
+        position: absolute;
+        left: -1.25rem;
+        top: 1.25rem;
+        width: 1rem;
+        height: 2px;
+        background-color: #e5e7eb;
+    }
+    .dark .tree-children .category-item::before {
+        background-color: #4b5563;
+    }
+    .tree-children .category-item {
+        position: relative;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">Categories</h1>
         <button onclick="openAddModal()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2">
-            <svg class="w-5 h-5"><use href="#plus"/></svg>
+            <svg class="w-5 h-5 lucide-icon"><use href="#plus"/></svg>
             Add Category
         </button>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div id="categories-tree" class="divide-y divide-gray-200 dark:divide-gray-700">
+        <div id="categories-tree" class="p-4 space-y-1">
             {% for category in categories %}
             {% if category.depth == 0 %}
-            <div class="category-item" data-id="{{ category.category.id }}" data-parent="">
-                <div class="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 group">
-                    <div class="drag-handle cursor-grab active:cursor-grabbing p-2 -ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-none">
-                        <svg class="w-5 h-5"><use href="#grip-vertical"/></svg>
+            <div class="category-item" data-id="{{ category.category.id }}" data-parent="" data-depth="0">
+                <div class="flex items-center px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 group transition-colors">
+                    <div class="drag-handle cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-none">
+                        <svg class="w-5 h-5 lucide-icon"><use href="#grip-vertical"/></svg>
                     </div>
                     <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="openEditModal({{ category.category.id }})">
-                        <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: {{ category.category.color }}20; color: {{ category.category.color }};">
-                            <svg class="w-5 h-5"><use href="#{{ category.category.icon }}"/></svg>
+                        <span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: {{ category.category.color }}20; color: {{ category.category.color }};">
+                            <svg class="w-5 h-5 lucide-icon"><use href="#{{ category.category.icon }}"/></svg>
                         </span>
-                        <span class="font-medium truncate">{{ category.category.name }}</span>
+                        <span class="font-medium">{{ category.category.name }}</span>
                     </div>
                     <button onclick="event.stopPropagation(); deleteCategory({{ category.category.id }}, '{{ category.category.name }}')"
                         class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <svg class="w-5 h-5"><use href="#trash-2"/></svg>
+                        <svg class="w-5 h-5 lucide-icon"><use href="#trash-2"/></svg>
                     </button>
                 </div>
-                <div class="children pl-8 border-l border-gray-200 dark:border-gray-700 ml-6" data-parent-id="{{ category.category.id }}">
+                <!-- Children with tree lines -->
+                <div class="tree-children" data-parent-id="{{ category.category.id }}">
                     {% for child in categories %}
                     {% if child.is_child_of(category.category.id) %}
-                    <div class="category-item" data-id="{{ child.category.id }}" data-parent="{{ child.parent_id_or_empty() }}">
-                        <div class="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 group">
-                            <div class="drag-handle cursor-grab active:cursor-grabbing p-2 -ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-none">
-                                <svg class="w-5 h-5"><use href="#grip-vertical"/></svg>
+                    <div class="category-item" data-id="{{ child.category.id }}" data-parent="{{ child.parent_id_or_empty() }}" data-depth="1">
+                        <div class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 group transition-colors">
+                            <div class="drag-handle cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-none">
+                                <svg class="w-4 h-4 lucide-icon"><use href="#grip-vertical"/></svg>
                             </div>
-                            <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="openEditModal({{ child.category.id }})">
-                                <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: {{ child.category.color }}20; color: {{ child.category.color }};">
-                                    <svg class="w-5 h-5"><use href="#{{ child.category.icon }}"/></svg>
+                            <div class="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer" onclick="openEditModal({{ child.category.id }})">
+                                <span class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style="background-color: {{ child.category.color }}20; color: {{ child.category.color }};">
+                                    <svg class="w-4 h-4 lucide-icon"><use href="#{{ child.category.icon }}"/></svg>
                                 </span>
-                                <span class="font-medium truncate">{{ child.category.name }}</span>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ child.category.name }}</span>
                             </div>
                             <button onclick="event.stopPropagation(); deleteCategory({{ child.category.id }}, '{{ child.category.name }}')"
-                                class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg class="w-5 h-5"><use href="#trash-2"/></svg>
+                                class="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg class="w-4 h-4 lucide-icon"><use href="#trash-2"/></svg>
                             </button>
                         </div>
                     </div>
@@ -60,7 +107,7 @@
 
         {% if categories.is_empty() %}
         <div class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-            <svg class="w-12 h-12 mx-auto mb-4 opacity-50"><use href="#folder"/></svg>
+            <svg class="w-12 h-12 mx-auto mb-4 opacity-50 lucide-icon"><use href="#folder"/></svg>
             <p>No categories yet. Create one to get started.</p>
         </div>
         {% endif %}
@@ -75,7 +122,7 @@
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 id="modal-title" class="text-lg font-semibold">Add Category</h2>
                 <button onclick="closeModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <svg class="w-5 h-5"><use href="#x"/></svg>
+                    <svg class="w-5 h-5 lucide-icon"><use href="#x"/></svg>
                 </button>
             </div>
             <form id="category-form" class="p-6 space-y-4">
@@ -113,7 +160,7 @@
                         <div class="relative">
                             <button type="button" id="icon-picker-btn" onclick="toggleIconPicker()"
                                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 flex items-center gap-2">
-                                <svg id="selected-icon" class="w-5 h-5"><use href="#folder"/></svg>
+                                <svg id="selected-icon" class="w-5 h-5 lucide-icon"><use href="#folder"/></svg>
                                 <span id="selected-icon-name" class="text-sm">folder</span>
                             </button>
                             <input type="hidden" id="category-icon" name="icon" value="folder">
@@ -176,31 +223,35 @@ function initSortable() {
     const tree = document.getElementById('categories-tree');
     if (!tree) return;
 
+    // Top-level categories
     new Sortable(tree, {
         handle: '.drag-handle',
         animation: 150,
         ghostClass: 'opacity-50',
-        dragClass: 'bg-primary-50 dark:bg-primary-900/20',
+        draggable: '& > .category-item',
         delay: 100,
         delayOnTouchOnly: true,
-        touchStartThreshold: 3,
-        onEnd: function(evt) {
-            const item = evt.item;
-            const id = item.dataset.id;
-            const newParent = item.closest('.children') ? item.closest('.category-item[data-parent=""]')?.dataset.id || '' : '';
-            updateCategoryParent(id, newParent || null);
-        }
+        touchStartThreshold: 3
     });
 
-    document.querySelectorAll('.children').forEach(children => {
-        new Sortable(children, {
+    // Children containers
+    document.querySelectorAll('.tree-children').forEach(container => {
+        new Sortable(container, {
             handle: '.drag-handle',
             animation: 150,
             ghostClass: 'opacity-50',
-            group: 'categories',
+            group: 'nested',
             delay: 100,
             delayOnTouchOnly: true,
-            touchStartThreshold: 3
+            touchStartThreshold: 3,
+            onEnd: function(evt) {
+                const item = evt.item;
+                const id = item.dataset.id;
+                const newParentId = evt.to.dataset.parentId;
+                if (newParentId && newParentId !== item.dataset.parent) {
+                    updateCategoryParent(id, newParentId);
+                }
+            }
         });
     });
 }
@@ -213,7 +264,7 @@ function initIconPicker() {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors';
-        btn.innerHTML = `<svg class="w-5 h-5"><use href="#${icon}"/></svg>`;
+        btn.innerHTML = `<svg class="w-5 h-5 lucide-icon"><use href="#${icon}"/></svg>`;
         btn.onclick = () => selectIcon(icon);
         grid.appendChild(btn);
     });
