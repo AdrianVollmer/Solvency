@@ -173,10 +173,7 @@ pub async fn table_partial(
     Ok(Html(template.render().unwrap()))
 }
 
-pub async fn show(
-    State(state): State<AppState>,
-    Path(id): Path<i64>,
-) -> AppResult<Html<String>> {
+pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     let expense = expenses::get_expense(&conn, id)?
@@ -260,10 +257,7 @@ pub async fn update(
     Ok(Html(template.render().unwrap()))
 }
 
-pub async fn delete(
-    State(state): State<AppState>,
-    Path(id): Path<i64>,
-) -> AppResult<Html<String>> {
+pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     expenses::delete_expense(&conn, id)?;

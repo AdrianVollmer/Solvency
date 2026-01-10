@@ -28,6 +28,9 @@ impl JsManifest {
     }
 
     pub fn get(&self, name: &str) -> String {
-        self.0.get(name).cloned().unwrap_or_else(|| name.to_string())
+        self.0
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| name.to_string())
     }
 }

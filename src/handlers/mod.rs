@@ -4,6 +4,7 @@ pub mod categories;
 pub mod dashboard;
 pub mod expenses;
 pub mod import;
+pub mod rules;
 pub mod settings;
 pub mod tags;
 
@@ -38,6 +39,11 @@ pub fn routes() -> Router<AppState> {
         .route("/tags/create", post(tags::create))
         .route("/tags/search", get(tags::search))
         .route("/tags/:id", delete(tags::delete))
+        // Rule management
+        .route("/rules", get(rules::index))
+        .route("/rules/create", post(rules::create))
+        .route("/rules/:id", put(rules::update))
+        .route("/rules/:id", delete(rules::delete))
         // Import
         .route("/import/upload", post(import::upload))
         .route("/import/preview", post(import::preview))

@@ -1,5 +1,11 @@
-<span id="tag-{{ tag.id }}" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm"
-    style="background-color: {{ tag.color }}20; color: {{ tag.color }};">
+<span id="tag-{{ tag.id }}" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm {% if tag.style.as_str() == "striped" %}tag-striped{% endif %}"
+    {% if tag.style.as_str() == "solid" %}
+    style="background-color: {{ tag.color }}; color: white;"
+    {% else if tag.style.as_str() == "outline" %}
+    style="background-color: transparent; color: {{ tag.color }}; border: 1.5px solid {{ tag.color }};"
+    {% else %}
+    style="background: repeating-linear-gradient(135deg, {{ tag.color }}20, {{ tag.color }}20 4px, {{ tag.color }}40 4px, {{ tag.color }}40 8px); color: {{ tag.color }}; border: 1px solid {{ tag.color }}40;"
+    {% endif %}>
     {{ tag.name }}
     <button hx-delete="/tags/{{ tag.id }}"
         hx-target="#tag-{{ tag.id }}"

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">Rules</h1>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Rules automatically assign categories or tags to expenses based on description patterns.
+            Use regular expressions for flexible matching.
+        </p>
+        <form hx-post="/rules/create" hx-target="#rules-table tbody" hx-swap="beforeend" hx-on::after-request="this.reset()" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                    <input type="text" name="name" required placeholder="e.g. Grocery stores"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pattern (regex)</label>
+                    <input type="text" name="pattern" required placeholder="e.g. walmart|costco|kroger"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 font-mono text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action</label>
+                    <select name="action_type" id="action-type-select"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500"
+                        onchange="toggleActionValue(this)">
+                        <option value="assign_category">Assign Category</option>
+                        <option value="assign_tag">Assign Tag</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value</label>
+                    <select name="action_value" id="action-value-category"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                        {% for cat in categories %}
+                        <option value="{{ cat.category.id }}">{{ cat.path }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="action_value" id="action-value-tag"
+                        class="hidden w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                        {% for tag in tags %}
+                        <option value="{{ tag.id }}">{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div>
+                <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                    Add Rule
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="rules-table" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pattern</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for rule in rules %}
+                {% include "components/rule_row.html" %}
+                {% else %}
+                <tr id="no-rules-row">
+                    <td colspan="4" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                        No rules yet. Create one above to automatically categorize your expenses.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function toggleActionValue(select) {
+    const categorySelect = document.getElementById('action-value-category');
+    const tagSelect = document.getElementById('action-value-tag');
+
+    if (select.value === 'assign_category') {
+        categorySelect.classList.remove('hidden');
+        categorySelect.name = 'action_value';
+        tagSelect.classList.add('hidden');
+        tagSelect.name = '';
+    } else {
+        categorySelect.classList.add('hidden');
+        categorySelect.name = '';
+        tagSelect.classList.remove('hidden');
+        tagSelect.name = 'action_value';
+    }
+}
+</script>
+{% endblock %}

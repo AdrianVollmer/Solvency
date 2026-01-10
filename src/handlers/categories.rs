@@ -117,10 +117,7 @@ pub async fn update(
     Ok(Html(template.render().unwrap()))
 }
 
-pub async fn delete(
-    State(state): State<AppState>,
-    Path(id): Path<i64>,
-) -> AppResult<Html<String>> {
+pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     categories::delete_category(&conn, id)?;

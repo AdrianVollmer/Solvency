@@ -9,15 +9,14 @@ pub fn create_pool(database_path: &Path) -> Result<DbPool, r2d2::Error> {
         std::fs::create_dir_all(parent).ok();
     }
 
-    let manager = SqliteConnectionManager::file(database_path)
-        .with_init(|conn| {
-            conn.execute_batch(
-                "PRAGMA journal_mode = WAL;
+    let manager = SqliteConnectionManager::file(database_path).with_init(|conn| {
+        conn.execute_batch(
+            "PRAGMA journal_mode = WAL;
                  PRAGMA synchronous = NORMAL;
                  PRAGMA foreign_keys = ON;
                  PRAGMA busy_timeout = 5000;",
-            )
-        });
+        )
+    });
 
     Pool::builder().max_size(10).build(manager)
 }

@@ -1,5 +1,5 @@
 use crate::models::expense::{Expense, ExpenseWithRelations, NewExpense};
-use crate::models::tag::Tag;
+use crate::models::tag::{Tag, TagStyle};
 use rusqlite::{params, Connection, OptionalExtension};
 
 #[derive(Default)]
@@ -219,7 +219,7 @@ pub fn delete_expense(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
 
 fn get_expense_tags(conn: &Connection, expense_id: i64) -> rusqlite::Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
-        "SELECT t.id, t.name, t.color, t.created_at
+        "SELECT t.id, t.name, t.color, t.style, t.created_at
          FROM tags t
          JOIN expense_tags et ON t.id = et.tag_id
          WHERE et.expense_id = ?
@@ -228,11 +228,13 @@ fn get_expense_tags(conn: &Connection, expense_id: i64) -> rusqlite::Result<Vec<
 
     let tags = stmt
         .query_map([expense_id], |row| {
+            let style_str: String = row.get(3)?;
             Ok(Tag {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 color: row.get(2)?,
-                created_at: row.get(3)?,
+                style: TagStyle::parse(&style_str),
+                created_at: row.get(4)?,
             })
         })?
         .filter_map(|t| t.ok())

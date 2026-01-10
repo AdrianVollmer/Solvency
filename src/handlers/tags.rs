@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::db::queries::{settings, tags};
 use crate::error::{AppError, AppResult};
-use crate::models::{NewTag, Settings, Tag};
+use crate::models::{NewTag, Settings, Tag, TagStyle};
 use crate::state::{AppState, JsManifest};
 
 #[derive(Template)]
@@ -28,6 +28,7 @@ pub struct TagBadgeTemplate {
 pub struct TagFormData {
     pub name: String,
     pub color: Option<String>,
+    pub style: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -78,6 +79,7 @@ pub async fn create(
     let new_tag = NewTag {
         name: form.name,
         color: form.color.unwrap_or_else(|| "#6b7280".into()),
+        style: form.style.map(|s| TagStyle::parse(&s)).unwrap_or_default(),
     };
 
     let id = tags::create_tag(&conn, &new_tag)?;
@@ -90,10 +92,7 @@ pub async fn create(
     Ok(Html(template.render().unwrap()))
 }
 
-pub async fn delete(
-    State(state): State<AppState>,
-    Path(id): Path<i64>,
-) -> AppResult<Html<String>> {
+pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     tags::delete_tag(&conn, id)?;

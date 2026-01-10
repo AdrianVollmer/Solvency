@@ -61,9 +61,7 @@ pub async fn spending_by_category(
             .clone()
             .unwrap_or_else(|| "#6b7280".into());
 
-        let entry = category_totals
-            .entry(category_name)
-            .or_insert((color, 0));
+        let entry = category_totals.entry(category_name).or_insert((color, 0));
         entry.1 += expense.expense.amount_cents;
     }
 
@@ -102,8 +100,7 @@ pub async fn spending_over_time(
 
     let expense_list = expenses::list_expenses(&conn, &filter)?;
 
-    let mut daily_totals: std::collections::HashMap<String, i64> =
-        std::collections::HashMap::new();
+    let mut daily_totals: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
 
     for expense in &expense_list {
         let entry = daily_totals

@@ -68,9 +68,7 @@ pub fn spending_by_category(expenses: &[ExpenseWithRelations]) -> Vec<CategoryBr
             .clone()
             .unwrap_or_else(|| "#6b7280".into());
 
-        let entry = category_data
-            .entry(category)
-            .or_insert((color, 0, 0));
+        let entry = category_data.entry(category).or_insert((color, 0, 0));
         entry.1 += expense.expense.amount_cents;
         entry.2 += 1;
     }
@@ -79,17 +77,19 @@ pub fn spending_by_category(expenses: &[ExpenseWithRelations]) -> Vec<CategoryBr
 
     let mut result: Vec<CategoryBreakdown> = category_data
         .into_iter()
-        .map(|(category, (color, total_cents, expense_count))| CategoryBreakdown {
-            category,
-            color,
-            total_cents,
-            percentage: if total > 0 {
-                (total_cents as f64 / total as f64) * 100.0
-            } else {
-                0.0
+        .map(
+            |(category, (color, total_cents, expense_count))| CategoryBreakdown {
+                category,
+                color,
+                total_cents,
+                percentage: if total > 0 {
+                    (total_cents as f64 / total as f64) * 100.0
+                } else {
+                    0.0
+                },
+                expense_count,
             },
-            expense_count,
-        })
+        )
         .collect();
 
     result.sort_by(|a, b| b.total_cents.cmp(&a.total_cents));
