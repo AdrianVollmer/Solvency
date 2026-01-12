@@ -1,6 +1,6 @@
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::response::Html;
+use axum::response::{Html, Redirect};
 use axum::Form;
 use serde::Deserialize;
 
@@ -51,6 +51,17 @@ pub struct ExpenseRowTemplate {
 #[derive(Template)]
 #[template(path = "pages/expense_detail.html")]
 pub struct ExpenseDetailTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+    pub expense: ExpenseWithRelations,
+    pub categories: Vec<CategoryWithPath>,
+    pub tags: Vec<Tag>,
+}
+
+#[derive(Template)]
+#[template(path = "pages/expense_edit.html")]
+pub struct ExpenseEditTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
@@ -243,14 +254,19 @@ pub async fn edit_form(
     let expense = expenses::get_expense(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Expense {} not found", id)))?;
 
+    let settings_map = settings::get_all_settings(&conn)?;
+    let app_settings = Settings::from_map(settings_map);
+
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
 
-    let template = ExpenseFormTemplate {
-        expense: Some(expense),
+    let template = ExpenseEditTemplate {
+        title: "Edit Transaction".into(),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
+        expense,
         categories: cats,
         tags: tag_list,
-        is_edit: true,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -277,18 +293,13 @@ pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Form(form): Form<ExpenseFormData>,
-) -> AppResult<Html<String>> {
+) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
     let new_expense = form.to_new_expense()?;
     expenses::update_expense(&conn, id, &new_expense)?;
 
-    let expense = expenses::get_expense(&conn, id)?
-        .ok_or_else(|| AppError::NotFound(format!("Expense {} not found", id)))?;
-
-    let template = ExpenseRowTemplate { expense };
-
-    Ok(Html(template.render().unwrap()))
+    Ok(Redirect::to(&format!("/expenses/{}", id)))
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
