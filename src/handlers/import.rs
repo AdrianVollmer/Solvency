@@ -158,6 +158,15 @@ pub async fn confirm(
             category_id: expense_data.category_id,
             notes: None,
             tag_ids,
+            value_date: None,
+            payer: None,
+            payee: None,
+            reference: None,
+            transaction_type: None,
+            counterparty_iban: None,
+            creditor_id: None,
+            mandate_reference: None,
+            customer_reference: None,
         };
 
         match expenses::create_expense(&conn, &new_expense) {

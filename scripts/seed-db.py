@@ -333,19 +333,53 @@ def seed_expenses(
             ]
             notes = random.choice(note_templates)
 
+        # Generate payee (the recipient of the payment - i.e. the vendor)
+        payee = description.split(" - ")[0]  # Use vendor name as payee
+
         expenses_data.append((
             expense_date.isoformat(),
-            amount_cents,
+            -amount_cents,  # Negative for expenses
             "USD",
             description,
             category_id,
             notes,
+            None,  # payer (not set for expenses - we are the payer)
+            payee,  # payee (the vendor receiving money)
+        ))
+
+    # Add some income entries (salary, refunds, etc.)
+    income_templates = [
+        ("Salary Deposit", 350000, 600000, "Employer Inc."),
+        ("Freelance Payment", 50000, 200000, "Client LLC"),
+        ("Tax Refund", 30000, 150000, "IRS"),
+        ("Cashback Reward", 1000, 5000, "Credit Card Co"),
+        ("Reimbursement", 2000, 10000, "Company ABC"),
+        ("Gift Received", 2500, 10000, "Family Member"),
+        ("Sold Item", 1500, 8000, "eBay Buyer"),
+    ]
+
+    num_income = max(1, num_expenses // 20)  # ~5% income transactions
+    for _ in range(num_income):
+        desc, min_c, max_c, payer = random.choice(income_templates)
+        amount_cents = random.randint(min_c, max_c)
+        days_ago = random.randint(0, days_back)
+        expense_date = today - timedelta(days=days_ago)
+
+        expenses_data.append((
+            expense_date.isoformat(),
+            amount_cents,  # Positive for income
+            "USD",
+            desc,
+            None,  # No category for income
+            None,  # No notes
+            payer,  # payer (the one sending money to us)
+            None,  # payee (not set for income - we are the payee)
         ))
 
     # Insert expenses
     cursor = conn.executemany(
-        """INSERT INTO expenses (date, amount_cents, currency, description, category_id, notes)
-           VALUES (?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO expenses (date, amount_cents, currency, description, category_id, notes, payer, payee)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
         expenses_data,
     )
     conn.commit()

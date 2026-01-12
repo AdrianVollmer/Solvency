@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <a href="/expenses" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#arrow-left"/></svg>
+            </a>
+            <h1 class="text-2xl font-bold">Transaction Details</h1>
+        </div>
+        <div class="flex gap-2">
+            <button
+                hx-get="/expenses/{{ expense.expense.id }}/edit"
+                hx-target="#expense-modal"
+                hx-swap="innerHTML"
+                onclick="document.getElementById('expense-modal').classList.remove('hidden')"
+                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors inline-flex items-center gap-2">
+                <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24"><use href="#pencil"/></svg>
+                Edit
+            </button>
+            <button
+                hx-delete="/expenses/{{ expense.expense.id }}"
+                hx-confirm="Are you sure you want to delete this transaction?"
+                hx-target="body"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) window.location.href='/expenses'"
+                class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+                <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24"><use href="#trash-2"/></svg>
+                Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Info Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ expense.expense.description }}</h2>
+                    {% if expense.has_notes() %}
+                    <p class="mt-1 text-gray-600 dark:text-gray-400">{{ expense.notes_text() }}</p>
+                    {% endif %}
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold {% if expense.is_income() %}text-green-600 dark:text-green-400{% else %}text-gray-900 dark:text-gray-100{% endif %}">
+                        {% if expense.is_income() %}+{% endif %}{{ expense.amount_formatted() }}
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        {% if expense.is_income() %}Income{% else %}Expense{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Left Column -->
+            <div class="space-y-4">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ expense.expense.date }}</dd>
+                </div>
+
+                {% match expense.expense.value_date %}
+                {% when Some with (vd) %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Value Date</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ vd }}</dd>
+                </div>
+                {% when None %}
+                {% endmatch %}
+
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</dt>
+                    <dd class="mt-1">
+                        {% if expense.has_category() %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium"
+                            style="background-color: {{ expense.category_color_or_default() }}20; color: {{ expense.category_color_or_default() }};">
+                            {{ expense.category_name_or_default() }}
+                        </span>
+                        {% else %}
+                        <span class="text-gray-400">Uncategorized</span>
+                        {% endif %}
+                    </dd>
+                </div>
+
+                {% if !expense.tags.is_empty() %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tags</dt>
+                    <dd class="mt-1 flex flex-wrap gap-1">
+                        {% for tag in expense.tags %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                            style="background-color: {{ tag.color }}20; color: {{ tag.color }};">
+                            {{ tag.name }}
+                        </span>
+                        {% endfor %}
+                    </dd>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-4">
+                {% match expense.expense.payer %}
+                {% when Some with (p) %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payer</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ p }}</dd>
+                </div>
+                {% when None %}
+                {% endmatch %}
+
+                {% match expense.expense.payee %}
+                {% when Some with (p) %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payee</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ p }}</dd>
+                </div>
+                {% when None %}
+                {% endmatch %}
+
+                {% match expense.expense.transaction_type %}
+                {% when Some with (t) %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Transaction Type</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ t }}</dd>
+                </div>
+                {% when None %}
+                {% endmatch %}
+
+                {% match expense.expense.counterparty_iban %}
+                {% when Some with (iban) %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">IBAN</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100 font-mono text-sm">{{ iban }}</dd>
+                </div>
+                {% when None %}
+                {% endmatch %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Reference/Purpose Section -->
+    {% match expense.expense.reference %}
+    {% when Some with (ref) %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Reference / Purpose</h3>
+        <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ ref }}</p>
+    </div>
+    {% when None %}
+    {% endmatch %}
+
+    <!-- SEPA Details Section -->
+    {% if expense.expense.creditor_id.is_some() || expense.expense.mandate_reference.is_some() || expense.expense.customer_reference.is_some() %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">SEPA Details</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% match expense.expense.creditor_id %}
+            {% when Some with (cid) %}
+            <div>
+                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Creditor ID</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 font-mono">{{ cid }}</dd>
+            </div>
+            {% when None %}
+            {% endmatch %}
+
+            {% match expense.expense.mandate_reference %}
+            {% when Some with (mr) %}
+            <div>
+                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Mandate Reference</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 font-mono">{{ mr }}</dd>
+            </div>
+            {% when None %}
+            {% endmatch %}
+
+            {% match expense.expense.customer_reference %}
+            {% when Some with (cr) %}
+            <div>
+                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Customer Reference</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 font-mono">{{ cr }}</dd>
+            </div>
+            {% when None %}
+            {% endmatch %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Metadata Section -->
+    <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-6">
+        <span>Created: {{ expense.expense.created_at }}</span>
+        <span>Updated: {{ expense.expense.updated_at }}</span>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="expense-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('expense-modal').classList.add('hidden')"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full p-6">
+        </div>
+    </div>
+</div>
+{% endblock %}

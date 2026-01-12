@@ -12,6 +12,16 @@ pub struct Expense {
     pub notes: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    // Extended transaction fields
+    pub value_date: Option<String>,
+    pub payer: Option<String>,
+    pub payee: Option<String>,
+    pub reference: Option<String>,
+    pub transaction_type: Option<String>,
+    pub counterparty_iban: Option<String>,
+    pub creditor_id: Option<String>,
+    pub mandate_reference: Option<String>,
+    pub customer_reference: Option<String>,
 }
 
 impl Expense {
@@ -31,6 +41,23 @@ impl Expense {
         let symbol = currency_symbol(&self.currency);
         format!("{}{}", symbol, self.amount_display())
     }
+
+    pub fn is_income(&self) -> bool {
+        self.amount_cents > 0
+    }
+
+    pub fn is_expense(&self) -> bool {
+        self.amount_cents < 0
+    }
+
+    /// Returns the counterparty: payer for income, payee for expenses
+    pub fn counterparty(&self) -> Option<&str> {
+        if self.is_income() {
+            self.payer.as_deref()
+        } else {
+            self.payee.as_deref()
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,6 +76,18 @@ impl ExpenseWithRelations {
 
     pub fn amount_formatted(&self) -> String {
         self.expense.amount_formatted()
+    }
+
+    pub fn is_income(&self) -> bool {
+        self.expense.is_income()
+    }
+
+    pub fn is_expense(&self) -> bool {
+        self.expense.is_expense()
+    }
+
+    pub fn counterparty(&self) -> Option<&str> {
+        self.expense.counterparty()
     }
 
     pub fn category_color_or_default(&self) -> &str {
@@ -101,6 +140,16 @@ pub struct NewExpense {
     pub notes: Option<String>,
     #[serde(default)]
     pub tag_ids: Vec<i64>,
+    // Extended transaction fields
+    pub value_date: Option<String>,
+    pub payer: Option<String>,
+    pub payee: Option<String>,
+    pub reference: Option<String>,
+    pub transaction_type: Option<String>,
+    pub counterparty_iban: Option<String>,
+    pub creditor_id: Option<String>,
+    pub mandate_reference: Option<String>,
+    pub customer_reference: Option<String>,
 }
 
 impl NewExpense {

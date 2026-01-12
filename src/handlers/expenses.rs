@@ -48,6 +48,17 @@ pub struct ExpenseRowTemplate {
     pub expense: ExpenseWithRelations,
 }
 
+#[derive(Template)]
+#[template(path = "pages/expense_detail.html")]
+pub struct ExpenseDetailTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+    pub expense: ExpenseWithRelations,
+    pub categories: Vec<CategoryWithPath>,
+    pub tags: Vec<Tag>,
+}
+
 #[derive(Debug, Default, Deserialize)]
 pub struct ExpenseFilterParams {
     pub search: Option<String>,
@@ -91,6 +102,16 @@ impl ExpenseFormData {
             category_id: self.category_id,
             notes: self.notes.clone(),
             tag_ids: self.tag_ids.clone(),
+            // Extended fields are not editable via the simple form
+            value_date: None,
+            payer: None,
+            payee: None,
+            reference: None,
+            transaction_type: None,
+            counterparty_iban: None,
+            creditor_id: None,
+            mandate_reference: None,
+            customer_reference: None,
         })
     }
 }
@@ -179,7 +200,20 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     let expense = expenses::get_expense(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Expense {} not found", id)))?;
 
-    let template = ExpenseRowTemplate { expense };
+    let settings_map = settings::get_all_settings(&conn)?;
+    let app_settings = Settings::from_map(settings_map);
+
+    let cats = categories::list_categories_with_path(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+
+    let template = ExpenseDetailTemplate {
+        title: format!("Transaction #{}", id),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
+        expense,
+        categories: cats,
+        tags: tag_list,
+    };
 
     Ok(Html(template.render().unwrap()))
 }
