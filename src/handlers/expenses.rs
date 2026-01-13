@@ -10,6 +10,7 @@ use crate::db::queries::{categories, expenses, settings, tags};
 use crate::error::{AppError, AppResult};
 use crate::models::{CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag};
 use crate::state::{AppState, JsManifest};
+use crate::VERSION;
 
 #[derive(Template)]
 #[template(path = "pages/expenses.html")]
@@ -17,6 +18,7 @@ pub struct ExpensesTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub expenses: Vec<ExpenseWithRelations>,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
@@ -58,6 +60,7 @@ pub struct ExpenseDetailTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub expense: ExpenseWithRelations,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
@@ -69,6 +72,7 @@ pub struct ExpenseEditTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub expense: ExpenseWithRelations,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
@@ -213,6 +217,7 @@ pub async fn index(
         title: "Expenses".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         expenses: expense_list,
         categories: cats,
         tags: tag_list,
@@ -280,6 +285,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
         title: format!("Transaction #{}", id),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         expense,
         categories: cats,
         tags: tag_list,
@@ -323,6 +329,7 @@ pub async fn edit_form(
         title: "Edit Transaction".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         expense,
         categories: cats,
         tags: tag_list,

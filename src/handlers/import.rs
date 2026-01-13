@@ -9,6 +9,7 @@ use crate::error::{AppError, AppResult};
 use crate::models::{CategoryWithPath, NewExpense, Settings};
 use crate::services::csv_parser::{parse_csv, ParsedExpense};
 use crate::state::{AppState, JsManifest};
+use crate::VERSION;
 
 #[derive(Template)]
 #[template(path = "pages/import.html")]
@@ -16,6 +17,7 @@ pub struct ImportTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub categories: Vec<CategoryWithPath>,
 }
 
@@ -25,6 +27,7 @@ pub struct ImportFormatTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
 }
 
 #[derive(Template)]
@@ -81,6 +84,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         title: "Import".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         categories: cats,
     };
 
@@ -97,6 +101,7 @@ pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
         title: "CSV Import Format".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
     };
 
     Ok(Html(template.render().unwrap()))

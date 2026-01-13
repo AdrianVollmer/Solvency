@@ -10,6 +10,7 @@ use crate::db::queries::{categories, rules, settings, tags};
 use crate::error::{AppError, AppResult};
 use crate::models::{CategoryWithPath, NewRule, Rule, RuleActionType, Settings, Tag};
 use crate::state::{AppState, JsManifest};
+use crate::VERSION;
 
 #[derive(Template)]
 #[template(path = "pages/rules.html")]
@@ -17,6 +18,7 @@ pub struct RulesTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub rules: Vec<Rule>,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
@@ -52,6 +54,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         title: "Rules".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         rules: rule_list,
         categories: category_list,
         tags: tag_list,

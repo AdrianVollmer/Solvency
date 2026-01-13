@@ -9,6 +9,7 @@ use crate::db::queries::{settings, tags};
 use crate::error::{AppError, AppResult};
 use crate::models::{NewTag, Settings, Tag, TagStyle};
 use crate::state::{AppState, JsManifest};
+use crate::VERSION;
 
 #[derive(Template)]
 #[template(path = "pages/tags.html")]
@@ -16,6 +17,7 @@ pub struct TagsTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub tags: Vec<Tag>,
 }
 
@@ -49,6 +51,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         title: "Tags".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         tags: tag_list,
     };
 

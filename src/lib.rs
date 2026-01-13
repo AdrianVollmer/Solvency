@@ -6,3 +6,6 @@ pub mod handlers;
 pub mod models;
 pub mod services;
 pub mod state;
+
+/// Application version from Cargo.toml (single source of truth)
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");

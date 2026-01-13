@@ -10,6 +10,7 @@ use crate::db::queries::{categories, settings};
 use crate::error::{AppError, AppResult};
 use crate::models::{CategoryWithPath, NewCategory, Settings};
 use crate::state::{AppState, JsManifest};
+use crate::VERSION;
 
 #[derive(Template)]
 #[template(path = "pages/categories.html")]
@@ -17,6 +18,7 @@ pub struct CategoriesTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub categories: Vec<CategoryWithPath>,
 }
 
@@ -46,6 +48,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         title: "Categories".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         categories: cats,
     };
 

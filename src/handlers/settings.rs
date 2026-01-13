@@ -8,6 +8,7 @@ use crate::db::queries::settings;
 use crate::error::AppResult;
 use crate::models::Settings;
 use crate::state::{AppState, JsManifest};
+use crate::VERSION;
 
 #[derive(Template)]
 #[template(path = "pages/settings.html")]
@@ -15,6 +16,7 @@ pub struct SettingsTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
 }
 
 #[derive(Template)]
@@ -47,6 +49,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         title: "Settings".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
     };
 
     Ok(Html(template.render().unwrap()))

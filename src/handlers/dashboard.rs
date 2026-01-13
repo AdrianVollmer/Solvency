@@ -6,6 +6,7 @@ use crate::db::queries::{expenses, settings};
 use crate::error::AppResult;
 use crate::models::{ExpenseWithRelations, Settings};
 use crate::state::{AppState, JsManifest};
+use crate::VERSION;
 
 #[derive(Template)]
 #[template(path = "pages/dashboard.html")]
@@ -13,6 +14,7 @@ pub struct DashboardTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub recent_expenses: Vec<ExpenseWithRelations>,
     pub total_this_month: i64,
     pub total_last_month: i64,
@@ -64,6 +66,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         title: "Dashboard".into(),
         settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         recent_expenses,
         total_this_month,
         total_last_month,

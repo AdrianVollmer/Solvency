@@ -9,6 +9,7 @@ use crate::db::queries::settings;
 use crate::error::AppResult;
 use crate::models::Settings;
 use crate::state::{AppState, JsManifest};
+use crate::VERSION;
 
 #[derive(Debug, Default, Deserialize)]
 pub struct AnalyticsFilterParams {
@@ -44,6 +45,7 @@ pub struct AnalyticsTemplate {
     pub title: String,
     pub settings: Settings,
     pub manifest: JsManifest,
+    pub version: &'static str,
     pub date_range: DateRange,
     pub presets: &'static [DatePreset],
 }
@@ -63,6 +65,7 @@ pub async fn index(
         title: "Analytics".into(),
         settings: app_settings,
         manifest: state.manifest.clone(),
+        version: VERSION,
         date_range,
         presets: DatePreset::all(),
     };

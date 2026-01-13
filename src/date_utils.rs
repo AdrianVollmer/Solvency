@@ -263,7 +263,12 @@ fn detect_preset(from: NaiveDate, to: NaiveDate) -> Option<DatePreset> {
     None
 }
 
-fn shift_by_period(from: NaiveDate, to: NaiveDate, period: PeriodType, direction: i32) -> (NaiveDate, NaiveDate) {
+fn shift_by_period(
+    from: NaiveDate,
+    to: NaiveDate,
+    period: PeriodType,
+    direction: i32,
+) -> (NaiveDate, NaiveDate) {
     match period {
         PeriodType::Week => {
             let shift = chrono::Duration::days(7 * direction as i64);
