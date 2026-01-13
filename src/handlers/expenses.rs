@@ -38,6 +38,8 @@ pub struct ExpenseTableTemplate {
     pub total_count: i64,
     pub page: i64,
     pub page_size: i64,
+    pub filter: ExpenseFilterParams,
+    pub date_range: DateRange,
 }
 
 #[derive(Template)]
@@ -80,7 +82,7 @@ pub struct ExpenseEditTemplate {
     pub tags: Vec<Tag>,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Clone, Deserialize)]
 pub struct ExpenseFilterParams {
     pub search: Option<String>,
     pub category_id: Option<i64>,
@@ -267,6 +269,8 @@ pub async fn table_partial(
         total_count,
         page,
         page_size,
+        filter: params,
+        date_range,
     };
 
     Ok(Html(template.render().unwrap()))
