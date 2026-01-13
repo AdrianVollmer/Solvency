@@ -9,7 +9,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400">This Month</p>
-                    <p class="text-2xl font-bold mt-1">${{ total_this_month / 100 }}.{{ "{:02}"|format(total_this_month.abs() % 100) }}</p>
+                    <p class="text-2xl font-bold mt-1">{{ settings.format_money(total_this_month)|safe }}</p>
                 </div>
                 <div class="p-3 bg-primary-100 dark:bg-primary-900/30 rounded-full">
                     <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,7 +23,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Last Month</p>
-                    <p class="text-2xl font-bold mt-1">${{ total_last_month / 100 }}.{{ "{:02}"|format(total_last_month.abs() % 100) }}</p>
+                    <p class="text-2xl font-bold mt-1">{{ settings.format_money(total_last_month)|safe }}</p>
                 </div>
                 <div class="p-3 bg-gray-100 dark:bg-gray-700 rounded-full">
                     <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +69,7 @@
                         </p>
                     </div>
                 </div>
-                <span class="font-semibold">{{ expense.amount_formatted() }}</span>
+                <span class="font-semibold">{{ settings.format_money(expense.expense.amount_cents)|safe }}</span>
             </div>
             {% else %}
             <div class="p-8 text-center text-gray-500 dark:text-gray-400">

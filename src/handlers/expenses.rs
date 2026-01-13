@@ -33,6 +33,7 @@ pub struct ExpensesTemplate {
 #[derive(Template)]
 #[template(path = "partials/expense_table.html")]
 pub struct ExpenseTableTemplate {
+    pub settings: Settings,
     pub expenses: Vec<ExpenseWithRelations>,
     pub total_count: i64,
     pub page: i64,
@@ -51,6 +52,7 @@ pub struct ExpenseFormTemplate {
 #[derive(Template)]
 #[template(path = "components/expense_row.html")]
 pub struct ExpenseRowTemplate {
+    pub settings: Settings,
     pub expense: ExpenseWithRelations,
 }
 
@@ -260,6 +262,7 @@ pub async fn table_partial(
     let total_count = expenses::count_expenses(&conn, &filter)?;
 
     let template = ExpenseTableTemplate {
+        settings: app_settings,
         expenses: expense_list,
         total_count,
         page,
@@ -350,7 +353,13 @@ pub async fn create(
     let expense = expenses::get_expense(&conn, id)?
         .ok_or_else(|| AppError::Internal("Failed to retrieve created expense".into()))?;
 
-    let template = ExpenseRowTemplate { expense };
+    let settings_map = settings::get_all_settings(&conn)?;
+    let app_settings = Settings::from_map(settings_map);
+
+    let template = ExpenseRowTemplate {
+        settings: app_settings,
+        expense,
+    };
 
     Ok(Html(template.render().unwrap()))
 }

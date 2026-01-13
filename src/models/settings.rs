@@ -1,3 +1,4 @@
+use crate::filters;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -55,5 +56,19 @@ impl Settings {
 
     pub fn is_dark(&self) -> bool {
         self.theme == "dark"
+    }
+
+    /// Format a monetary amount (in cents) with proper locale formatting and color coding.
+    /// Returns HTML with Tailwind color classes:
+    /// - Positive: green
+    /// - Negative: red
+    /// - Zero: default text color
+    pub fn format_money(&self, cents: &i64) -> String {
+        filters::format_money(*cents, &self.currency, &self.locale)
+    }
+
+    /// Format a monetary amount (in cents) as plain text without HTML/colors.
+    pub fn format_money_plain(&self, cents: &i64) -> String {
+        filters::format_money_plain(*cents, &self.currency, &self.locale)
     }
 }
