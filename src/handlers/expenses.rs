@@ -2,8 +2,10 @@ use askama::Template;
 use axum::extract::{Path, Query, State};
 use axum::response::{Html, Redirect};
 use axum::Form;
+use chrono::NaiveDate;
 use serde::Deserialize;
 
+use crate::date_utils::{DatePreset, DateRange};
 use crate::db::queries::{categories, expenses, settings, tags};
 use crate::error::{AppError, AppResult};
 use crate::models::{CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag};
@@ -22,6 +24,8 @@ pub struct ExpensesTemplate {
     pub page: i64,
     pub page_size: i64,
     pub filter: ExpenseFilterParams,
+    pub date_range: DateRange,
+    pub presets: &'static [DatePreset],
 }
 
 #[derive(Template)]
@@ -78,11 +82,60 @@ pub struct ExpenseFilterParams {
     pub from_date: Option<String>,
     pub to_date: Option<String>,
     pub page: Option<i64>,
+    pub preset: Option<String>,
+    pub nav: Option<String>, // "prev" or "next"
 }
 
 impl ExpenseFilterParams {
     pub fn matches_category(&self, id: &i64) -> bool {
         self.category_id == Some(*id)
+    }
+
+    pub fn resolve_date_range(&self) -> DateRange {
+        // If nav is specified, we need the current range to shift from
+        let base_range = if let Some(preset_str) = &self.preset {
+            DatePreset::from_str(preset_str)
+                .map(DateRange::from_preset)
+                .unwrap_or_else(DateRange::default)
+        } else if let (Some(from), Some(to)) = (&self.from_date, &self.to_date) {
+            if let (Ok(from_date), Ok(to_date)) = (
+                NaiveDate::parse_from_str(from, "%Y-%m-%d"),
+                NaiveDate::parse_from_str(to, "%Y-%m-%d"),
+            ) {
+                DateRange::from_dates(from_date, to_date)
+            } else {
+                DateRange::default()
+            }
+        } else {
+            DateRange::default()
+        };
+
+        // Apply navigation if specified
+        match self.nav.as_deref() {
+            Some("prev") => base_range.prev(),
+            Some("next") => base_range.next(),
+            _ => base_range,
+        }
+    }
+
+    pub fn base_query_string(&self) -> String {
+        let mut parts = Vec::new();
+        if let Some(search) = &self.search {
+            if !search.is_empty() {
+                parts.push(format!("search={}", urlencoding::encode(search)));
+            }
+        }
+        if let Some(cat_id) = self.category_id {
+            parts.push(format!("category_id={}", cat_id));
+        }
+        if let Some(tag_id) = self.tag_id {
+            parts.push(format!("tag_id={}", tag_id));
+        }
+        if parts.is_empty() {
+            String::new()
+        } else {
+            parts.join("&")
+        }
     }
 }
 
@@ -139,12 +192,14 @@ pub async fn index(
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
 
+    let date_range = params.resolve_date_range();
+
     let filter = expenses::ExpenseFilter {
         search: params.search.clone(),
         category_id: params.category_id,
         tag_id: params.tag_id,
-        from_date: params.from_date.clone(),
-        to_date: params.to_date.clone(),
+        from_date: Some(date_range.from_str()),
+        to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
     };
@@ -165,6 +220,8 @@ pub async fn index(
         page,
         page_size,
         filter: params,
+        date_range,
+        presets: DatePreset::all(),
     };
 
     Ok(Html(template.render().unwrap()))
@@ -182,12 +239,14 @@ pub async fn table_partial(
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
 
+    let date_range = params.resolve_date_range();
+
     let filter = expenses::ExpenseFilter {
         search: params.search.clone(),
         category_id: params.category_id,
         tag_id: params.tag_id,
-        from_date: params.from_date.clone(),
-        to_date: params.to_date.clone(),
+        from_date: Some(date_range.from_str()),
+        to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
     };

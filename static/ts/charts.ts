@@ -240,22 +240,7 @@ async function updateCharts(): Promise<void> {
 
 document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("category-chart")) {
-    const today = new Date();
-    const threeMonthsAgo = new Date(today);
-    threeMonthsAgo.setMonth(today.getMonth() - 3);
-
-    const fromInput = document.getElementById("from_date") as HTMLInputElement;
-    const toInput = document.getElementById("to_date") as HTMLInputElement;
-
-    if (fromInput && !fromInput.value) {
-      fromInput.value = threeMonthsAgo.toISOString().split("T")[0];
-    }
-    if (toInput && !toInput.value) {
-      toInput.value = today.toISOString().split("T")[0];
-    }
-
+    // Date range is set by server via hidden inputs, just load charts
     updateCharts();
   }
 });
-
-(window as any).updateCharts = updateCharts;

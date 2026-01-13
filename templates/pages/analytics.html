@@ -10,24 +10,45 @@
     <h1 class="text-2xl font-bold">Analytics</h1>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-        <form id="analytics-filter" class="flex flex-wrap gap-4">
-            <div>
-                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">From</label>
-                <input type="date" name="from_date" id="from_date"
-                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="/analytics?from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
+                class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
+                title="Previous period">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <a href="/analytics?from_date={{ date_range.next().from_str() }}&to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
+                class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
+                title="Next period">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+
+            <div class="flex flex-wrap gap-1.5 ml-2">
+                {% for preset in presets %}
+                <a href="/analytics?preset={{ preset.as_str() }}"
+                    class="px-3 py-1.5 text-sm rounded-full transition-colors {% if date_range.is_preset(preset) %}bg-primary-600 text-white{% else %}border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                    {{ preset.label() }}
+                </a>
+                {% endfor %}
             </div>
-            <div>
-                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">To</label>
-                <input type="date" name="to_date" id="to_date"
-                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
-            </div>
-            <div class="flex items-end">
-                <button type="button" onclick="updateCharts()"
-                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                    Update
+
+            <form action="/analytics" method="get" class="flex items-center gap-2 ml-auto">
+                <input type="date" name="from_date" value="{{ date_range.from_str() }}"
+                    class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <span class="text-gray-500 text-sm">to</span>
+                <input type="date" name="to_date" value="{{ date_range.to_str() }}"
+                    class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <button type="submit" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                    Apply
                 </button>
-            </div>
-        </form>
+            </form>
+        </div>
+
+        <input type="hidden" id="from_date" value="{{ date_range.from_str() }}">
+        <input type="hidden" id="to_date" value="{{ date_range.to_str() }}">
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
