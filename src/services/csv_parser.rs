@@ -9,6 +9,16 @@ pub struct ParsedExpense {
     pub description: String,
     pub category: Option<String>,
     pub tags: Vec<String>,
+    pub notes: Option<String>,
+    pub value_date: Option<String>,
+    pub payer: Option<String>,
+    pub payee: Option<String>,
+    pub reference: Option<String>,
+    pub transaction_type: Option<String>,
+    pub counterparty_iban: Option<String>,
+    pub creditor_id: Option<String>,
+    pub mandate_reference: Option<String>,
+    pub customer_reference: Option<String>,
     pub row_number: usize,
 }
 
@@ -46,23 +56,25 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
         .map_err(|e| AppError::CsvParse(e.to_string()))?
         .clone();
 
-    let date_col = find_column(&headers, &["date", "Date", "DATE", "transaction_date"]);
-    let amount_col = find_column(&headers, &["amount", "Amount", "AMOUNT", "value", "Value"]);
-    let desc_col = find_column(
-        &headers,
-        &[
-            "description",
-            "Description",
-            "DESCRIPTION",
-            "memo",
-            "Memo",
-            "note",
-            "Note",
-        ],
-    );
-    let currency_col = find_column(&headers, &["currency", "Currency", "CURRENCY"]);
-    let category_col = find_column(&headers, &["category", "Category", "CATEGORY"]);
-    let tags_col = find_column(&headers, &["tags", "Tags", "TAGS", "labels", "Labels"]);
+    // Required columns
+    let date_col = find_column(&headers, "date");
+    let amount_col = find_column(&headers, "amount");
+    let desc_col = find_column(&headers, "description");
+
+    // Optional columns
+    let currency_col = find_column(&headers, "currency");
+    let category_col = find_column(&headers, "category");
+    let tags_col = find_column(&headers, "tags");
+    let notes_col = find_column(&headers, "notes");
+    let value_date_col = find_column(&headers, "value_date");
+    let payer_col = find_column(&headers, "payer");
+    let payee_col = find_column(&headers, "payee");
+    let reference_col = find_column(&headers, "reference");
+    let transaction_type_col = find_column(&headers, "transaction_type");
+    let counterparty_iban_col = find_column(&headers, "counterparty_iban");
+    let creditor_id_col = find_column(&headers, "creditor_id");
+    let mandate_reference_col = find_column(&headers, "mandate_reference");
+    let customer_reference_col = find_column(&headers, "customer_reference");
 
     let date_col =
         date_col.ok_or_else(|| AppError::CsvParse("No date column found in CSV".into()))?;
@@ -121,6 +133,17 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
             })
             .unwrap_or_default();
 
+        let notes = get_optional_field(&record, notes_col);
+        let value_date = get_optional_field(&record, value_date_col);
+        let payer = get_optional_field(&record, payer_col);
+        let payee = get_optional_field(&record, payee_col);
+        let reference = get_optional_field(&record, reference_col);
+        let transaction_type = get_optional_field(&record, transaction_type_col);
+        let counterparty_iban = get_optional_field(&record, counterparty_iban_col);
+        let creditor_id = get_optional_field(&record, creditor_id_col);
+        let mandate_reference = get_optional_field(&record, mandate_reference_col);
+        let customer_reference = get_optional_field(&record, customer_reference_col);
+
         expenses.push(ParsedExpense {
             date,
             amount: amount_clean,
@@ -128,6 +151,16 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
             description,
             category,
             tags,
+            notes,
+            value_date,
+            payer,
+            payee,
+            reference,
+            transaction_type,
+            counterparty_iban,
+            creditor_id,
+            mandate_reference,
+            customer_reference,
             row_number,
         });
     }
@@ -135,30 +168,50 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
     Ok(ParseResult { expenses, errors })
 }
 
-fn find_column(headers: &csv::StringRecord, candidates: &[&str]) -> Option<usize> {
-    for candidate in candidates {
-        for (idx, header) in headers.iter().enumerate() {
-            if header.trim().eq_ignore_ascii_case(candidate) {
-                return Some(idx);
-            }
-        }
-    }
-    None
+fn find_column(headers: &csv::StringRecord, name: &str) -> Option<usize> {
+    headers
+        .iter()
+        .position(|header| header.trim().eq_ignore_ascii_case(name))
+}
+
+fn get_optional_field(record: &csv::StringRecord, col: Option<usize>) -> Option<String> {
+    col.and_then(|c| record.get(c))
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 fn clean_amount(amount: &str) -> String {
+    // Determine which character is the decimal separator:
+    // If both . and , appear, the last one is the decimal separator
+    let last_dot = amount.rfind('.');
+    let last_comma = amount.rfind(',');
+
+    let decimal_char = match (last_dot, last_comma) {
+        (Some(d), Some(c)) => {
+            if d > c {
+                Some('.')
+            } else {
+                Some(',')
+            }
+        }
+        (Some(_), None) => Some('.'),
+        (None, Some(_)) => Some(','),
+        (None, None) => None,
+    };
+
     let mut result = String::new();
     let mut has_decimal = false;
 
     for c in amount.chars() {
         if c.is_ascii_digit() {
             result.push(c);
-        } else if (c == '.' || c == ',') && !has_decimal {
+        } else if Some(c) == decimal_char && !has_decimal {
             result.push('.');
             has_decimal = true;
         } else if c == '-' && result.is_empty() {
             result.push(c);
         }
+        // Skip thousand separators and currency symbols
     }
 
     result

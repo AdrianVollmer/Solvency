@@ -45,6 +45,7 @@ pub fn routes() -> Router<AppState> {
         .route("/rules/:id", put(rules::update))
         .route("/rules/:id", delete(rules::delete))
         // Import
+        .route("/import/format", get(import::format))
         .route("/import/upload", post(import::upload))
         .route("/import/preview", post(import::preview))
         .route("/import/confirm", post(import::confirm))

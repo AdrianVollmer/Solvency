@@ -60,6 +60,36 @@
                             <input type="text" name="expenses[{{ loop.index0 }}][tag_names]" value="{{ exp.tags_joined() }}"
                                 placeholder="tag1, tag2"
                                 class="text-sm px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 w-32">
+                            {% if let Some(notes) = exp.notes.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][notes]" value="{{ notes }}">
+                            {% endif %}
+                            {% if let Some(value_date) = exp.value_date.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][value_date]" value="{{ value_date }}">
+                            {% endif %}
+                            {% if let Some(payer) = exp.payer.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][payer]" value="{{ payer }}">
+                            {% endif %}
+                            {% if let Some(payee) = exp.payee.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][payee]" value="{{ payee }}">
+                            {% endif %}
+                            {% if let Some(reference) = exp.reference.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][reference]" value="{{ reference }}">
+                            {% endif %}
+                            {% if let Some(transaction_type) = exp.transaction_type.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][transaction_type]" value="{{ transaction_type }}">
+                            {% endif %}
+                            {% if let Some(counterparty_iban) = exp.counterparty_iban.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][counterparty_iban]" value="{{ counterparty_iban }}">
+                            {% endif %}
+                            {% if let Some(creditor_id) = exp.creditor_id.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][creditor_id]" value="{{ creditor_id }}">
+                            {% endif %}
+                            {% if let Some(mandate_reference) = exp.mandate_reference.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][mandate_reference]" value="{{ mandate_reference }}">
+                            {% endif %}
+                            {% if let Some(customer_reference) = exp.customer_reference.as_ref() %}
+                            <input type="hidden" name="expenses[{{ loop.index0 }}][customer_reference]" value="{{ customer_reference }}">
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

@@ -20,6 +20,14 @@ pub struct ImportTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "pages/import_format.html")]
+pub struct ImportFormatTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+}
+
+#[derive(Template)]
 #[template(path = "partials/import_preview.html")]
 pub struct ImportPreviewTemplate {
     pub expenses: Vec<ParsedExpense>,
@@ -50,6 +58,16 @@ pub struct ImportExpenseData {
     pub category_id: Option<i64>,
     #[serde(default)]
     pub tag_names: String,
+    pub notes: Option<String>,
+    pub value_date: Option<String>,
+    pub payer: Option<String>,
+    pub payee: Option<String>,
+    pub reference: Option<String>,
+    pub transaction_type: Option<String>,
+    pub counterparty_iban: Option<String>,
+    pub creditor_id: Option<String>,
+    pub mandate_reference: Option<String>,
+    pub customer_reference: Option<String>,
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -64,6 +82,21 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         settings: app_settings,
         manifest: state.manifest.clone(),
         categories: cats,
+    };
+
+    Ok(Html(template.render().unwrap()))
+}
+
+pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+
+    let settings_map = settings::get_all_settings(&conn)?;
+    let app_settings = Settings::from_map(settings_map);
+
+    let template = ImportFormatTemplate {
+        title: "CSV Import Format".into(),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
     };
 
     Ok(Html(template.render().unwrap()))
@@ -156,17 +189,17 @@ pub async fn confirm(
             currency: expense_data.currency,
             description: expense_data.description,
             category_id: expense_data.category_id,
-            notes: None,
+            notes: expense_data.notes,
             tag_ids,
-            value_date: None,
-            payer: None,
-            payee: None,
-            reference: None,
-            transaction_type: None,
-            counterparty_iban: None,
-            creditor_id: None,
-            mandate_reference: None,
-            customer_reference: None,
+            value_date: expense_data.value_date,
+            payer: expense_data.payer,
+            payee: expense_data.payee,
+            reference: expense_data.reference,
+            transaction_type: expense_data.transaction_type,
+            counterparty_iban: expense_data.counterparty_iban,
+            creditor_id: expense_data.creditor_id,
+            mandate_reference: expense_data.mandate_reference,
+            customer_reference: expense_data.customer_reference,
         };
 
         match expenses::create_expense(&conn, &new_expense) {

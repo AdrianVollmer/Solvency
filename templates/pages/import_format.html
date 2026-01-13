@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-3xl">
+    <div class="flex items-center gap-4">
+        <a href="/import" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <h1 class="text-2xl font-bold">CSV Import Format</h1>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+        <section>
+            <h2 class="text-lg font-semibold mb-3">Overview</h2>
+            <p class="text-gray-600 dark:text-gray-400">
+                MoneyMapper accepts CSV files with a header row. Column names must match exactly
+                (case-insensitive).
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-3">Required Columns</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                            <th class="text-left py-2 pr-4 font-medium">Column</th>
+                            <th class="text-left py-2 font-medium">Format</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-600 dark:text-gray-400">
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">date</td>
+                            <td class="py-2">ISO 8601: <code>YYYY-MM-DD</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">amount</td>
+                            <td class="py-2">Decimal number (e.g., <code>42.50</code>, <code>-15.00</code>)</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">description</td>
+                            <td class="py-2">Free text</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-3">Optional Columns</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                            <th class="text-left py-2 pr-4 font-medium">Column</th>
+                            <th class="text-left py-2 font-medium">Format</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-600 dark:text-gray-400">
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">currency</td>
+                            <td class="py-2">ISO 4217 code (e.g., <code>USD</code>, <code>EUR</code>). Defaults to <code>USD</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">category</td>
+                            <td class="py-2">Category name (must exist in MoneyMapper)</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">tags</td>
+                            <td class="py-2">Comma-separated list (e.g., <code>groceries, weekly</code>)</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">notes</td>
+                            <td class="py-2">Additional notes or comments</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">value_date</td>
+                            <td class="py-2">Value/settlement date: <code>YYYY-MM-DD</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">payer</td>
+                            <td class="py-2">Who paid (for incoming transactions)</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">payee</td>
+                            <td class="py-2">Who received payment (for outgoing transactions)</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">reference</td>
+                            <td class="py-2">Payment reference or booking text</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">transaction_type</td>
+                            <td class="py-2">Transaction type (e.g., <code>SEPA</code>, <code>CARD</code>, <code>TRANSFER</code>)</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">counterparty_iban</td>
+                            <td class="py-2">IBAN of the other party</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">creditor_id</td>
+                            <td class="py-2">SEPA creditor identifier</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">mandate_reference</td>
+                            <td class="py-2">SEPA direct debit mandate reference</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">customer_reference</td>
+                            <td class="py-2">Customer reference number</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-3">Minimal Example</h2>
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <pre class="text-sm font-mono text-gray-700 dark:text-gray-300">date,amount,description
+2024-01-15,-42.50,Weekly groceries
+2024-01-16,-120.00,Electric bill
+2024-01-17,1500.00,Salary</pre>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-3">Full Example</h2>
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <pre class="text-sm font-mono text-gray-700 dark:text-gray-300">date,amount,description,currency,category,tags,notes,value_date,payee,transaction_type,counterparty_iban
+2024-01-15,-42.50,Weekly groceries,EUR,Food,"groceries, weekly",Organic store,2024-01-15,SuperMarket GmbH,CARD,
+2024-01-16,-120.00,Electric bill,EUR,Utilities,monthly,,2024-01-16,PowerCorp,SEPA,DE89370400440532013000
+2024-01-20,2500.00,January salary,EUR,Income,salary,,2024-01-20,,SEPA,DE89370400440532013001</pre>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-3">Notes</h2>
+            <ul class="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-2">
+                <li>Column names are case-insensitive but must match exactly</li>
+                <li>Column order does not matter</li>
+                <li>Currency symbols in amounts (e.g., <code>$50.00</code>) are automatically stripped</li>
+                <li>Thousand separators are handled (e.g., <code>1,234.56</code> becomes <code>1234.56</code>)</li>
+                <li>Use negative amounts for expenses, positive for income</li>
+                <li>Tags that don't exist will be created automatically on import</li>
+                <li>Categories must be created beforehand in MoneyMapper</li>
+                <li>Empty optional columns are ignored</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-3">Converting Bank Exports</h2>
+            <p class="text-gray-600 dark:text-gray-400">
+                Bank exports often use different formats. We recommend using external tools to convert
+                your bank's export to this canonical format before importing. This keeps MoneyMapper
+                focused on expense tracking rather than parsing hundreds of bank-specific formats.
+            </p>
+        </section>
+    </div>
+</div>
+{% endblock %}
