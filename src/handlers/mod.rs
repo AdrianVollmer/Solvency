@@ -32,16 +32,22 @@ pub fn routes() -> Router<AppState> {
         // Category management
         .route("/categories", get(categories::index))
         .route("/categories/create", post(categories::create))
+        .route("/categories/export", get(categories::export))
+        .route("/categories/import", post(categories::import))
         .route("/categories/:id", put(categories::update))
         .route("/categories/:id", delete(categories::delete))
         // Tag management
         .route("/tags", get(tags::index))
         .route("/tags/create", post(tags::create))
+        .route("/tags/export", get(tags::export))
+        .route("/tags/import", post(tags::import))
         .route("/tags/search", get(tags::search))
         .route("/tags/:id", delete(tags::delete))
         // Rule management
         .route("/rules", get(rules::index))
         .route("/rules/create", post(rules::create))
+        .route("/rules/export", get(rules::export))
+        .route("/rules/import", post(rules::import))
         .route("/rules/:id", put(rules::update))
         .route("/rules/:id", delete(rules::delete))
         // Import

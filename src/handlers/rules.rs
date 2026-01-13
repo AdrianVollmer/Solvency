@@ -1,8 +1,10 @@
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::response::Html;
+use axum::http::header;
+use axum::response::{Html, IntoResponse, Json};
 use axum::Form;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::db::queries::{categories, rules, settings, tags};
 use crate::error::{AppError, AppResult};
@@ -131,4 +133,142 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     rules::delete_rule(&conn, id)?;
 
     Ok(Html(String::new()))
+}
+
+#[derive(Serialize)]
+struct RuleExport {
+    name: String,
+    pattern: String,
+    action_type: RuleActionType,
+    action_value: String, // Name of category or tag
+}
+
+pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
+    let conn = state.db.get()?;
+
+    let rule_list = rules::list_rules(&conn)?;
+    let cat_list = categories::list_categories(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+
+    // Build maps of id -> name
+    let cat_id_to_name: HashMap<String, String> = cat_list
+        .iter()
+        .map(|c| (c.id.to_string(), c.name.clone()))
+        .collect();
+    let tag_id_to_name: HashMap<String, String> = tag_list
+        .iter()
+        .map(|t| (t.id.to_string(), t.name.clone()))
+        .collect();
+
+    let export_data: Vec<RuleExport> = rule_list
+        .iter()
+        .map(|r| {
+            let action_value = match r.action_type {
+                RuleActionType::AssignCategory => cat_id_to_name
+                    .get(&r.action_value)
+                    .cloned()
+                    .unwrap_or_else(|| r.action_value.clone()),
+                RuleActionType::AssignTag => tag_id_to_name
+                    .get(&r.action_value)
+                    .cloned()
+                    .unwrap_or_else(|| r.action_value.clone()),
+            };
+            RuleExport {
+                name: r.name.clone(),
+                pattern: r.pattern.clone(),
+                action_type: r.action_type,
+                action_value,
+            }
+        })
+        .collect();
+
+    let json = serde_json::to_string_pretty(&export_data)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize: {}", e)))?;
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"rules.json\"",
+            ),
+        ],
+        json,
+    ))
+}
+
+#[derive(Deserialize)]
+struct RuleImport {
+    name: String,
+    pattern: String,
+    action_type: RuleActionType,
+    action_value: String, // Name of category or tag
+}
+
+pub async fn import(
+    State(state): State<AppState>,
+    Json(value): Json<serde_json::Value>,
+) -> AppResult<Json<serde_json::Value>> {
+    let data: Vec<RuleImport> = serde_json::from_value(value)
+        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
+
+    let conn = state.db.get()?;
+
+    let cat_list = categories::list_categories(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+
+    // Build maps of name -> id
+    let cat_name_to_id: HashMap<String, i64> =
+        cat_list.iter().map(|c| (c.name.clone(), c.id)).collect();
+    let tag_name_to_id: HashMap<String, i64> =
+        tag_list.iter().map(|t| (t.name.clone(), t.id)).collect();
+
+    let existing_rules = rules::list_rules(&conn)?;
+    let existing_names: std::collections::HashSet<_> =
+        existing_rules.iter().map(|r| r.name.clone()).collect();
+
+    let mut created = 0;
+    let mut skipped = 0;
+
+    for item in data {
+        if existing_names.contains(&item.name) {
+            skipped += 1;
+            continue;
+        }
+
+        // Resolve action_value name to id
+        let action_value = match item.action_type {
+            RuleActionType::AssignCategory => {
+                if let Some(id) = cat_name_to_id.get(&item.action_value) {
+                    id.to_string()
+                } else {
+                    skipped += 1;
+                    continue; // Skip if category not found
+                }
+            }
+            RuleActionType::AssignTag => {
+                if let Some(id) = tag_name_to_id.get(&item.action_value) {
+                    id.to_string()
+                } else {
+                    skipped += 1;
+                    continue; // Skip if tag not found
+                }
+            }
+        };
+
+        let new_rule = NewRule {
+            name: item.name,
+            pattern: item.pattern,
+            action_type: item.action_type,
+            action_value,
+        };
+        rules::create_rule(&conn, &new_rule)?;
+        created += 1;
+    }
+
+    Ok(Json(serde_json::json!({
+        "imported": created,
+        "skipped": skipped,
+        "message": format!("Imported {} rules, skipped {}", created, skipped)
+    })))
 }

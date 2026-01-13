@@ -1,8 +1,9 @@
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::response::{Html, Json};
+use axum::http::header;
+use axum::response::{Html, IntoResponse, Json};
 use axum::Form;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::db::queries::{settings, tags};
 use crate::error::{AppError, AppResult};
@@ -98,4 +99,85 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     tags::delete_tag(&conn, id)?;
 
     Ok(Html(String::new()))
+}
+
+#[derive(Serialize)]
+struct TagExport {
+    name: String,
+    color: String,
+    style: TagStyle,
+}
+
+pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
+    let conn = state.db.get()?;
+
+    let tag_list = tags::list_tags(&conn)?;
+
+    let export_data: Vec<TagExport> = tag_list
+        .iter()
+        .map(|t| TagExport {
+            name: t.name.clone(),
+            color: t.color.clone(),
+            style: t.style,
+        })
+        .collect();
+
+    let json = serde_json::to_string_pretty(&export_data)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize: {}", e)))?;
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"tags.json\"",
+            ),
+        ],
+        json,
+    ))
+}
+
+#[derive(Deserialize)]
+struct TagImport {
+    name: String,
+    #[serde(default = "default_color")]
+    color: String,
+    #[serde(default)]
+    style: TagStyle,
+}
+
+fn default_color() -> String {
+    "#6b7280".to_string()
+}
+
+pub async fn import(
+    State(state): State<AppState>,
+    Json(value): Json<serde_json::Value>,
+) -> AppResult<Json<serde_json::Value>> {
+    let data: Vec<TagImport> = serde_json::from_value(value)
+        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
+
+    let conn = state.db.get()?;
+
+    let existing = tags::list_tags(&conn)?;
+    let existing_names: std::collections::HashSet<_> =
+        existing.iter().map(|t| t.name.clone()).collect();
+
+    let mut created = 0;
+    for item in data {
+        if !existing_names.contains(&item.name) {
+            let new_tag = NewTag {
+                name: item.name,
+                color: item.color,
+                style: item.style,
+            };
+            tags::create_tag(&conn, &new_tag)?;
+            created += 1;
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "imported": created,
+        "message": format!("Successfully imported {} tags", created)
+    })))
 }

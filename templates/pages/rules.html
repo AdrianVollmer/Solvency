@@ -4,6 +4,17 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">Rules</h1>
+        <div class="flex items-center gap-2">
+            <a href="/rules/export" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#download"/></svg>
+                Export
+            </a>
+            <button onclick="document.getElementById('import-file').click()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#upload"/></svg>
+                Import
+            </button>
+            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importRules(this.files[0])">
+        </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -97,6 +108,27 @@ function toggleActionValue(select) {
         tagSelect.classList.remove('hidden');
         tagSelect.name = 'action_value';
     }
+}
+
+async function importRules(file) {
+    if (!file) return;
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        const response = await fetch('/rules/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        alert(result.message);
+        if (result.imported > 0) {
+            location.reload();
+        }
+    } catch (e) {
+        alert('Import failed: ' + e.message);
+    }
+    document.getElementById('import-file').value = '';
 }
 </script>
 {% endblock %}
