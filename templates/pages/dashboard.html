@@ -63,13 +63,13 @@
                         </span>
                     </div>
                     <div>
-                        <p class="font-medium">{{ expense.expense.description }}</p>
+                        <p class="font-medium">{{ expense.description }}</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            {{ expense.category_name_or_default() }} &middot; {{ expense.expense.date }}
+                            {{ expense.category_name_or_default() }} &middot; {{ expense.date }}
                         </p>
                     </div>
                 </div>
-                <span class="font-semibold">{{ settings.format_money(expense.expense.amount_cents)|safe }}</span>
+                <span class="font-semibold">{{ settings.format_money(expense.amount_cents)|safe }}</span>
             </div>
             {% else %}
             <div class="p-8 text-center text-gray-500 dark:text-gray-400">

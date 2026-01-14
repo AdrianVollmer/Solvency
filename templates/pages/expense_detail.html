@@ -10,13 +10,13 @@
             <h1 class="text-2xl font-bold">Transaction Details</h1>
         </div>
         <div class="flex gap-2">
-            <a href="/expenses/{{ expense.expense.id }}/edit"
+            <a href="/expenses/{{ expense.id }}/edit"
                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors inline-flex items-center gap-2">
                 <svg class="w-4 h-4 lucide-icon text-gray-700 dark:text-gray-300" viewBox="0 0 24 24"><use href="#pencil"/></svg>
                 Edit
             </a>
             <button
-                hx-delete="/expenses/{{ expense.expense.id }}"
+                hx-delete="/expenses/{{ expense.id }}"
                 hx-confirm="Are you sure you want to delete this transaction?"
                 hx-target="body"
                 hx-swap="none"
@@ -33,14 +33,14 @@
         <div class="p-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-start justify-between">
                 <div>
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ expense.expense.description }}</h2>
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ expense.description }}</h2>
                     {% if expense.has_notes() %}
                     <p class="mt-1 text-gray-600 dark:text-gray-400">{{ expense.notes_text() }}</p>
                     {% endif %}
                 </div>
                 <div class="text-right">
                     <div class="text-2xl font-bold">
-                        {{ settings.format_money(expense.expense.amount_cents)|safe }}
+                        {{ settings.format_money(expense.amount_cents)|safe }}
                     </div>
                     <div class="text-sm text-gray-500 dark:text-gray-400">
                         {% if expense.is_income() %}Income{% else %}Expense{% endif %}
@@ -54,10 +54,10 @@
             <div class="space-y-4">
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ expense.expense.date }}</dd>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ expense.date }}</dd>
                 </div>
 
-                {% match expense.expense.value_date %}
+                {% match expense.value_date %}
                 {% when Some with (vd) %}
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Value Date</dt>
@@ -97,7 +97,7 @@
 
             <!-- Right Column -->
             <div class="space-y-4">
-                {% match expense.expense.payer %}
+                {% match expense.payer %}
                 {% when Some with (p) %}
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payer</dt>
@@ -106,7 +106,7 @@
                 {% when None %}
                 {% endmatch %}
 
-                {% match expense.expense.payee %}
+                {% match expense.payee %}
                 {% when Some with (p) %}
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payee</dt>
@@ -115,7 +115,7 @@
                 {% when None %}
                 {% endmatch %}
 
-                {% match expense.expense.transaction_type %}
+                {% match expense.transaction_type %}
                 {% when Some with (t) %}
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Transaction Type</dt>
@@ -124,7 +124,7 @@
                 {% when None %}
                 {% endmatch %}
 
-                {% match expense.expense.counterparty_iban %}
+                {% match expense.counterparty_iban %}
                 {% when Some with (iban) %}
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">IBAN</dt>
@@ -137,7 +137,7 @@
     </div>
 
     <!-- Reference/Purpose Section -->
-    {% match expense.expense.reference %}
+    {% match expense.reference %}
     {% when Some with (ref) %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Reference / Purpose</h3>
@@ -147,11 +147,11 @@
     {% endmatch %}
 
     <!-- SEPA Details Section -->
-    {% if expense.expense.creditor_id.is_some() || expense.expense.mandate_reference.is_some() || expense.expense.customer_reference.is_some() %}
+    {% if expense.creditor_id.is_some() || expense.mandate_reference.is_some() || expense.customer_reference.is_some() %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">SEPA Details</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {% match expense.expense.creditor_id %}
+            {% match expense.creditor_id %}
             {% when Some with (cid) %}
             <div>
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Creditor ID</dt>
@@ -160,7 +160,7 @@
             {% when None %}
             {% endmatch %}
 
-            {% match expense.expense.mandate_reference %}
+            {% match expense.mandate_reference %}
             {% when Some with (mr) %}
             <div>
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Mandate Reference</dt>
@@ -169,7 +169,7 @@
             {% when None %}
             {% endmatch %}
 
-            {% match expense.expense.customer_reference %}
+            {% match expense.customer_reference %}
             {% when Some with (cr) %}
             <div>
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Customer Reference</dt>
@@ -183,8 +183,8 @@
 
     <!-- Metadata Section -->
     <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-6">
-        <span>Created: {{ expense.expense.created_at }}</span>
-        <span>Updated: {{ expense.expense.updated_at }}</span>
+        <span>Created: {{ expense.created_at }}</span>
+        <span>Updated: {{ expense.updated_at }}</span>
     </div>
 </div>
 {% endblock %}

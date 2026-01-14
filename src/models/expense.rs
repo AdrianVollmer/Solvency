@@ -1,5 +1,6 @@
 use crate::models::tag::Tag;
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Expense {
@@ -69,27 +70,15 @@ pub struct ExpenseWithRelations {
     pub tags: Vec<Tag>,
 }
 
+impl Deref for ExpenseWithRelations {
+    type Target = Expense;
+
+    fn deref(&self) -> &Self::Target {
+        &self.expense
+    }
+}
+
 impl ExpenseWithRelations {
-    pub fn amount_display(&self) -> String {
-        self.expense.amount_display()
-    }
-
-    pub fn amount_formatted(&self) -> String {
-        self.expense.amount_formatted()
-    }
-
-    pub fn is_income(&self) -> bool {
-        self.expense.is_income()
-    }
-
-    pub fn is_expense(&self) -> bool {
-        self.expense.is_expense()
-    }
-
-    pub fn counterparty(&self) -> Option<&str> {
-        self.expense.counterparty()
-    }
-
     pub fn category_color_or_default(&self) -> &str {
         self.category_color.as_deref().unwrap_or("#6b7280")
     }
@@ -110,19 +99,19 @@ impl ExpenseWithRelations {
     }
 
     pub fn has_notes(&self) -> bool {
-        self.expense.notes.is_some()
+        self.notes.is_some()
     }
 
     pub fn notes_text(&self) -> &str {
-        self.expense.notes.as_deref().unwrap_or("")
+        self.notes.as_deref().unwrap_or("")
     }
 
     pub fn is_currency(&self, currency: &str) -> bool {
-        self.expense.currency == currency
+        self.currency == currency
     }
 
     pub fn matches_category(&self, id: &i64) -> bool {
-        self.expense.category_id == Some(*id)
+        self.category_id == Some(*id)
     }
 
     pub fn has_tag(&self, id: &i64) -> bool {
