@@ -113,32 +113,56 @@ pub async fn upload(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let mut csv_content = Vec::new();
+    let mut all_expenses = Vec::new();
+    let mut all_errors = Vec::new();
+    let mut file_count = 0;
 
     while let Some(field) = multipart
         .next_field()
         .await
         .map_err(|e| AppError::CsvParse(e.to_string()))?
     {
-        if field.name() == Some("file") {
-            csv_content = field
+        if field.name() == Some("files") {
+            let file_name = field
+                .file_name()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| format!("file_{}", file_count + 1));
+
+            let csv_content = field
                 .bytes()
                 .await
                 .map_err(|e| AppError::CsvParse(e.to_string()))?
                 .to_vec();
+
+            if csv_content.is_empty() {
+                continue;
+            }
+
+            file_count += 1;
+
+            match parse_csv(&csv_content) {
+                Ok(result) => {
+                    all_expenses.extend(result.expenses);
+                    for error in result.errors {
+                        all_errors.push(format!("{}: {}", file_name, error));
+                    }
+                }
+                Err(e) => {
+                    all_errors.push(format!("{}: {}", file_name, e));
+                }
+            }
         }
     }
 
-    if csv_content.is_empty() {
-        return Err(AppError::Validation("No file uploaded".into()));
+    if file_count == 0 {
+        return Err(AppError::Validation("No files uploaded".into()));
     }
 
-    let result = parse_csv(&csv_content)?;
     let cats = categories::list_categories_with_path(&conn)?;
 
     let template = ImportPreviewTemplate {
-        expenses: result.expenses,
-        errors: result.errors,
+        expenses: all_expenses,
+        errors: all_errors,
         categories: cats,
     };
 

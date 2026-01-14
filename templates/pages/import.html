@@ -10,15 +10,16 @@
                 <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
-                <p class="text-gray-600 dark:text-gray-400 mb-2">Drag and drop your CSV file here, or</p>
+                <p class="text-gray-600 dark:text-gray-400 mb-2">Drag and drop your CSV files here, or</p>
                 <label class="cursor-pointer inline-block">
                     <span class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
                         Browse Files
                     </span>
-                    <input type="file" name="file" accept=".csv" class="hidden" required>
+                    <input type="file" name="files" accept=".csv" class="hidden" multiple required>
                 </label>
+                <p id="file-count" class="text-sm text-primary-600 dark:text-primary-400 mt-2 hidden"></p>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                    Supported format: CSV with columns for date, amount, and description.
+                    Supported format: CSV with columns for date, amount, and description. You can select multiple files.
                     <a href="/import/format" class="text-primary-600 dark:text-primary-400 hover:underline">View format specification</a>
                 </p>
             </div>
@@ -38,6 +39,21 @@
 document.addEventListener('DOMContentLoaded', function() {
     const dropZone = document.getElementById('drop-zone');
     const fileInput = dropZone.querySelector('input[type="file"]');
+    const fileCount = document.getElementById('file-count');
+
+    function updateFileCount() {
+        const count = fileInput.files.length;
+        if (count > 0) {
+            fileCount.textContent = count === 1
+                ? '1 file selected'
+                : count + ' files selected';
+            fileCount.classList.remove('hidden');
+        } else {
+            fileCount.classList.add('hidden');
+        }
+    }
+
+    fileInput.addEventListener('change', updateFileCount);
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, preventDefaults, false);
@@ -64,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const files = e.dataTransfer.files;
         if (files.length) {
             fileInput.files = files;
+            updateFileCount();
         }
     });
 });
