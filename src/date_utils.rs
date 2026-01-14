@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::{Datelike, Local, NaiveDate};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,21 +23,25 @@ pub enum DatePreset {
     LastYear,
 }
 
-impl DatePreset {
-    pub fn from_str(s: &str) -> Option<Self> {
+impl FromStr for DatePreset {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "this_week" => Some(Self::ThisWeek),
-            "this_month" => Some(Self::ThisMonth),
-            "this_quarter" => Some(Self::ThisQuarter),
-            "this_year" => Some(Self::ThisYear),
-            "last_week" => Some(Self::LastWeek),
-            "last_month" => Some(Self::LastMonth),
-            "last_quarter" => Some(Self::LastQuarter),
-            "last_year" => Some(Self::LastYear),
-            _ => None,
+            "this_week" => Ok(Self::ThisWeek),
+            "this_month" => Ok(Self::ThisMonth),
+            "this_quarter" => Ok(Self::ThisQuarter),
+            "this_year" => Ok(Self::ThisYear),
+            "last_week" => Ok(Self::LastWeek),
+            "last_month" => Ok(Self::LastMonth),
+            "last_quarter" => Ok(Self::LastQuarter),
+            "last_year" => Ok(Self::LastYear),
+            _ => Err(()),
         }
     }
+}
 
+impl DatePreset {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::ThisWeek => "this_week",
@@ -145,10 +151,6 @@ impl DateRange {
         Self { from, to, preset }
     }
 
-    pub fn default() -> Self {
-        Self::from_preset(DatePreset::ThisMonth)
-    }
-
     pub fn prev(&self) -> Self {
         let period = self.detect_period_type();
         let (new_from, new_to) = shift_by_period(self.from, self.to, period, -1);
@@ -203,6 +205,12 @@ impl DateRange {
 
     pub fn is_preset(&self, preset: &DatePreset) -> bool {
         self.preset == Some(*preset)
+    }
+}
+
+impl Default for DateRange {
+    fn default() -> Self {
+        Self::from_preset(DatePreset::ThisMonth)
     }
 }
 

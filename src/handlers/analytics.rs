@@ -21,9 +21,10 @@ pub struct AnalyticsFilterParams {
 impl AnalyticsFilterParams {
     pub fn resolve_date_range(&self) -> DateRange {
         if let Some(preset_str) = &self.preset {
-            DatePreset::from_str(preset_str)
+            preset_str
+                .parse::<DatePreset>()
                 .map(DateRange::from_preset)
-                .unwrap_or_else(DateRange::default)
+                .unwrap_or_default()
         } else if let (Some(from), Some(to)) = (&self.from_date, &self.to_date) {
             if let (Ok(from_date), Ok(to_date)) = (
                 NaiveDate::parse_from_str(from, "%Y-%m-%d"),

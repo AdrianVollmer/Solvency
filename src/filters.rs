@@ -1,11 +1,11 @@
-/// Money formatting utilities for displaying monetary amounts.
-///
-/// Format: sign + currency symbol + number with thousands separator
-///
-/// Color coding:
-/// - Positive amounts (> 0): green
-/// - Negative amounts (< 0): red
-/// - Zero (= 0): default text color (black in light mode, white in dark mode)
+//! Money formatting utilities for displaying monetary amounts.
+//!
+//! Format: sign + currency symbol + number with thousands separator
+//!
+//! Color coding:
+//! - Positive amounts (> 0): green
+//! - Negative amounts (< 0): red
+//! - Zero (= 0): default text color (black in light mode, white in dark mode)
 
 /// Format cents as a colored money display with proper locale formatting.
 /// Returns HTML with appropriate Tailwind color classes.
@@ -61,10 +61,10 @@ fn format_money_impl(cents: i64, currency: &str, locale: &str) -> (String, &'sta
 fn locale_separators(locale: &str) -> (char, char) {
     // Locales that use period as thousands separator and comma as decimal
     match locale {
-        "de-DE" | "de-AT" | "de-CH" | "fr-FR" | "fr-BE" | "fr-CA" | "es-ES" | "es-AR"
-        | "it-IT" | "pt-BR" | "pt-PT" | "nl-NL" | "nl-BE" | "pl-PL" | "ru-RU" | "tr-TR"
-        | "vi-VN" | "id-ID" | "da-DK" | "nb-NO" | "sv-SE" | "fi-FI" | "cs-CZ" | "sk-SK"
-        | "hu-HU" | "ro-RO" | "bg-BG" | "uk-UA" | "el-GR" => ('.', ','),
+        "de-DE" | "de-AT" | "de-CH" | "fr-FR" | "fr-BE" | "fr-CA" | "es-ES" | "es-AR" | "it-IT"
+        | "pt-BR" | "pt-PT" | "nl-NL" | "nl-BE" | "pl-PL" | "ru-RU" | "tr-TR" | "vi-VN"
+        | "id-ID" | "da-DK" | "nb-NO" | "sv-SE" | "fi-FI" | "cs-CZ" | "sk-SK" | "hu-HU"
+        | "ro-RO" | "bg-BG" | "uk-UA" | "el-GR" => ('.', ','),
         // Most English-speaking countries and others use comma as thousands, period as decimal
         _ => (',', '.'),
     }
