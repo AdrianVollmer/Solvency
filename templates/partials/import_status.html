@@ -1,0 +1,181 @@
+{% match session.status %}
+    {% when crate::models::ImportStatus::Parsing %}
+        <!-- Parsing Progress -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <div class="text-center">
+                <svg class="w-16 h-16 mx-auto text-primary-600 animate-spin lucide-icon mb-4"><use href="#loader-2"></use></svg>
+                <h2 class="text-xl font-semibold mb-2">Parsing CSV files...</h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Please wait while we process your files.</p>
+
+                {% if session.total_rows > 0 %}
+                <div class="max-w-md mx-auto">
+                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        <span>Progress</span>
+                        <span>{{ session.processed_rows }} / {{ session.total_rows }} rows</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                        <div class="bg-primary-600 h-3 rounded-full transition-all duration-300"
+                             style="width: {{ session.progress_percent() }}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    {% when crate::models::ImportStatus::Preview %}
+        <!-- Preview Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold">Preview</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ session.total_rows }} expense{% if session.total_rows != 1 %}s{% endif %} ready to import
+                            {% if session.error_count > 0 %}
+                                ({{ session.error_count }} error{% if session.error_count != 1 %}s{% endif %})
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <form action="/import/{{ session.id }}/categories" method="post" class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600 dark:text-gray-400">Set all to:</label>
+                            <select name="category_id" class="text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                <option value="">Uncategorized</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.category.id }}">{{ cat.path }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+                                Apply
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="preview-table" hx-get="/import/{{ session.id }}/rows" hx-trigger="load" hx-swap="innerHTML">
+                <div class="p-8 text-center text-gray-500">
+                    <svg class="w-8 h-8 mx-auto animate-spin lucide-icon"><use href="#loader-2"></use></svg>
+                    <p class="mt-2">Loading preview...</p>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+                <a href="/import/{{ session.id }}/cancel" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+                    Cancel
+                </a>
+                <button hx-post="/import/{{ session.id }}/confirm"
+                        hx-target="#wizard-content"
+                        hx-swap="innerHTML"
+                        class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
+                    Import {{ session.total_rows }} Expense{% if session.total_rows != 1 %}s{% endif %}
+                </button>
+            </div>
+        </div>
+
+        {% if session.errors.len() > 0 %}
+        <div class="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+            <h3 class="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Parse Warnings</h3>
+            <ul class="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 max-h-40 overflow-y-auto">
+                {% for error in session.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+    {% when crate::models::ImportStatus::Importing %}
+        <!-- Importing Progress -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8"
+             hx-get="/import/{{ session.id }}/status"
+             hx-trigger="every 500ms"
+             hx-swap="outerHTML">
+            <div class="text-center">
+                <svg class="w-16 h-16 mx-auto text-primary-600 animate-spin lucide-icon mb-4"><use href="#loader-2"></use></svg>
+                <h2 class="text-xl font-semibold mb-2">Importing expenses...</h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Please wait while we save your expenses.</p>
+
+                <div class="max-w-md mx-auto">
+                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        <span>Progress</span>
+                        <span>{{ session.processed_rows }} / {{ session.total_rows }}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                        <div class="bg-primary-600 h-3 rounded-full transition-all duration-300"
+                             style="width: {{ session.progress_percent() }}%"></div>
+                    </div>
+                    {% if session.error_count > 0 %}
+                    <p class="text-sm text-yellow-600 dark:text-yellow-400 mt-2">
+                        {{ session.error_count }} error{% if session.error_count != 1 %}s{% endif %} so far
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    {% when crate::models::ImportStatus::Completed %}
+        <!-- Import Complete -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <div class="text-center">
+                <div class="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-green-600 dark:text-green-400 lucide-icon"><use href="#check"></use></svg>
+                </div>
+                <h2 class="text-xl font-semibold mb-2">Import Complete!</h2>
+                {% let success_count = session.processed_rows - session.error_count %}
+                <p class="text-gray-600 dark:text-gray-400 mb-6">
+                    Successfully imported {{ success_count }} expense{% if success_count != 1 %}s{% endif %}.
+                    {% if session.error_count > 0 %}
+                    <span class="text-yellow-600 dark:text-yellow-400">{{ session.error_count }} failed.</span>
+                    {% endif %}
+                </p>
+
+                <div class="flex justify-center gap-4">
+                    <a href="/expenses" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                        View Expenses
+                    </a>
+                    <a href="/import" class="px-6 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        Import More
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% if session.errors.len() > 0 %}
+        <div class="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+            <h3 class="font-medium text-red-800 dark:text-red-200 mb-2">Import Errors</h3>
+            <ul class="text-sm text-red-700 dark:text-red-300 space-y-1 max-h-40 overflow-y-auto">
+                {% for error in session.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+    {% when crate::models::ImportStatus::Failed %}
+        <!-- Import Failed -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <div class="text-center">
+                <div class="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-red-600 dark:text-red-400 lucide-icon"><use href="#x"></use></svg>
+                </div>
+                <h2 class="text-xl font-semibold mb-2">Import Failed</h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">
+                    Unable to process the uploaded files.
+                </p>
+
+                {% if session.errors.len() > 0 %}
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6 text-left max-w-lg mx-auto">
+                    <ul class="text-sm text-red-700 dark:text-red-300 space-y-1">
+                        {% for error in session.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <a href="/import" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                    Try Again
+                </a>
+            </div>
+        </div>
+{% endmatch %}

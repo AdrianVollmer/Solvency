@@ -53,8 +53,21 @@ pub fn routes() -> Router<AppState> {
         // Import
         .route("/import/format", get(import::format))
         .route("/import/upload", post(import::upload))
-        .route("/import/preview", post(import::preview))
-        .route("/import/confirm", post(import::confirm))
+        .route("/import/:session_id", get(import::wizard))
+        .route("/import/:session_id/status", get(import::status))
+        .route("/import/:session_id/status.json", get(import::status_json))
+        .route("/import/:session_id/rows", get(import::rows))
+        .route(
+            "/import/:session_id/rows/:row_id/category",
+            post(import::update_row_category),
+        )
+        .route(
+            "/import/:session_id/categories",
+            post(import::update_all_categories),
+        )
+        .route("/import/:session_id/confirm", post(import::confirm))
+        .route("/import/:session_id/result", get(import::result))
+        .route("/import/:session_id/cancel", get(import::cancel))
         // Settings
         .route("/settings/update", post(settings::update))
         .route("/settings/theme", post(settings::toggle_theme))
