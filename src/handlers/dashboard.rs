@@ -24,8 +24,7 @@ pub struct DashboardTemplate {
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let settings = Settings::from_map(settings_map);
+    let settings = settings::get_settings(&conn)?;
 
     let now = chrono::Local::now();
     let this_month_start = now.format("%Y-%m-01").to_string();

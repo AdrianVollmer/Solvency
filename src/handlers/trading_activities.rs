@@ -203,8 +203,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
@@ -254,8 +253,7 @@ pub async fn table_partial(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
@@ -298,8 +296,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let template = TradingActivityDetailTemplate {
         title: format!("{} - {}", activity.symbol, activity.activity_type.label()),
@@ -336,8 +333,7 @@ pub async fn edit_form(
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let symbols = trading::get_unique_symbols(&conn)?;
 
@@ -366,8 +362,7 @@ pub async fn create(
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::Internal("Failed to retrieve created activity".into()))?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let template = TradingActivityRowTemplate {
         settings: app_settings,

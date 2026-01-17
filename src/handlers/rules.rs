@@ -43,8 +43,7 @@ pub struct RuleFormData {
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let rule_list = rules::list_rules(&conn)?;
     let category_list = categories::list_categories_with_path(&conn)?;

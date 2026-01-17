@@ -93,8 +93,7 @@ pub struct StatusResponse {
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let template = TradingImportTemplate {
         title: "Import Trading Activities".into(),
@@ -109,8 +108,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let template = TradingImportFormatTemplate {
         title: "Trading CSV Format".into(),
@@ -260,8 +258,7 @@ pub async fn wizard(
     let conn = state.db.get()?;
 
     let session = trading::get_import_session(&conn, &session_id)?;
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let template = TradingImportWizardTemplate {
         title: "Import Trading Activities".into(),

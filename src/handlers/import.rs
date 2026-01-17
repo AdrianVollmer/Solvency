@@ -99,8 +99,7 @@ pub struct StatusResponse {
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let template = ImportTemplate {
         title: "Import".into(),
@@ -115,8 +114,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
 
     let template = ImportFormatTemplate {
         title: "CSV Import Format".into(),
@@ -247,8 +245,7 @@ pub async fn wizard(
     let conn = state.db.get()?;
 
     let session = import::get_session(&conn, &session_id)?;
-    let settings_map = settings::get_all_settings(&conn)?;
-    let app_settings = Settings::from_map(settings_map);
+    let app_settings = settings::get_settings(&conn)?;
     let cats = categories::list_categories_with_path(&conn)?;
 
     let template = ImportWizardTemplate {

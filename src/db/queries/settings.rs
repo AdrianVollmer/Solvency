@@ -1,6 +1,9 @@
 use rusqlite::{params, Connection};
 use std::collections::HashMap;
 
+use crate::error::AppResult;
+use crate::models::Settings;
+
 pub fn get_setting(conn: &Connection, key: &str) -> rusqlite::Result<Option<String>> {
     match conn.query_row("SELECT value FROM settings WHERE key = ?", [key], |row| {
         row.get(0)
@@ -37,4 +40,11 @@ pub fn set_setting(conn: &Connection, key: &str, value: &str) -> rusqlite::Resul
 pub fn delete_setting(conn: &Connection, key: &str) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM settings WHERE key = ?", [key])?;
     Ok(rows > 0)
+}
+
+/// Fetch all settings and convert to Settings struct.
+/// This is a convenience function that combines get_all_settings and Settings::from_map.
+pub fn get_settings(conn: &Connection) -> AppResult<Settings> {
+    let settings_map = get_all_settings(conn)?;
+    Ok(Settings::from_map(settings_map))
 }
