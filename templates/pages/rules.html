@@ -2,57 +2,64 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Rules</h1>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="page-title">Rules</h1>
+            <p class="mt-1 text-muted">Automatically categorize expenses</p>
+        </div>
         <div class="flex items-center gap-2">
-            <a href="/rules/export" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#download"/></svg>
+            <a href="/rules/export" class="btn btn-secondary flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
                 Export
             </a>
-            <button onclick="document.getElementById('import-file').click()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#upload"/></svg>
+            <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
                 Import
             </button>
-            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importRules(this.files[0])">
+            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importRules(this.files[0])" aria-label="Import rules from JSON file">
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
             Rules automatically assign categories or tags to expenses based on description patterns.
             Use regular expressions for flexible matching.
         </p>
         <form hx-post="/rules/create" hx-target="#rules-table tbody" hx-swap="beforeend" hx-on::after-request="this.reset()" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-                    <input type="text" name="name" required placeholder="e.g. Grocery stores"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                    <label for="rule-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
+                    <input type="text" id="rule-name" name="name" required placeholder="e.g. Grocery stores"
+                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pattern (regex)</label>
-                    <input type="text" name="pattern" required placeholder="e.g. walmart|costco|kroger"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 font-mono text-sm">
+                    <label for="rule-pattern" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Pattern (regex)</label>
+                    <input type="text" id="rule-pattern" name="pattern" required placeholder="e.g. walmart|costco|kroger"
+                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 font-mono text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action</label>
+                    <label for="action-type-select" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Action</label>
                     <select name="action_type" id="action-type-select"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500"
+                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500"
                         onchange="toggleActionValue(this)">
                         <option value="assign_category">Assign Category</option>
                         <option value="assign_tag">Assign Tag</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value</label>
+                    <label for="action-value-category" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Value</label>
                     <select name="action_value" id="action-value-category"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
                         {% for cat in categories %}
                         <option value="{{ cat.category.id }}">{{ cat.path }}</option>
                         {% endfor %}
                     </select>
                     <select name="action_value" id="action-value-tag"
-                        class="hidden w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                        class="hidden w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
                         {% for tag in tags %}
                         <option value="{{ tag.id }}">{{ tag.name }}</option>
                         {% endfor %}
@@ -60,29 +67,30 @@
                 </div>
             </div>
             <div>
-                <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                <button type="submit" class="btn btn-primary">
                     Add Rule
                 </button>
             </div>
         </form>
     </div>
 
-    <div id="rules-table" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div id="rules-table" class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <table class="w-full">
-            <thead class="bg-gray-50 dark:bg-gray-700">
+            <caption class="sr-only">Rules list</caption>
+            <thead class="bg-neutral-50 dark:bg-neutral-900/50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pattern</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Name</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Pattern</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Action</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Actions</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody class="divide-y divide-neutral-100 dark:divide-neutral-700">
                 {% for rule in rules %}
                 {% include "components/rule_row.html" %}
                 {% else %}
                 <tr id="no-rules-row">
-                    <td colspan="4" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colspan="4" class="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400">
                         No rules yet. Create one above to automatically categorize your expenses.
                     </td>
                 </tr>

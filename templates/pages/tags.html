@@ -2,52 +2,59 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Tags</h1>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="page-title">Tags</h1>
+            <p class="mt-1 text-muted">Label and categorize expenses</p>
+        </div>
         <div class="flex items-center gap-2">
-            <a href="/tags/export" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#download"/></svg>
+            <a href="/tags/export" class="btn btn-secondary flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
                 Export
             </a>
-            <button onclick="document.getElementById('import-file').click()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#upload"/></svg>
+            <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
                 Import
             </button>
-            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importTags(this.files[0])">
+            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importTags(this.files[0])" aria-label="Import tags from JSON file">
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
         <form hx-post="/tags/create" hx-target="#tags-container" hx-swap="beforeend" hx-on::after-request="this.reset()" class="flex flex-wrap gap-4 items-end">
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-                <input type="text" name="name" required class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                <label for="tag-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
+                <input type="text" id="tag-name" name="name" required class="px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
-                <input type="color" name="color" value="#6b7280" class="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                <label for="tag-color" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Color</label>
+                <input type="color" id="tag-color" name="color" value="#6b7280" class="h-10 w-14 rounded border border-neutral-200 dark:border-neutral-700 cursor-pointer">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Style</label>
-                <select name="style" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                <label for="tag-style" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Style</label>
+                <select id="tag-style" name="style" class="px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
                     <option value="solid">Solid</option>
                     <option value="outline">Outline</option>
                     <option value="striped">Striped</option>
                 </select>
             </div>
-            <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+            <button type="submit" class="btn btn-primary">
                 Add Tag
             </button>
         </form>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h2 class="font-semibold mb-4">All Tags</h2>
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        <h2 class="section-title mb-4">All Tags</h2>
         <div id="tags-container" class="flex flex-wrap gap-2">
             {% for tag in tags %}
             {% include "components/tag_badge.html" %}
             {% else %}
-            <p class="text-gray-500 dark:text-gray-400">No tags yet. Create one above.</p>
+            <p class="text-neutral-500 dark:text-neutral-400">No tags yet. Create one above.</p>
             {% endfor %}
         </div>
     </div>

@@ -7,21 +7,25 @@
 
 {% block content %}
 <div class="space-y-6">
-    <h1 class="text-2xl font-bold">Analytics</h1>
+    <div>
+        <h1 class="page-title">Analytics</h1>
+        <p class="mt-1 text-muted">Visualize your spending patterns</p>
+    </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+    <!-- Date filters -->
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
         <div class="flex flex-wrap items-center gap-2">
             <a href="/analytics?from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
-                class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
-                title="Previous period">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
+                aria-label="Previous period">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
             </a>
             <a href="/analytics?from_date={{ date_range.next().from_str() }}&to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
-                class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
-                title="Next period">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
+                aria-label="Next period">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
             </a>
@@ -29,19 +33,21 @@
             <div class="flex flex-wrap gap-1.5 ml-2">
                 {% for preset in presets %}
                 <a href="/analytics?preset={{ preset.as_str() }}"
-                    class="px-3 py-1.5 text-sm rounded-full transition-colors {% if date_range.is_preset(preset) %}bg-primary-600 text-white{% else %}border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                    class="chip {% if date_range.is_preset(preset) %}chip-active{% else %}chip-inactive{% endif %}">
                     {{ preset.label() }}
                 </a>
                 {% endfor %}
             </div>
 
             <form action="/analytics" method="get" class="flex items-center gap-2 ml-auto">
-                <input type="date" name="from_date" value="{{ date_range.from_str() }}"
-                    class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                <span class="text-gray-500 text-sm">to</span>
-                <input type="date" name="to_date" value="{{ date_range.to_str() }}"
-                    class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                <button type="submit" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                <label for="analytics_from_date" class="sr-only">From date</label>
+                <input type="date" id="analytics_from_date" name="from_date" value="{{ date_range.from_str() }}"
+                    class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <span class="text-neutral-500 text-sm">to</span>
+                <label for="analytics_to_date" class="sr-only">To date</label>
+                <input type="date" id="analytics_to_date" name="to_date" value="{{ date_range.to_str() }}"
+                    class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <button type="submit" class="btn-ghost px-3 py-2 text-sm rounded-lg">
                     Apply
                 </button>
             </form>
@@ -51,26 +57,27 @@
         <input type="hidden" id="to_date" value="{{ date_range.to_str() }}">
     </div>
 
+    <!-- Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 class="text-lg font-semibold mb-4">Spending by Category</h2>
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+            <h2 class="section-title mb-4">Spending by Category</h2>
             <div class="aspect-square max-h-[400px]">
-                <canvas id="category-chart"></canvas>
+                <canvas id="category-chart" aria-label="Pie chart showing spending by category"></canvas>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 class="text-lg font-semibold mb-4">Spending Over Time</h2>
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+            <h2 class="section-title mb-4">Spending Over Time</h2>
             <div class="aspect-video">
-                <canvas id="time-chart"></canvas>
+                <canvas id="time-chart" aria-label="Line chart showing spending over time"></canvas>
             </div>
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h2 class="text-lg font-semibold mb-4">Monthly Summary</h2>
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        <h2 class="section-title mb-4">Monthly Summary</h2>
         <div class="aspect-[2/1]">
-            <canvas id="monthly-chart"></canvas>
+            <canvas id="monthly-chart" aria-label="Bar chart showing monthly spending summary"></canvas>
         </div>
     </div>
 </div>

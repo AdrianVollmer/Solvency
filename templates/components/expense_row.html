@@ -1,38 +1,38 @@
 <tr id="expense-{{ expense.id }}"
     onclick="window.location.href='/expenses/{{ expense.id }}'"
-    class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
-    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ expense.date }}</td>
+    class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer row-hover">
+    <td class="px-6 py-4 whitespace-nowrap text-sm tabular-nums">{{ expense.date }}</td>
     <td class="px-6 py-4">
         <div class="text-sm font-medium">{{ expense.description }}</div>
         {% if expense.has_notes() %}
-        <div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ expense.notes_text() }}</div>
+        <div class="text-xs text-neutral-500 dark:text-neutral-400 truncate max-w-xs">{{ expense.notes_text() }}</div>
         {% endif %}
     </td>
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
         {% match expense.counterparty() %}
         {% when Some with (cp) %}{{ cp }}{% when None %}-{% endmatch %}
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
         {% if expense.has_category() %}
         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
-            style="background-color: {{ expense.category_color_or_default() }}20; color: {{ expense.category_color_or_default() }};">
+            style="background-color: {{ expense.category_color_or_default() }}15; color: {{ expense.category_color_or_default() }};">
             {{ expense.category_name_or_default() }}
         </span>
         {% else %}
-        <span class="text-gray-400 text-sm">-</span>
+        <span class="text-neutral-400 text-sm">-</span>
         {% endif %}
     </td>
     <td class="px-6 py-4">
         <div class="flex flex-wrap gap-1">
             {% for tag in expense.tags %}
             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                style="background-color: {{ tag.color }}20; color: {{ tag.color }};">
+                style="background-color: {{ tag.color }}15; color: {{ tag.color }};">
                 {{ tag.name }}
             </span>
             {% endfor %}
         </div>
     </td>
-    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-right tabular-nums {% if expense.amount_cents < 0 %}text-red-600 dark:text-red-400{% else %}text-accent-600 dark:text-accent-400{% endif %}">
         {{ settings.format_money(expense.amount_cents)|safe }}
     </td>
 </tr>

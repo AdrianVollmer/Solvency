@@ -3,34 +3,38 @@
 {% block content %}
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 class="text-2xl font-bold">Expenses</h1>
+        <div>
+            <h1 class="page-title">Expenses</h1>
+        </div>
         <button
             hx-get="/expenses/new"
             hx-target="#expense-modal"
             hx-swap="innerHTML"
             onclick="document.getElementById('expense-modal').classList.remove('hidden')"
-            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="btn btn-primary inline-flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             Add Expense
         </button>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+    <!-- Filters -->
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
         <div class="flex flex-col gap-4">
+            <!-- Date range navigation -->
             <div class="flex flex-wrap items-center gap-2">
                 <a href="/expenses?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
-                    class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
-                    title="Previous period">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
+                    aria-label="Previous period">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
                 </a>
                 <a href="/expenses?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}from_date={{ date_range.next().from_str() }}&to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
-                    class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
-                    title="Next period">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
+                    aria-label="Next period">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
                 </a>
@@ -38,7 +42,7 @@
                 <div class="flex flex-wrap gap-1.5 ml-2">
                     {% for preset in presets %}
                     <a href="/expenses?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}preset={{ preset.as_str() }}"
-                        class="px-3 py-1.5 text-sm rounded-full transition-colors {% if date_range.is_preset(preset) %}bg-primary-600 text-white{% else %}border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                        class="chip {% if date_range.is_preset(preset) %}chip-active{% else %}chip-inactive{% endif %}">
                         {{ preset.label() }}
                     </a>
                     {% endfor %}
@@ -51,17 +55,20 @@
                     {% if filter.category_id.is_some() %}
                     <input type="hidden" name="category_id" value="{{ filter.category_id.unwrap() }}">
                     {% endif %}
-                    <input type="date" name="from_date" value="{{ date_range.from_str() }}"
-                        class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                    <span class="text-gray-500 text-sm">to</span>
-                    <input type="date" name="to_date" value="{{ date_range.to_str() }}"
-                        class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                    <button type="submit" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                    <label for="from_date" class="sr-only">From date</label>
+                    <input type="date" id="from_date" name="from_date" value="{{ date_range.from_str() }}"
+                        class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <span class="text-neutral-500 text-sm">to</span>
+                    <label for="to_date" class="sr-only">To date</label>
+                    <input type="date" id="to_date" name="to_date" value="{{ date_range.to_str() }}"
+                        class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <button type="submit" class="btn-ghost px-3 py-2 text-sm rounded-lg">
                         Apply
                     </button>
                 </form>
             </div>
 
+            <!-- Search and category filter -->
             <form hx-get="/expenses/table" hx-target="#expense-table" hx-trigger="change, keyup delay:300ms from:input[name='search']" class="flex flex-wrap gap-4">
                 <input type="hidden" name="from_date" value="{{ date_range.from_str() }}">
                 <input type="hidden" name="to_date" value="{{ date_range.to_str() }}">
@@ -69,17 +76,23 @@
                 <input type="hidden" name="preset" value="{{ date_range.preset.unwrap().as_str() }}">
                 {% endif %}
 
-                <input type="text" name="search" placeholder="Search expenses..." value="{{ filter.search.as_deref().unwrap_or("") }}"
-                    class="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="search" class="sr-only">Search expenses</label>
+                    <input type="text" id="search" name="search" placeholder="Search expenses..." value="{{ filter.search.as_deref().unwrap_or("") }}"
+                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                </div>
 
-                <select name="category_id" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
-                    <option value="">All Categories</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.category.id }}" {% if filter.matches_category(cat.category.id) %}selected{% endif %}>
-                        {{ cat.display_name() }}
-                    </option>
-                    {% endfor %}
-                </select>
+                <div>
+                    <label for="category_filter" class="sr-only">Filter by category</label>
+                    <select id="category_filter" name="category_id" class="px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.category.id }}" {% if filter.matches_category(cat.category.id) %}selected{% endif %}>
+                            {{ cat.display_name() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </form>
         </div>
     </div>
@@ -89,10 +102,11 @@
     </div>
 </div>
 
-<div id="expense-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+<!-- Modal -->
+<div id="expense-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="flex min-h-screen items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('expense-modal').classList.add('hidden')"></div>
-        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full p-6">
+        <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('expense-modal').classList.add('hidden')" aria-hidden="true"></div>
+        <div class="relative bg-white dark:bg-neutral-800 rounded-xl shadow-xl max-w-lg w-full p-6">
         </div>
     </div>
 </div>
