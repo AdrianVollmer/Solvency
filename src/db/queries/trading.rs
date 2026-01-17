@@ -7,6 +7,9 @@ use crate::services::trading_csv_parser::ParsedTradingActivity;
 use rusqlite::{params, Connection, OptionalExtension};
 use std::collections::HashMap;
 
+/// Raw activity row for position calculations: (symbol, activity_type, quantity, unit_price_cents, fee_cents, currency)
+type ActivityRow = (String, String, Option<f64>, Option<i64>, i64, String);
+
 // Activity operations
 
 #[derive(Default)]
@@ -200,7 +203,7 @@ pub fn get_positions(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
          ORDER BY symbol, date ASC, id ASC",
     )?;
 
-    let activities: Vec<(String, String, Option<f64>, Option<i64>, i64, String)> = stmt
+    let activities: Vec<ActivityRow> = stmt
         .query_map([], |row| {
             Ok((
                 row.get(0)?,
@@ -217,7 +220,8 @@ pub fn get_positions(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
     // Calculate positions by symbol
     let mut positions_map: HashMap<String, (f64, i64, String)> = HashMap::new();
 
-    for (symbol, activity_type_str, quantity, unit_price_cents, _fee_cents, currency) in activities {
+    for (symbol, activity_type_str, quantity, unit_price_cents, _fee_cents, currency) in activities
+    {
         let activity_type: TradingActivityType = activity_type_str
             .parse()
             .unwrap_or(TradingActivityType::Buy);
@@ -302,12 +306,14 @@ pub fn get_positions(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
     let mut positions: Vec<Position> = positions_map
         .into_iter()
         .filter(|(_, (qty, _, _))| *qty != 0.0)
-        .map(|(symbol, (quantity, total_cost_cents, currency))| Position {
-            symbol,
-            quantity,
-            total_cost_cents,
-            currency,
-        })
+        .map(
+            |(symbol, (quantity, total_cost_cents, currency))| Position {
+                symbol,
+                quantity,
+                total_cost_cents,
+                currency,
+            },
+        )
         .collect();
 
     // Sort: cash positions first, then alphabetically
@@ -325,9 +331,8 @@ pub fn get_positions(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
 }
 
 pub fn get_unique_symbols(conn: &Connection) -> rusqlite::Result<Vec<String>> {
-    let mut stmt = conn.prepare(
-        "SELECT DISTINCT symbol FROM trading_activities ORDER BY symbol",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT DISTINCT symbol FROM trading_activities ORDER BY symbol")?;
 
     let symbols: Vec<String> = stmt
         .query_map([], |row| row.get(0))?
