@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::db::queries::{categories, expenses, import, settings, tags};
-use crate::error::{AppError, AppResult};
+use crate::error::{html_escape, AppError, AppResult};
 use crate::models::{CategoryWithPath, ImportSession, ImportStatus, NewExpense, Settings};
 use crate::services::csv_parser::parse_csv;
 use crate::state::{AppState, JsManifest};
@@ -339,13 +339,15 @@ pub async fn update_row_category(
         String::new()
     };
 
+    let display_name = if cat_name.is_empty() {
+        "Uncategorized".to_string()
+    } else {
+        html_escape(&cat_name)
+    };
+
     Ok(Html(format!(
         r#"<span class="text-gray-600 dark:text-gray-400">{}</span>"#,
-        if cat_name.is_empty() {
-            "Uncategorized"
-        } else {
-            &cat_name
-        }
+        display_name
     )))
 }
 
