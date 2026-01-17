@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="page-title">Import Trading Activities</h1>
+            <p class="mt-1 text-muted">Review and import your trading data</p>
+        </div>
+        <a href="/trading/import/{{ session.id }}/cancel" class="text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+            Cancel Import
+        </a>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="flex items-center justify-center gap-4">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-medium">1</div>
+            <span class="text-sm font-medium text-neutral-900 dark:text-white">Upload</span>
+        </div>
+        <div class="w-12 h-0.5 bg-neutral-300 dark:bg-neutral-600"></div>
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full {% if session.is_preview() || session.is_importing() || session.is_completed() %}bg-primary-600 text-white{% else %}bg-neutral-200 dark:bg-neutral-700 text-neutral-500{% endif %} flex items-center justify-center text-sm font-medium">2</div>
+            <span class="text-sm font-medium {% if session.is_preview() || session.is_importing() || session.is_completed() %}text-neutral-900 dark:text-white{% else %}text-neutral-500{% endif %}">Preview</span>
+        </div>
+        <div class="w-12 h-0.5 bg-neutral-300 dark:bg-neutral-600"></div>
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full {% if session.is_completed() %}bg-primary-600 text-white{% else %}bg-neutral-200 dark:bg-neutral-700 text-neutral-500{% endif %} flex items-center justify-center text-sm font-medium">3</div>
+            <span class="text-sm font-medium {% if session.is_completed() %}text-neutral-900 dark:text-white{% else %}text-neutral-500{% endif %}">Import</span>
+        </div>
+    </div>
+
+    <!-- Status Content -->
+    <div id="import-status"
+        {% if session.is_processing() %}
+        hx-get="/trading/import/{{ session.id }}/status"
+        hx-trigger="every 500ms"
+        hx-swap="innerHTML"
+        {% endif %}>
+        {% include "partials/trading_import_status.html" %}
+    </div>
+</div>
+{% endblock %}

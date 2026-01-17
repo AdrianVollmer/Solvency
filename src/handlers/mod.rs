@@ -7,6 +7,9 @@ pub mod import;
 pub mod rules;
 pub mod settings;
 pub mod tags;
+pub mod trading_activities;
+pub mod trading_import;
+pub mod trading_positions;
 
 use axum::routing::{delete, get, post, put};
 use axum::Router;
@@ -68,6 +71,27 @@ pub fn routes() -> Router<AppState> {
         .route("/import/:session_id/confirm", post(import::confirm))
         .route("/import/:session_id/result", get(import::result))
         .route("/import/:session_id/cancel", get(import::cancel))
+        // Trading Activities
+        .route("/trading/activities", get(trading_activities::index))
+        .route("/trading/activities/new", get(trading_activities::new_form))
+        .route("/trading/activities/create", post(trading_activities::create))
+        .route("/trading/activities/table", get(trading_activities::table_partial))
+        .route("/trading/activities/:id/edit", get(trading_activities::edit_form))
+        .route("/trading/activities/:id/update", post(trading_activities::update))
+        .route("/trading/activities/:id/delete", delete(trading_activities::delete))
+        // Trading Positions
+        .route("/trading/positions", get(trading_positions::index))
+        // Trading Import
+        .route("/trading/import", get(trading_import::index))
+        .route("/trading/import/format", get(trading_import::format))
+        .route("/trading/import/upload", post(trading_import::upload))
+        .route("/trading/import/:session_id", get(trading_import::wizard))
+        .route("/trading/import/:session_id/status", get(trading_import::status))
+        .route("/trading/import/:session_id/status.json", get(trading_import::status_json))
+        .route("/trading/import/:session_id/rows", get(trading_import::rows))
+        .route("/trading/import/:session_id/confirm", post(trading_import::confirm))
+        .route("/trading/import/:session_id/result", get(trading_import::result))
+        .route("/trading/import/:session_id/cancel", get(trading_import::cancel))
         // Settings
         .route("/settings/update", post(settings::update))
         .route("/settings/theme", post(settings::toggle_theme))

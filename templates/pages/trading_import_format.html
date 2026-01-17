@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-8">
+    <div>
+        <h1 class="page-title">Trading CSV Format</h1>
+        <p class="mt-1 text-muted">Specification for importing trading activities</p>
+    </div>
+
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 space-y-6">
+        <div>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Required Columns</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Column</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Description</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">date</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Activity date (YYYY-MM-DD)</td>
+                            <td class="px-4 py-2 font-mono text-sm">2024-01-15</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">symbol</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Security symbol or $CASH-USD for cash</td>
+                            <td class="px-4 py-2 font-mono text-sm">AAPL, $CASH-USD</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">activityType</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Type of activity</td>
+                            <td class="px-4 py-2 font-mono text-sm">BUY, SELL, DIVIDEND</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Optional Columns</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Column</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Description</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">quantity</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Number of shares/units</td>
+                            <td class="px-4 py-2 font-mono text-sm">10, 5.5</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">unitPrice</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Price per share/unit</td>
+                            <td class="px-4 py-2 font-mono text-sm">150.00</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">currency</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Currency code (default: USD)</td>
+                            <td class="px-4 py-2 font-mono text-sm">USD, EUR</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">fee</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Transaction fee</td>
+                            <td class="px-4 py-2 font-mono text-sm">5.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Activity Types</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Type</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
+                        {% for at in activity_types %}
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">{{ at.as_str() }}</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">{{ at.label() }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Example CSV</h2>
+            <pre class="bg-neutral-100 dark:bg-neutral-900 p-4 rounded-lg overflow-x-auto text-sm font-mono">date,symbol,activityType,quantity,unitPrice,currency,fee
+2024-01-15,AAPL,BUY,10,150.00,USD,5.00
+2024-01-20,$CASH-USD,DEPOSIT,1000,1.00,USD,0
+2024-02-01,AAPL,DIVIDEND,,0.24,USD,0
+2024-02-15,AAPL,SELL,5,160.00,USD,5.00</pre>
+        </div>
+    </div>
+
+    <div class="flex justify-end">
+        <a href="/trading/import" class="btn btn-primary">Back to Import</a>
+    </div>
+</div>
+{% endblock %}

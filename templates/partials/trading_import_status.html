@@ -1,0 +1,128 @@
+{% match session.status %}
+    {% when crate::models::TradingImportStatus::Parsing %}
+        <!-- Parsing Status -->
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-4">
+                <svg class="w-8 h-8 text-primary-600 dark:text-primary-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Parsing files...</h2>
+            <p class="mt-2 text-neutral-500 dark:text-neutral-400">{{ session.processed_rows }} rows processed</p>
+            {% if session.total_rows > 0 %}
+            <div class="mt-4 w-full max-w-xs mx-auto bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                <div class="bg-primary-600 h-2 rounded-full transition-all" style="width: {{ session.progress_percent() }}%"></div>
+            </div>
+            {% endif %}
+        </div>
+
+    {% when crate::models::TradingImportStatus::Preview %}
+        <!-- Preview Status -->
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Preview</h2>
+                    <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ session.total_rows }} activities ready to import</p>
+                </div>
+                <form hx-post="/trading/import/{{ session.id }}/confirm" hx-target="#import-status" hx-swap="innerHTML">
+                    <button type="submit" class="btn btn-primary">
+                        Confirm Import
+                    </button>
+                </form>
+            </div>
+
+            {% if session.error_count > 0 %}
+            <div class="px-6 py-3 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
+                <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                    {{ session.error_count }} warning(s) during parsing
+                </p>
+            </div>
+            {% endif %}
+
+            <div hx-get="/trading/import/{{ session.id }}/rows" hx-trigger="load" hx-swap="innerHTML">
+                <div class="p-8 text-center">
+                    <div class="animate-pulse text-neutral-400">Loading preview...</div>
+                </div>
+            </div>
+        </div>
+
+    {% when crate::models::TradingImportStatus::Importing %}
+        <!-- Importing Status -->
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center"
+            hx-get="/trading/import/{{ session.id }}/status"
+            hx-trigger="every 500ms"
+            hx-swap="innerHTML">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-4">
+                <svg class="w-8 h-8 text-primary-600 dark:text-primary-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Importing...</h2>
+            <p class="mt-2 text-neutral-500 dark:text-neutral-400">
+                {{ session.processed_rows }} of {{ session.total_rows }} activities
+                {% if session.error_count > 0 %}({{ session.error_count }} errors){% endif %}
+            </p>
+            <div class="mt-4 w-full max-w-xs mx-auto bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                <div class="bg-primary-600 h-2 rounded-full transition-all" style="width: {{ session.progress_percent() }}%"></div>
+            </div>
+        </div>
+
+    {% when crate::models::TradingImportStatus::Completed %}
+        <!-- Completed Status -->
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
+                <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Import Complete</h2>
+            <p class="mt-2 text-neutral-500 dark:text-neutral-400">
+                Successfully imported {{ session.processed_rows - session.error_count }} activities
+                {% if session.error_count > 0 %}({{ session.error_count }} errors){% endif %}
+            </p>
+
+            {% if session.error_count > 0 %}
+            {% if !session.errors.is_empty() %}
+            <div class="mt-4 text-left bg-red-50 dark:bg-red-900/20 rounded-lg p-4 max-h-48 overflow-y-auto">
+                <p class="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Errors:</p>
+                <ul class="text-sm text-red-700 dark:text-red-300 space-y-1">
+                    {% for error in session.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <div class="mt-6">
+                <a href="/trading/activities" class="btn btn-primary">View Activities</a>
+            </div>
+        </div>
+
+    {% when crate::models::TradingImportStatus::Failed %}
+        <!-- Failed Status -->
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Import Failed</h2>
+
+            {% if !session.errors.is_empty() %}
+            <div class="mt-4 text-left bg-red-50 dark:bg-red-900/20 rounded-lg p-4 max-h-48 overflow-y-auto">
+                <ul class="text-sm text-red-700 dark:text-red-300 space-y-1">
+                    {% for error in session.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="mt-6">
+                <a href="/trading/import" class="btn btn-primary">Try Again</a>
+            </div>
+        </div>
+{% endmatch %}

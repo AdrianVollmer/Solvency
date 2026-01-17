@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="page-title">Trading Activities</h1>
+        </div>
+        <button
+            hx-get="/trading/activities/new"
+            hx-target="#activity-modal"
+            hx-swap="innerHTML"
+            onclick="document.getElementById('activity-modal').classList.remove('hidden')"
+            class="btn btn-primary inline-flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Activity
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+        <form hx-get="/trading/activities/table" hx-target="#activity-table" hx-trigger="change" class="flex flex-wrap gap-4">
+            <div>
+                <label for="symbol_filter" class="sr-only">Filter by symbol</label>
+                <select id="symbol_filter" name="symbol" class="px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
+                    <option value="">All Symbols</option>
+                    {% for sym in symbols %}
+                    <option value="{{ sym }}" {% if filter.matches_symbol(sym) %}selected{% endif %}>
+                        {{ sym }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="type_filter" class="sr-only">Filter by type</label>
+                <select id="type_filter" name="activity_type" class="px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
+                    <option value="">All Types</option>
+                    {% for at in activity_types %}
+                    <option value="{{ at.as_str() }}" {% if filter.matches_activity_type(at) %}selected{% endif %}>
+                        {{ at.label() }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <label for="from_date" class="sr-only">From date</label>
+                <input type="date" id="from_date" name="from_date" value="{{ filter.from_date.as_deref().unwrap_or("") }}"
+                    class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <span class="text-neutral-500 text-sm">to</span>
+                <label for="to_date" class="sr-only">To date</label>
+                <input type="date" id="to_date" name="to_date" value="{{ filter.to_date.as_deref().unwrap_or("") }}"
+                    class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+            </div>
+        </form>
+    </div>
+
+    <div id="activity-table">
+        {% include "partials/trading_activity_table.html" %}
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="activity-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('activity-modal').classList.add('hidden')" aria-hidden="true"></div>
+        <div class="relative bg-white dark:bg-neutral-800 rounded-xl shadow-xl max-w-lg w-full p-6">
+        </div>
+    </div>
+</div>
+{% endblock %}

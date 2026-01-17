@@ -4,6 +4,7 @@ pub mod import;
 pub mod rule;
 pub mod settings;
 pub mod tag;
+pub mod trading;
 
 pub use category::{Category, CategoryWithPath, NewCategory};
 pub use expense::{Expense, ExpenseWithRelations, NewExpense};
@@ -11,3 +12,7 @@ pub use import::{ImportRow, ImportRowStatus, ImportSession, ImportStatus};
 pub use rule::{NewRule, Rule, RuleActionType};
 pub use settings::Settings;
 pub use tag::{NewTag, Tag, TagStyle};
+pub use trading::{
+    NewTradingActivity, Position, TradingActivity, TradingActivityType, TradingImportRow,
+    TradingImportRowStatus, TradingImportSession, TradingImportStatus,
+};
