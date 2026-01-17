@@ -2,6 +2,45 @@ use std::str::FromStr;
 
 use chrono::{Datelike, Local, NaiveDate};
 
+/// Trait for filter params that support date filtering with presets and navigation.
+#[allow(clippy::wrong_self_convention)]
+pub trait DateFilterable {
+    fn from_date(&self) -> Option<&String>;
+    fn to_date(&self) -> Option<&String>;
+    fn preset(&self) -> Option<&String>;
+
+    /// Override to support prev/next navigation. Defaults to None.
+    fn nav(&self) -> Option<&String> {
+        None
+    }
+
+    fn resolve_date_range(&self) -> DateRange {
+        let base_range = if let Some(preset_str) = self.preset() {
+            preset_str
+                .parse::<DatePreset>()
+                .map(DateRange::from_preset)
+                .unwrap_or_default()
+        } else if let (Some(from), Some(to)) = (self.from_date(), self.to_date()) {
+            if let (Ok(from_date), Ok(to_date)) = (
+                NaiveDate::parse_from_str(from, "%Y-%m-%d"),
+                NaiveDate::parse_from_str(to, "%Y-%m-%d"),
+            ) {
+                DateRange::from_dates(from_date, to_date)
+            } else {
+                DateRange::default()
+            }
+        } else {
+            DateRange::default()
+        };
+
+        match self.nav().map(|s| s.as_str()) {
+            Some("prev") => base_range.prev(),
+            Some("next") => base_range.next(),
+            _ => base_range,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum PeriodType {
     Week,

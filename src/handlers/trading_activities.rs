@@ -2,10 +2,9 @@ use askama::Template;
 use axum::extract::{Path, Query, State};
 use axum::response::{Html, Redirect};
 use axum::Form;
-use chrono::NaiveDate;
 use serde::Deserialize;
 
-use crate::date_utils::{DatePreset, DateRange};
+use crate::date_utils::{DateFilterable, DatePreset, DateRange};
 use crate::db::queries::{settings, trading};
 use crate::error::{AppError, AppResult};
 use crate::models::{NewTradingActivity, Settings, TradingActivity, TradingActivityType};
@@ -90,6 +89,20 @@ pub struct TradingActivityFilterParams {
     pub preset: Option<String>,
 }
 
+impl DateFilterable for TradingActivityFilterParams {
+    fn from_date(&self) -> Option<&String> {
+        self.from_date.as_ref()
+    }
+
+    fn to_date(&self) -> Option<&String> {
+        self.to_date.as_ref()
+    }
+
+    fn preset(&self) -> Option<&String> {
+        self.preset.as_ref()
+    }
+}
+
 impl TradingActivityFilterParams {
     pub fn matches_symbol(&self, sym: &str) -> bool {
         self.symbol.as_deref() == Some(sym)
@@ -97,26 +110,6 @@ impl TradingActivityFilterParams {
 
     pub fn matches_activity_type(&self, at: &TradingActivityType) -> bool {
         self.activity_type.as_deref() == Some(at.as_str())
-    }
-
-    pub fn resolve_date_range(&self) -> DateRange {
-        if let Some(preset_str) = &self.preset {
-            preset_str
-                .parse::<DatePreset>()
-                .map(DateRange::from_preset)
-                .unwrap_or_default()
-        } else if let (Some(from), Some(to)) = (&self.from_date, &self.to_date) {
-            if let (Ok(from_date), Ok(to_date)) = (
-                NaiveDate::parse_from_str(from, "%Y-%m-%d"),
-                NaiveDate::parse_from_str(to, "%Y-%m-%d"),
-            ) {
-                DateRange::from_dates(from_date, to_date)
-            } else {
-                DateRange::default()
-            }
-        } else {
-            DateRange::default()
-        }
     }
 
     pub fn base_query_string(&self) -> String {
@@ -299,10 +292,7 @@ pub async fn table_partial(
     Ok(Html(template.render().unwrap()))
 }
 
-pub async fn detail(
-    State(state): State<AppState>,
-    Path(id): Path<i64>,
-) -> AppResult<Html<String>> {
+pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     let activity = trading::get_activity(&conn, id)?

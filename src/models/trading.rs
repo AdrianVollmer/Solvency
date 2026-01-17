@@ -195,7 +195,12 @@ impl TradingActivity {
 
     pub fn quantity_display(&self) -> String {
         self.quantity
-            .map(|q| format!("{:.4}", q).trim_end_matches('0').trim_end_matches('.').to_string())
+            .map(|q| {
+                format!("{:.4}", q)
+                    .trim_end_matches('0')
+                    .trim_end_matches('.')
+                    .to_string()
+            })
             .unwrap_or_default()
     }
 }

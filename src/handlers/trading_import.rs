@@ -6,7 +6,9 @@ use uuid::Uuid;
 
 use crate::db::queries::{settings, trading};
 use crate::error::{AppError, AppResult};
-use crate::models::{NewTradingActivity, Settings, TradingActivityType, TradingImportSession, TradingImportStatus};
+use crate::models::{
+    NewTradingActivity, Settings, TradingActivityType, TradingImportSession, TradingImportStatus,
+};
 use crate::services::trading_csv_parser::parse_csv;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -162,7 +164,12 @@ pub async fn upload(
     if files.is_empty() {
         let conn = state.db.get()?;
         trading::update_import_session_status(&conn, &session_id, TradingImportStatus::Failed)?;
-        trading::update_import_session_errors(&conn, &session_id, 1, &["No files uploaded".to_string()])?;
+        trading::update_import_session_errors(
+            &conn,
+            &session_id,
+            1,
+            &["No files uploaded".to_string()],
+        )?;
         return Ok(Redirect::to(&format!("/trading/import/{}", session_id)));
     }
 
@@ -191,7 +198,8 @@ async fn parse_files_background(
                 // Insert rows into database
                 if let Ok(conn) = state.db.get() {
                     for activity in result.activities {
-                        if let Err(e) = trading::insert_import_row(&conn, &session_id, row_index, &activity)
+                        if let Err(e) =
+                            trading::insert_import_row(&conn, &session_id, row_index, &activity)
                         {
                             all_errors.push(format!("{}: Failed to store row: {}", file_name, e));
                         }
@@ -222,13 +230,25 @@ async fn parse_files_background(
     // Finalize session
     if let Ok(conn) = state.db.get() {
         let _ = trading::update_import_session_progress(&conn, &session_id, row_index, row_index);
-        let _ =
-            trading::update_import_session_errors(&conn, &session_id, all_errors.len() as i64, &all_errors);
+        let _ = trading::update_import_session_errors(
+            &conn,
+            &session_id,
+            all_errors.len() as i64,
+            &all_errors,
+        );
 
         if row_index == 0 && !all_errors.is_empty() {
-            let _ = trading::update_import_session_status(&conn, &session_id, TradingImportStatus::Failed);
+            let _ = trading::update_import_session_status(
+                &conn,
+                &session_id,
+                TradingImportStatus::Failed,
+            );
         } else {
-            let _ = trading::update_import_session_status(&conn, &session_id, TradingImportStatus::Preview);
+            let _ = trading::update_import_session_status(
+                &conn,
+                &session_id,
+                TradingImportStatus::Preview,
+            );
         }
     }
 }
@@ -384,7 +404,11 @@ async fn import_rows_background(state: AppState, session_id: String) {
                 Ok(v) => Some(v),
                 Err(_) => {
                     error_count += 1;
-                    errors.push(format!("Row {}: Invalid quantity '{}'", row.row_index + 1, q));
+                    errors.push(format!(
+                        "Row {}: Invalid quantity '{}'",
+                        row.row_index + 1,
+                        q
+                    ));
                     let _ = trading::mark_import_row_error(&conn, row.id, "Invalid quantity");
                     let _ = trading::increment_import_session_processed(&conn, &session_id);
                     let _ = trading::increment_import_session_error_count(&conn, &session_id);
@@ -400,7 +424,11 @@ async fn import_rows_background(state: AppState, session_id: String) {
                 Ok(v) => Some((v * 100.0).round() as i64),
                 Err(_) => {
                     error_count += 1;
-                    errors.push(format!("Row {}: Invalid unit price '{}'", row.row_index + 1, p));
+                    errors.push(format!(
+                        "Row {}: Invalid unit price '{}'",
+                        row.row_index + 1,
+                        p
+                    ));
                     let _ = trading::mark_import_row_error(&conn, row.id, "Invalid unit price");
                     let _ = trading::increment_import_session_processed(&conn, &session_id);
                     let _ = trading::increment_import_session_error_count(&conn, &session_id);
@@ -455,7 +483,11 @@ async fn import_rows_background(state: AppState, session_id: String) {
     // Finalize
     if let Ok(conn) = state.db.get() {
         let _ = trading::update_import_session_errors(&conn, &session_id, error_count, &errors);
-        let _ = trading::update_import_session_status(&conn, &session_id, TradingImportStatus::Completed);
+        let _ = trading::update_import_session_status(
+            &conn,
+            &session_id,
+            TradingImportStatus::Completed,
+        );
     }
 }
 

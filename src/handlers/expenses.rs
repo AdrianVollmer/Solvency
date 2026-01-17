@@ -2,10 +2,9 @@ use askama::Template;
 use axum::extract::{Path, Query, State};
 use axum::response::{Html, Redirect};
 use axum::Form;
-use chrono::NaiveDate;
 use serde::Deserialize;
 
-use crate::date_utils::{DatePreset, DateRange};
+use crate::date_utils::{DateFilterable, DatePreset, DateRange};
 use crate::db::queries::{categories, expenses, settings, tags};
 use crate::error::{AppError, AppResult};
 use crate::models::{CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag};
@@ -94,37 +93,27 @@ pub struct ExpenseFilterParams {
     pub nav: Option<String>, // "prev" or "next"
 }
 
+impl DateFilterable for ExpenseFilterParams {
+    fn from_date(&self) -> Option<&String> {
+        self.from_date.as_ref()
+    }
+
+    fn to_date(&self) -> Option<&String> {
+        self.to_date.as_ref()
+    }
+
+    fn preset(&self) -> Option<&String> {
+        self.preset.as_ref()
+    }
+
+    fn nav(&self) -> Option<&String> {
+        self.nav.as_ref()
+    }
+}
+
 impl ExpenseFilterParams {
     pub fn matches_category(&self, id: &i64) -> bool {
         self.category_id == Some(*id)
-    }
-
-    pub fn resolve_date_range(&self) -> DateRange {
-        // If nav is specified, we need the current range to shift from
-        let base_range = if let Some(preset_str) = &self.preset {
-            preset_str
-                .parse::<DatePreset>()
-                .map(DateRange::from_preset)
-                .unwrap_or_default()
-        } else if let (Some(from), Some(to)) = (&self.from_date, &self.to_date) {
-            if let (Ok(from_date), Ok(to_date)) = (
-                NaiveDate::parse_from_str(from, "%Y-%m-%d"),
-                NaiveDate::parse_from_str(to, "%Y-%m-%d"),
-            ) {
-                DateRange::from_dates(from_date, to_date)
-            } else {
-                DateRange::default()
-            }
-        } else {
-            DateRange::default()
-        };
-
-        // Apply navigation if specified
-        match self.nav.as_deref() {
-            Some("prev") => base_range.prev(),
-            Some("next") => base_range.next(),
-            _ => base_range,
-        }
     }
 
     pub fn base_query_string(&self) -> String {
