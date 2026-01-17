@@ -76,6 +76,7 @@ pub fn routes() -> Router<AppState> {
         .route("/trading/activities/new", get(trading_activities::new_form))
         .route("/trading/activities/create", post(trading_activities::create))
         .route("/trading/activities/table", get(trading_activities::table_partial))
+        .route("/trading/activities/:id", get(trading_activities::detail))
         .route("/trading/activities/:id/edit", get(trading_activities::edit_form))
         .route("/trading/activities/:id/update", post(trading_activities::update))
         .route("/trading/activities/:id/delete", delete(trading_activities::delete))

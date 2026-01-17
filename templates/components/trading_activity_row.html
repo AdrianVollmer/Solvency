@@ -1,7 +1,7 @@
-<tr id="activity-{{ activity.id }}">
-    <td class="px-6 py-4 whitespace-nowrap">
-        <span class="text-sm text-neutral-900 dark:text-white">{{ activity.date }}</span>
-    </td>
+<tr id="activity-{{ activity.id }}"
+    onclick="window.location.href='/trading/activities/{{ activity.id }}'"
+    class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer row-hover">
+    <td class="px-6 py-4 whitespace-nowrap text-sm tabular-nums">{{ activity.date }}</td>
     <td class="px-6 py-4 whitespace-nowrap">
         <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ activity.symbol }}</span>
     </td>
@@ -20,35 +20,21 @@
         </span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
-        <span class="text-sm text-neutral-900 dark:text-white">{{ activity.quantity_display() }}</span>
+        <span class="text-sm text-neutral-900 dark:text-white tabular-nums">{{ activity.quantity_display() }}</span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
-        <span class="text-sm text-neutral-600 dark:text-neutral-400">
+        <span class="text-sm text-neutral-600 dark:text-neutral-400 tabular-nums">
             {% match activity.unit_price_formatted() %}
             {% when Some with (price) %}{{ price }}{% when None %}-{% endmatch %}
         </span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
-        <span class="text-sm font-medium text-neutral-900 dark:text-white">
+        <span class="text-sm font-medium text-neutral-900 dark:text-white tabular-nums">
             {% match activity.total_value_formatted() %}
             {% when Some with (total) %}{{ total }}{% when None %}-{% endmatch %}
         </span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
-        <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ activity.fee_formatted() }}</span>
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <div class="flex items-center justify-end gap-2">
-            <a href="/trading/activities/{{ activity.id }}/edit" class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300">
-                Edit
-            </a>
-            <button hx-delete="/trading/activities/{{ activity.id }}/delete"
-                hx-target="#activity-{{ activity.id }}"
-                hx-swap="outerHTML"
-                hx-confirm="Are you sure you want to delete this activity?"
-                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                Delete
-            </button>
-        </div>
+        <span class="text-sm text-neutral-600 dark:text-neutral-400 tabular-nums">{{ activity.fee_formatted() }}</span>
     </td>
 </tr>

@@ -15,7 +15,6 @@
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Price</th>
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Total</th>
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Fee</th>
-                    <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700" id="activities-list">
@@ -34,13 +33,13 @@
         </p>
         <div class="flex gap-2">
             {% if page > 1 %}
-            <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}page={{ page - 1 }}"
+            <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}&page={{ page - 1 }}"
                 class="px-3 py-1 text-sm border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-700">
                 Previous
             </a>
             {% endif %}
             {% if page * page_size < total_count %}
-            <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}page={{ page + 1 }}"
+            <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}&page={{ page + 1 }}"
                 class="px-3 py-1 text-sm border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-700">
                 Next
             </a>

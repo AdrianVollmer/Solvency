@@ -1,42 +1,89 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="space-y-8">
+<div class="space-y-6">
     <div>
         <h1 class="page-title">Import Trading Activities</h1>
         <p class="mt-1 text-muted">Upload CSV files to import trading activities</p>
     </div>
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
-        <form action="/trading/import/upload" method="post" enctype="multipart/form-data" class="space-y-6">
-            <div>
-                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                    CSV Files
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl">
+        <form action="/trading/import/upload" method="post" enctype="multipart/form-data" class="space-y-4">
+            <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-8 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors" id="drop-zone">
+                <svg class="w-12 h-12 mx-auto text-neutral-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p class="text-neutral-600 dark:text-neutral-400 mb-3">Drag and drop your CSV files here, or</p>
+                <label class="cursor-pointer inline-block">
+                    <span class="btn btn-primary">
+                        Browse Files
+                    </span>
+                    <input type="file" name="files" accept=".csv" class="hidden" multiple required aria-label="Select CSV files to upload">
                 </label>
-                <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg p-8 text-center hover:border-primary-500 transition-colors">
-                    <input type="file" name="files" accept=".csv" multiple required
-                        class="block w-full text-sm text-neutral-500 dark:text-neutral-400
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-lg file:border-0
-                            file:text-sm file:font-medium
-                            file:bg-primary-50 file:text-primary-700
-                            dark:file:bg-primary-900/30 dark:file:text-primary-300
-                            hover:file:bg-primary-100 dark:hover:file:bg-primary-900/50
-                            cursor-pointer"
-                        onchange="document.getElementById('file-count').textContent = this.files.length + ' file(s) selected'">
-                    <p id="file-count" class="mt-2 text-sm text-neutral-500 dark:text-neutral-400">No files selected</p>
-                </div>
+                <p id="file-count" class="text-sm text-primary-600 dark:text-primary-400 font-medium mt-3 hidden"></p>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-4">
+                    Supported format: CSV with columns for date, symbol, quantity, and type.
+                    <a href="/trading/import/format" class="text-primary-600 dark:text-primary-400 hover:underline">View format specification</a>
+                </p>
             </div>
 
-            <div class="flex items-center justify-between">
-                <a href="/trading/import/format" class="text-sm text-primary-600 dark:text-primary-400 hover:underline">
-                    View CSV format specification
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    Upload and Preview
-                </button>
-            </div>
+            <button type="submit" class="w-full btn btn-primary py-3">
+                Upload and Preview
+            </button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = dropZone.querySelector('input[type="file"]');
+    const fileCount = document.getElementById('file-count');
+
+    function updateFileCount() {
+        const count = fileInput.files.length;
+        if (count > 0) {
+            fileCount.textContent = count === 1
+                ? '1 file selected'
+                : count + ' files selected';
+            fileCount.classList.remove('hidden');
+        } else {
+            fileCount.classList.add('hidden');
+        }
+    }
+
+    fileInput.addEventListener('change', updateFileCount);
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/10');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/10');
+        });
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            fileInput.files = files;
+            updateFileCount();
+        }
+    });
+});
+</script>
 {% endblock %}

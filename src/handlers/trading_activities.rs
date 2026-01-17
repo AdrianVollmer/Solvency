@@ -2,8 +2,10 @@ use askama::Template;
 use axum::extract::{Path, Query, State};
 use axum::response::{Html, Redirect};
 use axum::Form;
+use chrono::NaiveDate;
 use serde::Deserialize;
 
+use crate::date_utils::{DatePreset, DateRange};
 use crate::db::queries::{settings, trading};
 use crate::error::{AppError, AppResult};
 use crate::models::{NewTradingActivity, Settings, TradingActivity, TradingActivityType};
@@ -24,6 +26,8 @@ pub struct TradingActivitiesTemplate {
     pub page: i64,
     pub page_size: i64,
     pub filter: TradingActivityFilterParams,
+    pub date_range: DateRange,
+    pub presets: &'static [DatePreset],
 }
 
 #[derive(Template)]
@@ -35,6 +39,7 @@ pub struct TradingActivityTableTemplate {
     pub page: i64,
     pub page_size: i64,
     pub filter: TradingActivityFilterParams,
+    pub date_range: DateRange,
 }
 
 #[derive(Template)]
@@ -50,6 +55,16 @@ pub struct TradingActivityFormTemplate {
 #[template(path = "components/trading_activity_row.html")]
 pub struct TradingActivityRowTemplate {
     pub settings: Settings,
+    pub activity: TradingActivity,
+}
+
+#[derive(Template)]
+#[template(path = "pages/trading_activity_detail.html")]
+pub struct TradingActivityDetailTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+    pub version: &'static str,
     pub activity: TradingActivity,
 }
 
@@ -72,6 +87,7 @@ pub struct TradingActivityFilterParams {
     pub from_date: Option<String>,
     pub to_date: Option<String>,
     pub page: Option<i64>,
+    pub preset: Option<String>,
 }
 
 impl TradingActivityFilterParams {
@@ -81,6 +97,26 @@ impl TradingActivityFilterParams {
 
     pub fn matches_activity_type(&self, at: &TradingActivityType) -> bool {
         self.activity_type.as_deref() == Some(at.as_str())
+    }
+
+    pub fn resolve_date_range(&self) -> DateRange {
+        if let Some(preset_str) = &self.preset {
+            preset_str
+                .parse::<DatePreset>()
+                .map(DateRange::from_preset)
+                .unwrap_or_default()
+        } else if let (Some(from), Some(to)) = (&self.from_date, &self.to_date) {
+            if let (Ok(from_date), Ok(to_date)) = (
+                NaiveDate::parse_from_str(from, "%Y-%m-%d"),
+                NaiveDate::parse_from_str(to, "%Y-%m-%d"),
+            ) {
+                DateRange::from_dates(from_date, to_date)
+            } else {
+                DateRange::default()
+            }
+        } else {
+            DateRange::default()
+        }
     }
 
     pub fn base_query_string(&self) -> String {
@@ -93,16 +129,6 @@ impl TradingActivityFilterParams {
         if let Some(ref activity_type) = self.activity_type {
             if !activity_type.is_empty() {
                 parts.push(format!("activity_type={}", activity_type));
-            }
-        }
-        if let Some(ref from_date) = self.from_date {
-            if !from_date.is_empty() {
-                parts.push(format!("from_date={}", from_date));
-            }
-        }
-        if let Some(ref to_date) = self.to_date {
-            if !to_date.is_empty() {
-                parts.push(format!("to_date={}", to_date));
             }
         }
         if parts.is_empty() {
@@ -190,6 +216,8 @@ pub async fn index(
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
 
+    let date_range = params.resolve_date_range();
+
     let activity_type = params
         .activity_type
         .as_ref()
@@ -198,8 +226,8 @@ pub async fn index(
     let filter = trading::TradingActivityFilter {
         symbol: params.symbol.clone().filter(|s| !s.is_empty()),
         activity_type,
-        from_date: params.from_date.clone().filter(|s| !s.is_empty()),
-        to_date: params.to_date.clone().filter(|s| !s.is_empty()),
+        from_date: Some(date_range.from_str()),
+        to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
     };
@@ -220,6 +248,8 @@ pub async fn index(
         page,
         page_size,
         filter: params,
+        date_range,
+        presets: DatePreset::all(),
     };
 
     Ok(Html(template.render().unwrap()))
@@ -237,6 +267,8 @@ pub async fn table_partial(
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
 
+    let date_range = params.resolve_date_range();
+
     let activity_type = params
         .activity_type
         .as_ref()
@@ -245,8 +277,8 @@ pub async fn table_partial(
     let filter = trading::TradingActivityFilter {
         symbol: params.symbol.clone().filter(|s| !s.is_empty()),
         activity_type,
-        from_date: params.from_date.clone().filter(|s| !s.is_empty()),
-        to_date: params.to_date.clone().filter(|s| !s.is_empty()),
+        from_date: Some(date_range.from_str()),
+        to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
     };
@@ -261,6 +293,30 @@ pub async fn table_partial(
         page,
         page_size,
         filter: params,
+        date_range,
+    };
+
+    Ok(Html(template.render().unwrap()))
+}
+
+pub async fn detail(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+
+    let activity = trading::get_activity(&conn, id)?
+        .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
+
+    let settings_map = settings::get_all_settings(&conn)?;
+    let app_settings = Settings::from_map(settings_map);
+
+    let template = TradingActivityDetailTemplate {
+        title: format!("{} - {}", activity.symbol, activity.activity_type.label()),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        activity,
     };
 
     Ok(Html(template.render().unwrap()))
