@@ -31,24 +31,24 @@
     </div>
 
     {% if total_count > page_size %}
-    <div class="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+    <nav class="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between" aria-label="Pagination">
         <p class="text-sm text-neutral-600 dark:text-neutral-400">
             Showing {{ (page - 1) * page_size + 1 }}–{% if page * page_size < total_count %}{{ page * page_size }}{% else %}{{ total_count }}{% endif %} of {{ total_count }} expenses
         </p>
         <div class="flex gap-2">
             {% if page > 1 %}
             <a href="/expenses?page={{ page - 1 }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                class="px-3 py-1.5 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+                class="btn btn-secondary text-sm">
                 Previous
             </a>
             {% endif %}
             {% if page * page_size < total_count %}
             <a href="/expenses?page={{ page + 1 }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                class="px-3 py-1.5 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+                class="btn btn-secondary text-sm">
                 Next
             </a>
             {% endif %}
         </div>
-    </div>
+    </nav>
     {% endif %}
 </div>
