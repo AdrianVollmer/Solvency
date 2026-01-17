@@ -94,8 +94,11 @@ pub fn list_expenses(
 
     let mut expenses: Vec<ExpenseWithRelations> = expense_iter.filter_map(|e| e.ok()).collect();
 
+    let expense_ids: Vec<i64> = expenses.iter().map(|e| e.expense.id).collect();
+    let mut tags_map = get_tags_for_expenses(conn, &expense_ids)?;
+
     for expense in &mut expenses {
-        expense.tags = get_expense_tags(conn, expense.expense.id)?;
+        expense.tags = tags_map.remove(&expense.expense.id).unwrap_or_default();
     }
 
     Ok(expenses)
@@ -286,4 +289,56 @@ fn get_expense_tags(conn: &Connection, expense_id: i64) -> rusqlite::Result<Vec<
         .collect();
 
     Ok(tags)
+}
+
+fn get_tags_for_expenses(
+    conn: &Connection,
+    expense_ids: &[i64],
+) -> rusqlite::Result<std::collections::HashMap<i64, Vec<Tag>>> {
+    use std::collections::HashMap;
+
+    if expense_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    let placeholders: String = expense_ids
+        .iter()
+        .map(|_| "?")
+        .collect::<Vec<_>>()
+        .join(",");
+    let sql = format!(
+        "SELECT et.expense_id, t.id, t.name, t.color, t.style, t.created_at
+         FROM tags t
+         JOIN expense_tags et ON t.id = et.tag_id
+         WHERE et.expense_id IN ({})
+         ORDER BY t.name",
+        placeholders
+    );
+
+    let mut stmt = conn.prepare(&sql)?;
+    let params: Vec<&dyn rusqlite::ToSql> = expense_ids
+        .iter()
+        .map(|id| id as &dyn rusqlite::ToSql)
+        .collect();
+
+    let rows = stmt.query_map(params.as_slice(), |row| {
+        let style_str: String = row.get(4)?;
+        Ok((
+            row.get::<_, i64>(0)?,
+            Tag {
+                id: row.get(1)?,
+                name: row.get(2)?,
+                color: row.get(3)?,
+                style: TagStyle::parse(&style_str),
+                created_at: row.get(5)?,
+            },
+        ))
+    })?;
+
+    let mut tags_map: HashMap<i64, Vec<Tag>> = HashMap::new();
+    for row in rows.filter_map(|r| r.ok()) {
+        tags_map.entry(row.0).or_default().push(row.1);
+    }
+
+    Ok(tags_map)
 }
