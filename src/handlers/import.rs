@@ -402,26 +402,20 @@ pub async fn confirm(
 }
 
 async fn import_rows_background(state: AppState, session_id: String) {
-    let pending_rows = {
-        let conn = match state.db.get() {
-            Ok(c) => c,
-            Err(_) => return,
-        };
-        match import::get_pending_rows(&conn, &session_id) {
-            Ok(r) => r,
-            Err(_) => return,
-        }
+    let conn = match state.db.get() {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+
+    let pending_rows = match import::get_pending_rows(&conn, &session_id) {
+        Ok(r) => r,
+        Err(_) => return,
     };
 
     let mut error_count = 0;
     let mut errors: Vec<String> = Vec::new();
 
     for row in pending_rows {
-        let conn = match state.db.get() {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
-
         let amount: f64 = match row.data.amount.parse() {
             Ok(a) => a,
             Err(_) => {
@@ -487,10 +481,8 @@ async fn import_rows_background(state: AppState, session_id: String) {
     }
 
     // Finalize
-    if let Ok(conn) = state.db.get() {
-        let _ = import::update_session_errors(&conn, &session_id, error_count, &errors);
-        let _ = import::update_session_status(&conn, &session_id, ImportStatus::Completed);
-    }
+    let _ = import::update_session_errors(&conn, &session_id, error_count, &errors);
+    let _ = import::update_session_status(&conn, &session_id, ImportStatus::Completed);
 }
 
 pub async fn result(
