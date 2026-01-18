@@ -22,33 +22,33 @@
     </div>
 
     <!-- Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Latest Price</p>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Latest Price</p>
             {% match latest_price %}
             {% when Some with (price) %}
-            <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ price.close_price_formatted() }}</p>
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ price.close_price_formatted() }}</p>
             <p class="text-xs text-neutral-400">{{ price.date }}</p>
             {% when None %}
-            <p class="text-2xl font-semibold text-neutral-400">-</p>
+            <p class="text-xl font-semibold text-neutral-400">-</p>
             {% endmatch %}
         </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Data Points</p>
-            <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ data_points.len() }}</p>
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Data Points</p>
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ data_points.len() }}</p>
         </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Status</p>
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Status</p>
             {% match coverage %}
             {% when Some with (cov) %}
-            <p class="text-2xl font-semibold {{ cov.status_color() }}">{{ cov.coverage_status() }}</p>
+            <p class="text-xl font-semibold {{ cov.status_color() }}">{{ cov.coverage_status() }}</p>
             {% when None %}
-            <p class="text-2xl font-semibold text-neutral-400">Unknown</p>
+            <p class="text-xl font-semibold text-neutral-400">Unknown</p>
             {% endmatch %}
         </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Missing Ranges</p>
-            <p class="text-2xl font-semibold {% if missing_ranges.is_empty() %}text-green-600 dark:text-green-400{% else %}text-yellow-600 dark:text-yellow-400{% endif %}">{{ missing_ranges.len() }}</p>
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Missing Ranges</p>
+            <p class="text-xl font-semibold {% if missing_ranges.is_empty() %}text-green-600 dark:text-green-400{% else %}text-yellow-600 dark:text-yellow-400{% endif %}">{{ missing_ranges.len() }}</p>
         </div>
     </div>
 
