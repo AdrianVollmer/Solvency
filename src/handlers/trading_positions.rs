@@ -229,6 +229,15 @@ pub struct PositionDetailTemplate {
     pub xirr: Option<f64>,
     pub xirr_formatted: Option<String>,
     pub latest_price: Option<MarketData>,
+    pub total_fees_cents: i64,
+    pub total_fees_formatted: String,
+    pub total_taxes_cents: i64,
+    pub total_taxes_formatted: String,
+    pub total_dividends_cents: i64,
+    pub total_dividends_formatted: String,
+    pub realized_gain_loss_cents: i64,
+    pub realized_gain_loss_formatted: String,
+    pub realized_gain_loss_color: &'static str,
 }
 
 pub async fn detail(
@@ -275,6 +284,40 @@ pub async fn detail(
     let xirr = calculate_position_xirr(&activities, &position, &latest_price);
     let xirr_formatted = xirr.map(|x| format!("{:+.2}%", x * 100.0));
 
+    // Calculate total fees, taxes, dividends, and realized gain/loss
+    let (total_fees_cents, total_taxes_cents, total_dividends_cents, realized_gain_loss_cents) =
+        calculate_position_totals(&activities);
+
+    let currency = position
+        .as_ref()
+        .map(|p| p.position.currency.as_str())
+        .unwrap_or("USD");
+
+    let format_cents = |cents: i64| {
+        let sign = if cents < 0 { "-" } else { "" };
+        let symbol = match currency.to_uppercase().as_str() {
+            "EUR" => "€",
+            "GBP" => "£",
+            _ => "$",
+        };
+        let dollars = cents.abs() / 100;
+        let remainder = cents.abs() % 100;
+        format!("{}{}{}.{:02}", sign, symbol, dollars, remainder)
+    };
+
+    let total_fees_formatted = format_cents(total_fees_cents);
+    let total_taxes_formatted = format_cents(total_taxes_cents);
+    let total_dividends_formatted = format_cents(total_dividends_cents);
+    let realized_gain_loss_formatted = format_cents(realized_gain_loss_cents);
+
+    let realized_gain_loss_color = if realized_gain_loss_cents > 0 {
+        "text-green-600 dark:text-green-400"
+    } else if realized_gain_loss_cents < 0 {
+        "text-red-600 dark:text-red-400"
+    } else {
+        "text-neutral-600 dark:text-neutral-400"
+    };
+
     let display_name = symbol_info
         .display_name()
         .map(|n| format!("{} ({})", n, symbol))
@@ -292,6 +335,15 @@ pub async fn detail(
         xirr,
         xirr_formatted,
         latest_price,
+        total_fees_cents,
+        total_fees_formatted,
+        total_taxes_cents,
+        total_taxes_formatted,
+        total_dividends_cents,
+        total_dividends_formatted,
+        realized_gain_loss_cents,
+        realized_gain_loss_formatted,
+        realized_gain_loss_color,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -356,6 +408,117 @@ fn calculate_position_xirr(
     }
 
     calculate_xirr(&cash_flows)
+}
+
+/// Calculate total fees, taxes, dividends, and realized gain/loss for a position
+/// Returns (total_fees_cents, total_taxes_cents, total_dividends_cents, realized_gain_loss_cents)
+/// Note: Dividends are included in realized_gain_loss_cents
+fn calculate_position_totals(activities: &[TradingActivity]) -> (i64, i64, i64, i64) {
+    let mut total_fees_cents: i64 = 0;
+    let mut total_taxes_cents: i64 = 0;
+    let mut total_dividends_cents: i64 = 0;
+    let mut realized_gain_loss_cents: i64 = 0;
+
+    // Track running position for average cost calculation
+    let mut running_quantity: f64 = 0.0;
+    let mut running_cost_cents: i64 = 0;
+
+    for activity in activities {
+        // Sum all fees
+        total_fees_cents += activity.fee_cents;
+
+        // Sum taxes (Tax activity type has value in quantity * unit_price)
+        if activity.activity_type == TradingActivityType::Tax {
+            if let (Some(qty), Some(price)) = (activity.quantity, activity.unit_price_cents) {
+                total_taxes_cents += (qty * price as f64).round() as i64;
+            }
+        }
+
+        // Sum dividends and include in realized gain/loss
+        if activity.activity_type == TradingActivityType::Dividend {
+            if let (Some(qty), Some(price)) = (activity.quantity, activity.unit_price_cents) {
+                let dividend_amount = (qty * price as f64).round() as i64;
+                total_dividends_cents += dividend_amount;
+                realized_gain_loss_cents += dividend_amount;
+            }
+        }
+
+        // Calculate realized gain/loss from sell activities
+        match activity.activity_type {
+            TradingActivityType::Buy | TradingActivityType::AddHolding => {
+                let qty = activity.quantity.unwrap_or(0.0);
+                let price = activity.unit_price_cents.unwrap_or(0);
+                let cost = (qty * price as f64).round() as i64;
+                running_quantity += qty;
+                running_cost_cents += cost;
+            }
+            TradingActivityType::Sell | TradingActivityType::RemoveHolding => {
+                let qty = activity.quantity.unwrap_or(0.0);
+                let sell_price = activity.unit_price_cents.unwrap_or(0);
+                let sell_value = (qty * sell_price as f64).round() as i64;
+
+                // Calculate cost basis using average cost
+                if running_quantity > 0.0 {
+                    let avg_cost = running_cost_cents as f64 / running_quantity;
+                    let cost_basis = (qty * avg_cost).round() as i64;
+
+                    // Realized gain/loss = sell value - cost basis
+                    realized_gain_loss_cents += sell_value - cost_basis;
+
+                    // Update running position
+                    running_quantity -= qty;
+                    running_cost_cents -= cost_basis;
+
+                    if running_quantity < 0.0 {
+                        running_quantity = 0.0;
+                    }
+                    if running_cost_cents < 0 {
+                        running_cost_cents = 0;
+                    }
+                }
+            }
+            TradingActivityType::TransferIn => {
+                let qty = activity.quantity.unwrap_or(0.0);
+                let price = activity.unit_price_cents.unwrap_or(0);
+                let cost = (qty * price as f64).round() as i64;
+                running_quantity += qty;
+                running_cost_cents += cost;
+            }
+            TradingActivityType::TransferOut => {
+                let qty = activity.quantity.unwrap_or(0.0);
+                let sell_price = activity.unit_price_cents.unwrap_or(0);
+                let sell_value = (qty * sell_price as f64).round() as i64;
+
+                if running_quantity > 0.0 {
+                    let avg_cost = running_cost_cents as f64 / running_quantity;
+                    let cost_basis = (qty * avg_cost).round() as i64;
+
+                    realized_gain_loss_cents += sell_value - cost_basis;
+
+                    running_quantity -= qty;
+                    running_cost_cents -= cost_basis;
+
+                    if running_quantity < 0.0 {
+                        running_quantity = 0.0;
+                    }
+                    if running_cost_cents < 0 {
+                        running_cost_cents = 0;
+                    }
+                }
+            }
+            TradingActivityType::Split => {
+                // Split adjusts quantity but not cost
+                if let Some(ratio) = activity.quantity {
+                    if ratio > 0.0 {
+                        running_quantity *= ratio;
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    (total_fees_cents, total_taxes_cents, total_dividends_cents, realized_gain_loss_cents)
 }
 
 // Chart data API

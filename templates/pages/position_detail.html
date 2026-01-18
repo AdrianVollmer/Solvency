@@ -110,8 +110,24 @@
             {% endmatch %}
         </div>
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Transactions</p>
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ activities.len() }}</p>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Realized Gain/Loss</p>
+            <p class="text-xl font-semibold {{ realized_gain_loss_color }}">{{ realized_gain_loss_formatted }}</p>
+        </div>
+    </div>
+
+    <!-- Fees, Taxes & Dividends Row -->
+    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Total Fees</p>
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ total_fees_formatted }}</p>
+        </div>
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Total Taxes</p>
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ total_taxes_formatted }}</p>
+        </div>
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Total Dividends</p>
+            <p class="text-xl font-semibold text-green-600 dark:text-green-400">{{ total_dividends_formatted }}</p>
         </div>
     </div>
 
