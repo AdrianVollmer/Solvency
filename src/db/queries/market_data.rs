@@ -201,6 +201,7 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
 }
 
 /// Get symbols that need market data updates
+/// Includes both open positions (end_date = today) and closed positions (end_date = last_activity_date)
 pub fn get_symbols_needing_data(
     conn: &Connection,
 ) -> rusqlite::Result<Vec<(String, String, String)>> {
@@ -208,17 +209,18 @@ pub fn get_symbols_needing_data(
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
 
     let mut stmt = conn.prepare(
-        "WITH position_symbols AS (
+        "WITH all_traded_symbols AS (
             SELECT symbol,
-                   MIN(date) as first_activity_date
+                   MIN(date) as first_activity_date,
+                   MAX(date) as last_activity_date,
+                   SUM(CASE
+                       WHEN activity_type IN ('BUY', 'ADD_HOLDING', 'TRANSFER_IN') THEN COALESCE(quantity, 0)
+                       WHEN activity_type IN ('SELL', 'REMOVE_HOLDING', 'TRANSFER_OUT') THEN -COALESCE(quantity, 0)
+                       ELSE 0
+                   END) as net_quantity
             FROM trading_activities
             WHERE symbol NOT LIKE '$CASH-%'
             GROUP BY symbol
-            HAVING SUM(CASE
-                WHEN activity_type IN ('BUY', 'ADD_HOLDING', 'TRANSFER_IN') THEN COALESCE(quantity, 0)
-                WHEN activity_type IN ('SELL', 'REMOVE_HOLDING', 'TRANSFER_OUT') THEN -COALESCE(quantity, 0)
-                ELSE 0
-            END) > 0
         ),
         latest_data AS (
             SELECT symbol, MAX(date) as last_data_date
@@ -226,20 +228,27 @@ pub fn get_symbols_needing_data(
             GROUP BY symbol
         )
         SELECT
-            ps.symbol,
-            COALESCE(ld.last_data_date, ps.first_activity_date) as start_date
-        FROM position_symbols ps
-        LEFT JOIN latest_data ld ON ps.symbol = ld.symbol
+            ats.symbol,
+            COALESCE(ld.last_data_date, ats.first_activity_date) as start_date,
+            CASE
+                WHEN ats.net_quantity > 0 THEN ?1
+                ELSE ats.last_activity_date
+            END as end_date,
+            ats.net_quantity
+        FROM all_traded_symbols ats
+        LEFT JOIN latest_data ld ON ats.symbol = ld.symbol
         WHERE ld.last_data_date IS NULL
-           OR ld.last_data_date < date(?1, '-' || ?2 || ' days')
-        ORDER BY ps.symbol",
+           OR (ats.net_quantity > 0 AND ld.last_data_date < date(?1, '-' || ?2 || ' days'))
+           OR (ats.net_quantity <= 0 AND ld.last_data_date < ats.last_activity_date)
+        ORDER BY ats.symbol",
     )?;
 
     let symbols = stmt
         .query_map(rusqlite::params![&today, MAX_GAP_DAYS], |row| {
             let symbol: String = row.get(0)?;
             let start_date: String = row.get(1)?;
-            Ok((symbol, start_date, today.clone()))
+            let end_date: String = row.get(2)?;
+            Ok((symbol, start_date, end_date))
         })?
         .filter_map(|r| r.ok())
         .collect();

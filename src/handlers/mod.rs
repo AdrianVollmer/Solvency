@@ -103,6 +103,10 @@ pub fn routes() -> Router<AppState> {
         )
         // Trading Positions
         .route("/trading/positions", get(trading_positions::index))
+        .route(
+            "/trading/positions/closed",
+            get(trading_positions::closed_positions),
+        )
         .route("/trading/positions/:symbol", get(trading_positions::detail))
         .route(
             "/api/positions/:symbol/chart",

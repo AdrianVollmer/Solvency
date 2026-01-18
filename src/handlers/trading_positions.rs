@@ -7,7 +7,9 @@ use serde::Serialize;
 
 use crate::db::queries::{market_data, settings, trading};
 use crate::error::AppResult;
-use crate::models::trading::{PositionWithMarketData, TradingActivity, TradingActivityType};
+use crate::models::trading::{
+    ClosedPosition, PositionWithMarketData, TradingActivity, TradingActivityType,
+};
 use crate::models::{MarketData, Position, Settings};
 use crate::services::market_data as market_data_service;
 use crate::services::xirr::{calculate_xirr, CashFlow};
@@ -127,6 +129,70 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         total_gain_loss,
         total_gain_loss_color,
         total_gain_loss_formatted,
+    };
+
+    Ok(Html(template.render().unwrap()))
+}
+
+// Closed positions page
+
+#[derive(Template)]
+#[template(path = "pages/trading_positions_closed.html")]
+pub struct ClosedPositionsTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub positions: Vec<ClosedPosition>,
+    pub total_cost: i64,
+    pub total_cost_formatted: String,
+    pub total_proceeds: i64,
+    pub total_proceeds_formatted: String,
+    pub total_gain_loss: i64,
+    pub total_gain_loss_formatted: String,
+    pub total_gain_loss_color: &'static str,
+}
+
+pub async fn closed_positions(State(state): State<AppState>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+
+    let app_settings = settings::get_settings(&conn)?;
+
+    let positions = trading::get_closed_positions(&conn)?;
+
+    // Calculate totals
+    let total_cost: i64 = positions.iter().map(|p| p.total_cost_cents).sum();
+    let total_proceeds: i64 = positions.iter().map(|p| p.total_proceeds_cents).sum();
+    let total_gain_loss = total_proceeds - total_cost;
+
+    let total_gain_loss_color = if total_gain_loss > 0 {
+        "text-green-600 dark:text-green-400"
+    } else if total_gain_loss < 0 {
+        "text-red-600 dark:text-red-400"
+    } else {
+        "text-neutral-600 dark:text-neutral-400"
+    };
+
+    let format_cents = |cents: i64| {
+        let sign = if cents < 0 { "-" } else { "" };
+        let dollars = cents.abs() / 100;
+        let remainder = cents.abs() % 100;
+        format!("{}${}.{:02}", sign, dollars, remainder)
+    };
+
+    let template = ClosedPositionsTemplate {
+        title: "Closed Positions".into(),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        positions,
+        total_cost,
+        total_cost_formatted: format_cents(total_cost),
+        total_proceeds,
+        total_proceeds_formatted: format_cents(total_proceeds),
+        total_gain_loss,
+        total_gain_loss_formatted: format_cents(total_gain_loss),
+        total_gain_loss_color,
     };
 
     Ok(Html(template.render().unwrap()))

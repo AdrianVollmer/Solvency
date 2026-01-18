@@ -364,6 +364,89 @@ impl PositionWithMarketData {
     }
 }
 
+/// Represents a closed position (all securities sold)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClosedPosition {
+    pub symbol: String,
+    pub total_cost_cents: i64,
+    pub total_proceeds_cents: i64,
+    pub realized_gain_loss_cents: i64,
+    pub currency: String,
+    pub first_activity_date: String,
+    pub last_activity_date: String,
+}
+
+impl ClosedPosition {
+    pub fn total_cost_display(&self) -> String {
+        let dollars = self.total_cost_cents / 100;
+        let cents = self.total_cost_cents.abs() % 100;
+        format!("{}.{:02}", dollars, cents)
+    }
+
+    pub fn total_cost_formatted(&self) -> String {
+        format!(
+            "{}{}",
+            currency_symbol(&self.currency),
+            self.total_cost_display()
+        )
+    }
+
+    pub fn total_proceeds_display(&self) -> String {
+        let dollars = self.total_proceeds_cents / 100;
+        let cents = self.total_proceeds_cents.abs() % 100;
+        format!("{}.{:02}", dollars, cents)
+    }
+
+    pub fn total_proceeds_formatted(&self) -> String {
+        format!(
+            "{}{}",
+            currency_symbol(&self.currency),
+            self.total_proceeds_display()
+        )
+    }
+
+    pub fn realized_gain_loss_display(&self) -> String {
+        let sign = if self.realized_gain_loss_cents >= 0 {
+            ""
+        } else {
+            "-"
+        };
+        let dollars = self.realized_gain_loss_cents.abs() / 100;
+        let cents = self.realized_gain_loss_cents.abs() % 100;
+        format!("{}{}.{:02}", sign, dollars, cents)
+    }
+
+    pub fn realized_gain_loss_formatted(&self) -> String {
+        format!(
+            "{}{}",
+            currency_symbol(&self.currency),
+            self.realized_gain_loss_display()
+        )
+    }
+
+    pub fn gain_loss_percent(&self) -> f64 {
+        if self.total_cost_cents != 0 {
+            (self.realized_gain_loss_cents as f64 / self.total_cost_cents as f64) * 100.0
+        } else {
+            0.0
+        }
+    }
+
+    pub fn gain_loss_percent_display(&self) -> String {
+        format!("{:+.2}%", self.gain_loss_percent())
+    }
+
+    pub fn gain_loss_color(&self) -> &'static str {
+        if self.realized_gain_loss_cents > 0 {
+            "text-green-600 dark:text-green-400"
+        } else if self.realized_gain_loss_cents < 0 {
+            "text-red-600 dark:text-red-400"
+        } else {
+            "text-neutral-600 dark:text-neutral-400"
+        }
+    }
+}
+
 impl Position {
     pub fn average_cost_cents(&self) -> Option<i64> {
         if self.quantity > 0.0 {

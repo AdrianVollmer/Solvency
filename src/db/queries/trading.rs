@@ -1,7 +1,7 @@
 use crate::error::AppResult;
 use crate::models::trading::{
-    NewTradingActivity, Position, TradingActivity, TradingActivityType, TradingImportRow,
-    TradingImportSession, TradingImportStatus,
+    ClosedPosition, NewTradingActivity, Position, TradingActivity, TradingActivityType,
+    TradingImportRow, TradingImportSession, TradingImportStatus,
 };
 use crate::services::trading_csv_parser::ParsedTradingActivity;
 use rusqlite::{params, Connection, OptionalExtension};
@@ -333,6 +333,124 @@ pub fn get_positions(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
     });
 
     Ok(positions)
+}
+
+/// Get closed positions (where all securities have been sold)
+pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPosition>> {
+    // Get all activities grouped by symbol
+    let mut stmt = conn.prepare(
+        "SELECT symbol, activity_type, quantity, unit_price_cents, currency, date
+         FROM trading_activities
+         WHERE symbol NOT LIKE '$CASH-%'
+         ORDER BY symbol, date ASC, id ASC",
+    )?;
+
+    let activities: Vec<(String, String, Option<f64>, Option<i64>, String, String)> = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+                row.get(5)?,
+            ))
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    // Calculate positions by symbol, tracking cost, proceeds, and dates
+    // (quantity, total_cost, total_proceeds, currency, first_date, last_date)
+    let mut positions_map: HashMap<String, (f64, i64, i64, String, String, String)> =
+        HashMap::new();
+
+    for (symbol, activity_type_str, quantity, unit_price_cents, currency, date) in activities {
+        let activity_type: TradingActivityType = activity_type_str
+            .parse()
+            .unwrap_or(TradingActivityType::Buy);
+        let qty = quantity.unwrap_or(0.0);
+        let price = unit_price_cents.unwrap_or(0);
+
+        let entry = positions_map.entry(symbol.clone()).or_insert((
+            0.0,
+            0,
+            0,
+            currency,
+            date.clone(),
+            date.clone(),
+        ));
+
+        // Update last activity date
+        if date > entry.5 {
+            entry.5 = date.clone();
+        }
+
+        match activity_type {
+            TradingActivityType::Buy | TradingActivityType::AddHolding => {
+                let cost = (qty * price as f64).round() as i64;
+                entry.0 += qty;
+                entry.1 += cost;
+            }
+            TradingActivityType::Sell | TradingActivityType::RemoveHolding => {
+                let proceeds = (qty * price as f64).round() as i64;
+                entry.0 -= qty;
+                entry.2 += proceeds;
+                if entry.0 < 0.0 {
+                    entry.0 = 0.0;
+                }
+            }
+            TradingActivityType::TransferIn => {
+                let cost = (qty * price as f64).round() as i64;
+                entry.0 += qty;
+                entry.1 += cost;
+            }
+            TradingActivityType::TransferOut => {
+                // Treat as proceeds at the price
+                let proceeds = (qty * price as f64).round() as i64;
+                entry.0 -= qty;
+                entry.2 += proceeds;
+                if entry.0 < 0.0 {
+                    entry.0 = 0.0;
+                }
+            }
+            TradingActivityType::Split => {
+                // Split adjusts quantity but not cost/proceeds
+                if qty > 0.0 {
+                    entry.0 *= qty;
+                }
+            }
+            _ => {
+                // Dividends, interest, fees, taxes don't affect position quantity
+            }
+        }
+    }
+
+    // Convert to ClosedPosition structs, filtering to only zero positions
+    let mut closed_positions: Vec<ClosedPosition> = positions_map
+        .into_iter()
+        .filter(|(_, (qty, _, _, _, _, _))| *qty == 0.0)
+        .map(
+            |(
+                symbol,
+                (_, total_cost_cents, total_proceeds_cents, currency, first_date, last_date),
+            )| {
+                ClosedPosition {
+                    symbol,
+                    total_cost_cents,
+                    total_proceeds_cents,
+                    realized_gain_loss_cents: total_proceeds_cents - total_cost_cents,
+                    currency,
+                    first_activity_date: first_date,
+                    last_activity_date: last_date,
+                }
+            },
+        )
+        .collect();
+
+    // Sort alphabetically by symbol
+    closed_positions.sort_by(|a, b| a.symbol.cmp(&b.symbol));
+
+    Ok(closed_positions)
 }
 
 pub fn get_unique_symbols(conn: &Connection) -> rusqlite::Result<Vec<String>> {
