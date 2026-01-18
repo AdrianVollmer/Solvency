@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="/static/js/dist/{{ manifest.get("net-worth-chart.js") }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="page-title">Net Worth</h1>
+        <p class="mt-1 text-muted">Your total net worth over time, combining expenses and portfolio value</p>
+    </div>
+
+    {% if !has_data %}
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+        <p class="text-neutral-500 dark:text-neutral-400">No data yet. Add expenses or trading activities to see your net worth.</p>
+        <div class="mt-4 flex gap-3 justify-center">
+            <a href="/expenses" class="btn btn-primary">Add Expense</a>
+            <a href="/trading/activities" class="btn btn-secondary">Add Activity</a>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- Chart -->
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+        <div class="p-4">
+            <div style="height: 500px; position: relative;">
+                <canvas id="net-worth-chart"></canvas>
+            </div>
+        </div>
+        <div class="px-6 py-3 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900">
+            <p class="text-xs text-muted">
+                Click the legend items to show/hide the expense and portfolio components.
+                Net Worth = Cumulative Expenses + Portfolio Value
+            </p>
+        </div>
+    </div>
+
+    <!-- Stats Table -->
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+        <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+            <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
+                <tr>
+                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Current</td>
+                    <td class="px-4 py-2 text-sm font-medium text-right {% if current_net_worth_cents >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">{{ current_net_worth_formatted }}</td>
+                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">All-Time High</td>
+                    <td class="px-4 py-2 text-sm font-medium text-neutral-900 dark:text-white text-right">{{ highest_net_worth_formatted }}</td>
+                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">All-Time Low</td>
+                    <td class="px-4 py-2 text-sm font-medium text-neutral-900 dark:text-white text-right">{{ lowest_net_worth_formatted }}</td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Starting</td>
+                    <td class="px-4 py-2 text-sm font-medium text-neutral-900 dark:text-white text-right">{{ starting_net_worth_formatted }}</td>
+                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Change</td>
+                    <td class="px-4 py-2 text-sm font-medium text-right {% if change_cents >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">{{ change_formatted }} ({{ change_percent_formatted }})</td>
+                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Period</td>
+                    <td class="px-4 py-2 text-sm text-neutral-900 dark:text-white text-right">{{ start_date }} to {{ end_date }} ({{ total_days }} days)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}

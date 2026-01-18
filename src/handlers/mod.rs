@@ -6,6 +6,7 @@ pub mod dashboard;
 pub mod expenses;
 pub mod import;
 pub mod market_data;
+pub mod net_worth;
 pub mod rules;
 pub mod settings;
 pub mod tags;
@@ -115,6 +116,9 @@ pub fn routes() -> Router<AppState> {
             "/api/positions/:symbol/chart",
             get(trading_positions::position_chart_data),
         )
+        // Net Worth
+        .route("/trading/net-worth", get(net_worth::index))
+        .route("/api/net-worth/chart", get(net_worth::chart_data))
         // Trading Market Data
         .route("/trading/market-data", get(market_data::index))
         .route("/trading/market-data/refresh", post(market_data::refresh))

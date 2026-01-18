@@ -3,6 +3,7 @@ pub mod categories;
 pub mod expenses;
 pub mod import;
 pub mod market_data;
+pub mod net_worth;
 pub mod rules;
 pub mod settings;
 pub mod tags;
