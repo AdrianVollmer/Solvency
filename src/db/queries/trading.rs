@@ -193,6 +193,11 @@ pub fn delete_activity(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     Ok(rows > 0)
 }
 
+pub fn delete_all_activities(conn: &Connection) -> rusqlite::Result<usize> {
+    let rows = conn.execute("DELETE FROM trading_activities", [])?;
+    Ok(rows)
+}
+
 // Position calculations
 
 pub fn get_positions(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
@@ -340,6 +345,64 @@ pub fn get_unique_symbols(conn: &Connection) -> rusqlite::Result<Vec<String>> {
         .collect();
 
     Ok(symbols)
+}
+
+/// Get all activities for a specific symbol, ordered by date ascending (for XIRR calculation)
+pub fn get_activities_for_symbol(
+    conn: &Connection,
+    symbol: &str,
+) -> rusqlite::Result<Vec<TradingActivity>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, date, symbol, quantity, activity_type, unit_price_cents,
+                currency, fee_cents, notes, created_at, updated_at
+         FROM trading_activities
+         WHERE symbol = ?
+         ORDER BY date ASC, id ASC",
+    )?;
+
+    let activities = stmt
+        .query_map([symbol], |row| {
+            let activity_type_str: String = row.get(4)?;
+            Ok(TradingActivity {
+                id: row.get(0)?,
+                date: row.get(1)?,
+                symbol: row.get(2)?,
+                quantity: row.get(3)?,
+                activity_type: activity_type_str
+                    .parse()
+                    .unwrap_or(TradingActivityType::Buy),
+                unit_price_cents: row.get(5)?,
+                currency: row.get(6)?,
+                fee_cents: row.get(7)?,
+                notes: row.get(8)?,
+                created_at: row.get(9)?,
+                updated_at: row.get(10)?,
+            })
+        })?
+        .filter_map(|a| a.ok())
+        .collect();
+
+    Ok(activities)
+}
+
+/// Get the last BUY or SELL price for a symbol (for approximating current price)
+/// Returns (price_cents, date) if found
+pub fn get_last_trade_price(
+    conn: &Connection,
+    symbol: &str,
+) -> rusqlite::Result<Option<(i64, String)>> {
+    conn.query_row(
+        "SELECT unit_price_cents, date
+         FROM trading_activities
+         WHERE symbol = ?
+           AND activity_type IN ('BUY', 'SELL')
+           AND unit_price_cents IS NOT NULL
+         ORDER BY date DESC, id DESC
+         LIMIT 1",
+        [symbol],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    )
+    .optional()
 }
 
 // Import session operations

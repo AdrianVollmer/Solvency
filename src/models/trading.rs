@@ -245,6 +245,8 @@ pub struct PositionWithMarketData {
     pub gain_loss_cents: Option<i64>,
     pub gain_loss_percent: Option<f64>,
     pub price_date: Option<String>,
+    /// True if the price is approximated from the last BUY/SELL activity
+    pub price_is_approximated: bool,
 }
 
 impl PositionWithMarketData {
@@ -256,6 +258,7 @@ impl PositionWithMarketData {
             gain_loss_cents: None,
             gain_loss_percent: None,
             price_date: None,
+            price_is_approximated: false,
         }
     }
 
@@ -275,6 +278,32 @@ impl PositionWithMarketData {
             gain_loss_cents: Some(gain_loss),
             gain_loss_percent: Some(gain_loss_pct),
             price_date: Some(price_date),
+            price_is_approximated: false,
+        }
+    }
+
+    /// Create with approximated price from last BUY/SELL activity
+    pub fn with_approximated_price(
+        position: Position,
+        price_cents: i64,
+        price_date: String,
+    ) -> Self {
+        let current_value = (position.quantity * price_cents as f64).round() as i64;
+        let gain_loss = current_value - position.total_cost_cents;
+        let gain_loss_pct = if position.total_cost_cents != 0 {
+            (gain_loss as f64 / position.total_cost_cents as f64) * 100.0
+        } else {
+            0.0
+        };
+
+        Self {
+            position,
+            current_price_cents: Some(price_cents),
+            current_value_cents: Some(current_value),
+            gain_loss_cents: Some(gain_loss),
+            gain_loss_percent: Some(gain_loss_pct),
+            price_date: Some(price_date),
+            price_is_approximated: true,
         }
     }
 
