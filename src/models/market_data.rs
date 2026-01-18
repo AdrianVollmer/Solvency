@@ -48,6 +48,8 @@ pub struct SymbolDataCoverage {
     pub data_points: i64,
     pub missing_days: i64,
     pub has_current_price: bool,
+    /// Whether the position is closed (net quantity = 0)
+    pub is_closed: bool,
 }
 
 impl SymbolDataCoverage {

@@ -105,22 +105,22 @@ pub fn get_prices_for_symbol(conn: &Connection, symbol: &str) -> rusqlite::Resul
     Ok(data)
 }
 
-/// Get data coverage summary for all symbols that have positions
+/// Get data coverage summary for all symbols that have positions (both open and closed)
 pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolDataCoverage>> {
-    // Get symbols with their activity date ranges (only non-cash symbols with current positions > 0)
+    // Get symbols with their activity date ranges (all non-cash symbols)
     let mut stmt = conn.prepare(
         "WITH position_symbols AS (
             SELECT symbol, currency,
                    MIN(date) as first_activity_date,
-                   MAX(date) as last_activity_date
+                   MAX(date) as last_activity_date,
+                   SUM(CASE
+                       WHEN activity_type IN ('BUY', 'ADD_HOLDING', 'TRANSFER_IN') THEN COALESCE(quantity, 0)
+                       WHEN activity_type IN ('SELL', 'REMOVE_HOLDING', 'TRANSFER_OUT') THEN -COALESCE(quantity, 0)
+                       ELSE 0
+                   END) as net_quantity
             FROM trading_activities
             WHERE symbol NOT LIKE '$CASH-%'
             GROUP BY symbol
-            HAVING SUM(CASE
-                WHEN activity_type IN ('BUY', 'ADD_HOLDING', 'TRANSFER_IN') THEN COALESCE(quantity, 0)
-                WHEN activity_type IN ('SELL', 'REMOVE_HOLDING', 'TRANSFER_OUT') THEN -COALESCE(quantity, 0)
-                ELSE 0
-            END) > 0
         ),
         market_data_summary AS (
             SELECT symbol,
@@ -137,10 +137,11 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
             ps.last_activity_date,
             mds.first_data_date,
             mds.last_data_date,
-            COALESCE(mds.data_points, 0) as data_points
+            COALESCE(mds.data_points, 0) as data_points,
+            ps.net_quantity
         FROM position_symbols ps
         LEFT JOIN market_data_summary mds ON ps.symbol = mds.symbol
-        ORDER BY ps.symbol",
+        ORDER BY ps.net_quantity > 0 DESC, ps.symbol",
     )?;
 
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
@@ -148,16 +149,28 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
     let coverage = stmt
         .query_map([], |row| {
             let last_data_date: Option<String> = row.get(5)?;
+            let last_activity_date: String = row.get(3)?;
+            let net_quantity: f64 = row.get(7)?;
+            let is_closed = net_quantity <= 0.0;
+
+            // For closed positions, check if data covers up to last_activity_date
+            // For open positions, check if data covers up to today
+            let target_date = if is_closed {
+                &last_activity_date
+            } else {
+                &today
+            };
+
             let has_current_price = last_data_date
                 .as_ref()
                 .map(|d| {
-                    d >= &today || {
+                    d >= target_date || {
                         // Check if within acceptable gap (for weekends/holidays)
-                        if let (Ok(last), Ok(now)) = (
+                        if let (Ok(last), Ok(target)) = (
                             chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d"),
-                            chrono::NaiveDate::parse_from_str(&today, "%Y-%m-%d"),
+                            chrono::NaiveDate::parse_from_str(target_date, "%Y-%m-%d"),
                         ) {
-                            (now - last).num_days() <= MAX_GAP_DAYS
+                            (target - last).num_days() <= MAX_GAP_DAYS
                         } else {
                             false
                         }
@@ -170,9 +183,9 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
             let data_points: i64 = row.get(6)?;
             let missing_days =
                 if let Ok(first) = chrono::NaiveDate::parse_from_str(&first_activity, "%Y-%m-%d") {
-                    if let Ok(now) = chrono::NaiveDate::parse_from_str(&today, "%Y-%m-%d") {
+                    if let Ok(end) = chrono::NaiveDate::parse_from_str(target_date, "%Y-%m-%d") {
                         // Approximate trading days (weekdays only, ~252 per year)
-                        let total_days = (now - first).num_days();
+                        let total_days = (end - first).num_days();
                         let approx_trading_days = (total_days as f64 * 5.0 / 7.0) as i64;
                         (approx_trading_days - data_points).max(0)
                     } else {
@@ -186,12 +199,13 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
                 symbol: row.get(0)?,
                 currency: row.get(1)?,
                 first_activity_date: row.get(2)?,
-                last_activity_date: row.get(3)?,
+                last_activity_date,
                 first_data_date: row.get(4)?,
                 last_data_date,
                 data_points,
                 missing_days,
                 has_current_price,
+                is_closed,
             })
         })?
         .filter_map(|r| r.ok())

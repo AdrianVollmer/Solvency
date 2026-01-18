@@ -80,7 +80,12 @@
                     {% for item in coverage %}
                     <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="/trading/market-data/{{ item.symbol }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">{{ item.symbol }}</a>
+                            <div class="flex items-center gap-2">
+                                <a href="/trading/market-data/{{ item.symbol }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">{{ item.symbol }}</a>
+                                {% if item.is_closed %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400">Closed</span>
+                                {% endif %}
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ item.first_activity_date }} to {{ item.last_activity_date }}</span>
