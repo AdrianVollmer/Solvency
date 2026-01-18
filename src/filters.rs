@@ -34,6 +34,25 @@ pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String 
     format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
 }
 
+/// Format a percentage value with locale-aware decimal separator.
+/// Shows sign (+/-) and two decimal places.
+/// Example: 12.345 -> "+12.35%" (en-US) or "+12,35%" (de-DE)
+pub fn format_percent(value: f64, locale: &str) -> String {
+    let (_, decimal_sep) = locale_separators(locale);
+    let sign = if value > 0.0 {
+        "+"
+    } else if value < 0.0 {
+        "-"
+    } else {
+        ""
+    };
+    let abs_value = value.abs();
+    let whole = abs_value.trunc() as i64;
+    let fractional = ((abs_value.fract() * 100.0).round() as i64).abs();
+
+    format!("{}{}{}{}%", sign, whole, decimal_sep, format_args!("{:02}", fractional))
+}
+
 fn format_money_impl(cents: i64, currency: &str, locale: &str) -> (String, &'static str) {
     // Determine color class based on amount
     let color_class = if cents > 0 {
@@ -202,5 +221,29 @@ mod tests {
     fn test_neutral_thousands_separator_de() {
         let result = format_money_neutral(123456789, "EUR", "de-DE");
         assert_eq!(result, "\u{20ac}1.234.567,89");
+    }
+
+    #[test]
+    fn test_percent_positive_en() {
+        let result = format_percent(12.34, "en-US");
+        assert_eq!(result, "+12.34%");
+    }
+
+    #[test]
+    fn test_percent_negative_en() {
+        let result = format_percent(-5.67, "en-US");
+        assert_eq!(result, "-5.67%");
+    }
+
+    #[test]
+    fn test_percent_zero() {
+        let result = format_percent(0.0, "en-US");
+        assert_eq!(result, "0.00%");
+    }
+
+    #[test]
+    fn test_percent_de_locale() {
+        let result = format_percent(12.34, "de-DE");
+        assert_eq!(result, "+12,34%");
     }
 }

@@ -61,9 +61,9 @@
             {% when Some with (cents) %}
             <div>
                 <p class="text-xl font-semibold {{ pos.gain_loss_color() }}">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
-                {% match pos.gain_loss_percent_display() %}
+                {% match pos.gain_loss_percent %}
                 {% when Some with (pct) %}
-                <p class="text-sm {{ pos.gain_loss_color() }}">{{ pct }}</p>
+                <p class="text-sm {{ pos.gain_loss_color() }}">{{ settings.format_percent(pct) }}</p>
                 {% when None %}{% endmatch %}
             </div>
             {% when None %}

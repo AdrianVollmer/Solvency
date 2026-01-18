@@ -278,7 +278,7 @@ pub async fn detail(
 
     // Calculate XIRR
     let xirr = calculate_position_xirr(&activities, &position, &latest_price);
-    let xirr_formatted = xirr.map(|x| format!("{:+.2}%", x * 100.0));
+    let xirr_formatted = xirr.map(|x| filters::format_percent(x * 100.0, &app_settings.locale));
 
     // Calculate total fees, taxes, dividends, and realized gain/loss
     let (total_fees_cents, total_taxes_cents, total_dividends_cents, realized_gain_loss_cents) =

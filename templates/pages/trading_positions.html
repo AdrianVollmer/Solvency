@@ -121,9 +121,9 @@
                             {% when Some with (cents) %}
                             <div class="flex flex-col items-end">
                                 <span class="text-sm font-medium {{ pos.gain_loss_color() }}">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</span>
-                                {% match pos.gain_loss_percent_display() %}
+                                {% match pos.gain_loss_percent %}
                                 {% when Some with (pct) %}
-                                <span class="text-xs {{ pos.gain_loss_color() }}">{{ pct }}</span>
+                                <span class="text-xs {{ pos.gain_loss_color() }}">{{ settings.format_percent(pct) }}</span>
                                 {% when None %}{% endmatch %}
                             </div>
                             {% when None %}

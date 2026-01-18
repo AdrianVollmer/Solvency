@@ -89,4 +89,10 @@ impl Settings {
     pub fn format_money_neutral_with_currency(&self, cents: &i64, currency: &str) -> String {
         filters::format_money_neutral(*cents, currency, &self.locale)
     }
+
+    /// Format a percentage value with locale-aware decimal separator.
+    /// Shows sign (+/-) and two decimal places.
+    pub fn format_percent(&self, value: &f64) -> String {
+        filters::format_percent(*value, &self.locale)
+    }
 }
