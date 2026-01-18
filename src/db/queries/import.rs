@@ -110,7 +110,11 @@ pub fn cleanup_old_sessions(conn: &Connection, hours: i64) -> AppResult<usize> {
         params![format!("-{} hours", hours)],
     )?;
     if deleted > 0 {
-        info!(count = deleted, older_than_hours = hours, "Cleaned up old import sessions");
+        info!(
+            count = deleted,
+            older_than_hours = hours,
+            "Cleaned up old import sessions"
+        );
     }
     Ok(deleted)
 }

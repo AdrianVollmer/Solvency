@@ -171,7 +171,10 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
     }
 
     if !errors.is_empty() {
-        warn!(error_count = errors.len(), "CSV parsing completed with errors");
+        warn!(
+            error_count = errors.len(),
+            "CSV parsing completed with errors"
+        );
     }
     debug!(
         row_count = expenses.len(),

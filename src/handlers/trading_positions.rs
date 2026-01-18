@@ -12,7 +12,6 @@ use crate::models::trading::{
     ClosedPosition, PositionWithMarketData, TradingActivity, TradingActivityType,
 };
 use crate::models::{MarketData, Position, Settings};
-use crate::services::market_data as market_data_service;
 use crate::services::xirr::{calculate_xirr, CashFlow};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -244,13 +243,13 @@ pub async fn detail(
 
     let app_settings = settings::get_settings(&conn)?;
 
-    // Fetch symbol metadata from Yahoo Finance
-    let symbol_info = match market_data_service::fetch_symbol_metadata(&symbol).await {
+    // Get cached symbol metadata from DB
+    let symbol_info = match market_data::get_symbol_metadata(&conn, &symbol) {
         Ok(Some(meta)) => SymbolInfo {
             short_name: meta.short_name,
             long_name: meta.long_name,
-            exchange: Some(meta.exchange),
-            quote_type: Some(meta.quote_type),
+            exchange: meta.exchange,
+            quote_type: meta.quote_type,
         },
         _ => SymbolInfo::default(),
     };

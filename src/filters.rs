@@ -50,7 +50,13 @@ pub fn format_percent(value: f64, locale: &str) -> String {
     let whole = abs_value.trunc() as i64;
     let fractional = ((abs_value.fract() * 100.0).round() as i64).abs();
 
-    format!("{}{}{}{}%", sign, whole, decimal_sep, format_args!("{:02}", fractional))
+    format!(
+        "{}{}{}{}%",
+        sign,
+        whole,
+        decimal_sep,
+        format_args!("{:02}", fractional)
+    )
 }
 
 fn format_money_impl(cents: i64, currency: &str, locale: &str) -> (String, &'static str) {

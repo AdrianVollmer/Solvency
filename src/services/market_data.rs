@@ -195,7 +195,10 @@ fn parse_date(date_str: &str) -> AppResult<Date> {
 pub async fn fetch_quotes_for_symbols(
     symbols: &[(&str, &str, &str)], // (symbol, start_date, end_date)
 ) -> Vec<(String, AppResult<Vec<NewMarketData>>)> {
-    info!(symbol_count = symbols.len(), "Fetching quotes for multiple symbols");
+    info!(
+        symbol_count = symbols.len(),
+        "Fetching quotes for multiple symbols"
+    );
     let mut results = Vec::new();
 
     for (i, (symbol, start_date, end_date)) in symbols.iter().enumerate() {
@@ -215,7 +218,10 @@ pub async fn fetch_quotes_for_symbols(
 pub async fn fetch_latest_quotes_for_symbols(
     symbols: &[&str],
 ) -> Vec<(String, AppResult<Option<NewMarketData>>)> {
-    info!(symbol_count = symbols.len(), "Fetching latest quotes for multiple symbols");
+    info!(
+        symbol_count = symbols.len(),
+        "Fetching latest quotes for multiple symbols"
+    );
     let mut results = Vec::new();
 
     for (i, symbol) in symbols.iter().enumerate() {

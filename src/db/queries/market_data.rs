@@ -1,4 +1,4 @@
-use crate::models::market_data::{MarketData, NewMarketData, SymbolDataCoverage};
+use crate::models::market_data::{MarketData, NewMarketData, SymbolDataCoverage, SymbolMetadata};
 use rusqlite::{params, Connection, OptionalExtension};
 
 /// Maximum gap in days that's considered acceptable (weekends + holidays)
@@ -290,4 +290,50 @@ pub fn get_symbols_with_data(conn: &Connection) -> rusqlite::Result<Vec<String>>
         .collect();
 
     Ok(symbols)
+}
+
+/// Get cached symbol metadata
+pub fn get_symbol_metadata(
+    conn: &Connection,
+    symbol: &str,
+) -> rusqlite::Result<Option<SymbolMetadata>> {
+    conn.query_row(
+        "SELECT symbol, short_name, long_name, exchange, quote_type
+         FROM symbol_metadata
+         WHERE symbol = ?1",
+        [symbol],
+        |row| {
+            Ok(SymbolMetadata {
+                symbol: row.get(0)?,
+                short_name: row.get(1)?,
+                long_name: row.get(2)?,
+                exchange: row.get(3)?,
+                quote_type: row.get(4)?,
+            })
+        },
+    )
+    .optional()
+}
+
+/// Insert or update symbol metadata
+pub fn upsert_symbol_metadata(
+    conn: &Connection,
+    symbol: &str,
+    short_name: Option<&str>,
+    long_name: Option<&str>,
+    exchange: Option<&str>,
+    quote_type: Option<&str>,
+) -> rusqlite::Result<()> {
+    conn.execute(
+        "INSERT INTO symbol_metadata (symbol, short_name, long_name, exchange, quote_type)
+         VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(symbol) DO UPDATE SET
+         short_name = excluded.short_name,
+         long_name = excluded.long_name,
+         exchange = excluded.exchange,
+         quote_type = excluded.quote_type,
+         fetched_at = datetime('now')",
+        params![symbol, short_name, long_name, exchange, quote_type],
+    )?;
+    Ok(())
 }

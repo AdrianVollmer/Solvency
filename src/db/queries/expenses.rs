@@ -220,7 +220,11 @@ pub fn create_expense(conn: &Connection, expense: &NewExpense) -> rusqlite::Resu
         )?;
     }
 
-    debug!(expense_id = id, amount_cents = expense.amount_cents, "Created expense");
+    debug!(
+        expense_id = id,
+        amount_cents = expense.amount_cents,
+        "Created expense"
+    );
     Ok(id)
 }
 

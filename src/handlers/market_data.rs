@@ -120,6 +120,26 @@ pub async fn refresh(State(state): State<AppState>) -> AppResult<Redirect> {
                         } else {
                             tracing::info!("Fetched {} data points for {}", data.len(), symbol);
                         }
+
+                        // Also fetch and store symbol metadata if not already cached
+                        if market_data::get_symbol_metadata(&conn, &symbol)
+                            .ok()
+                            .flatten()
+                            .is_none()
+                        {
+                            if let Ok(Some(meta)) =
+                                market_data_service::fetch_symbol_metadata(&symbol).await
+                            {
+                                let _ = market_data::upsert_symbol_metadata(
+                                    &conn,
+                                    &symbol,
+                                    meta.short_name.as_deref(),
+                                    meta.long_name.as_deref(),
+                                    Some(&meta.exchange),
+                                    Some(&meta.quote_type),
+                                );
+                            }
+                        }
                     }
                 }
                 Err(e) => {
@@ -212,6 +232,26 @@ pub async fn refresh_symbol(
                         } else {
                             tracing::info!("Fetched {} data points for {}", data.len(), sym);
                         }
+
+                        // Also fetch and store symbol metadata if not already cached
+                        if market_data::get_symbol_metadata(&conn, &sym)
+                            .ok()
+                            .flatten()
+                            .is_none()
+                        {
+                            if let Ok(Some(meta)) =
+                                market_data_service::fetch_symbol_metadata(&sym).await
+                            {
+                                let _ = market_data::upsert_symbol_metadata(
+                                    &conn,
+                                    &sym,
+                                    meta.short_name.as_deref(),
+                                    meta.long_name.as_deref(),
+                                    Some(&meta.exchange),
+                                    Some(&meta.quote_type),
+                                );
+                            }
+                        }
                     }
                 }
                 Err(e) => {
@@ -298,13 +338,13 @@ pub async fn symbol_detail(
 
     let app_settings = settings::get_settings(&conn)?;
 
-    // Fetch symbol metadata from Yahoo Finance
-    let symbol_info = match market_data_service::fetch_symbol_metadata(&symbol).await {
+    // Get cached symbol metadata from DB
+    let symbol_info = match market_data::get_symbol_metadata(&conn, &symbol) {
         Ok(Some(meta)) => SymbolInfo {
             short_name: meta.short_name,
             long_name: meta.long_name,
-            exchange: Some(meta.exchange),
-            quote_type: Some(meta.quote_type),
+            exchange: meta.exchange,
+            quote_type: meta.quote_type,
         },
         _ => SymbolInfo::default(),
     };

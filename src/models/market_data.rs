@@ -90,3 +90,19 @@ fn currency_symbol(currency: &str) -> &'static str {
         _ => "$",
     }
 }
+
+/// Cached symbol metadata from Yahoo Finance
+#[derive(Debug, Clone, Default)]
+pub struct SymbolMetadata {
+    pub symbol: String,
+    pub short_name: Option<String>,
+    pub long_name: Option<String>,
+    pub exchange: Option<String>,
+    pub quote_type: Option<String>,
+}
+
+impl SymbolMetadata {
+    pub fn display_name(&self) -> Option<&String> {
+        self.long_name.as_ref().or(self.short_name.as_ref())
+    }
+}
