@@ -51,6 +51,17 @@ pub struct ExpenseFormTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "pages/expense_new.html")]
+pub struct ExpenseNewTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub categories: Vec<CategoryWithPath>,
+    pub tags: Vec<Tag>,
+}
+
+#[derive(Template)]
 #[template(path = "components/expense_row.html")]
 pub struct ExpenseRowTemplate {
     pub settings: Settings,
@@ -291,14 +302,17 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
+    let app_settings = settings::get_settings(&conn)?;
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
 
-    let template = ExpenseFormTemplate {
-        expense: None,
+    let template = ExpenseNewTemplate {
+        title: "Add Expense".into(),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
+        version: VERSION,
         categories: cats,
         tags: tag_list,
-        is_edit: false,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -334,23 +348,13 @@ pub async fn edit_form(
 pub async fn create(
     State(state): State<AppState>,
     Form(form): Form<ExpenseFormData>,
-) -> AppResult<Html<String>> {
+) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
     let new_expense = form.to_new_expense()?;
-    let id = expenses::create_expense(&conn, &new_expense)?;
+    expenses::create_expense(&conn, &new_expense)?;
 
-    let expense = expenses::get_expense(&conn, id)?
-        .ok_or_else(|| AppError::Internal("Failed to retrieve created expense".into()))?;
-
-    let app_settings = settings::get_settings(&conn)?;
-
-    let template = ExpenseRowTemplate {
-        settings: app_settings,
-        expense,
-    };
-
-    Ok(Html(template.render().unwrap()))
+    Ok(Redirect::to("/expenses"))
 }
 
 pub async fn update(

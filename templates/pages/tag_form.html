@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center gap-4">
+        <a href="/tags" class="p-2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Back to tags">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="page-title">Add Tag</h1>
+            <p class="mt-1 text-muted">Create a new tag to label expenses</p>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-lg">
+        <form action="/tags/create" method="POST" class="space-y-4">
+            <div>
+                <label for="tag-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
+                <input type="text" id="tag-name" name="name" required
+                    class="input w-full"
+                    placeholder="e.g., Vacation, Business">
+            </div>
+
+            <div>
+                <label for="tag-color" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Color</label>
+                <input type="color" id="tag-color" name="color" value="#6b7280"
+                    class="h-10 w-20 rounded border border-neutral-200 dark:border-neutral-700 cursor-pointer">
+            </div>
+
+            <div>
+                <label for="tag-style" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Style</label>
+                <select id="tag-style" name="style" class="input w-full">
+                    <option value="solid">Solid</option>
+                    <option value="outline">Outline</option>
+                    <option value="striped">Striped</option>
+                </select>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <a href="/tags" class="btn btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary flex-1">
+                    Add Tag
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

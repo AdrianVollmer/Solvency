@@ -18,17 +18,12 @@
                 </svg>
                 Delete All
             </button>
-            <button
-                hx-get="/trading/activities/new"
-                hx-target="#activity-modal"
-                hx-swap="innerHTML"
-                onclick="document.getElementById('activity-modal').classList.remove('hidden')"
-                class="btn btn-primary inline-flex items-center gap-2">
+            <a href="/trading/activities/new" class="btn btn-primary inline-flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Add Activity
-            </button>
+            </a>
         </div>
     </div>
 
@@ -118,15 +113,6 @@
 
     <div id="activity-table">
         {% include "partials/trading_activity_table.html" %}
-    </div>
-</div>
-
-<!-- Modal -->
-<div id="activity-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="flex min-h-screen items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('activity-modal').classList.add('hidden')" aria-hidden="true"></div>
-        <div class="relative bg-white dark:bg-neutral-800 rounded-xl shadow-xl max-w-lg w-full p-6">
-        </div>
     </div>
 </div>
 {% endblock %}

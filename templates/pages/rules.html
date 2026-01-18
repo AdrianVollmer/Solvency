@@ -21,57 +21,13 @@
                 Import
             </button>
             <input type="file" id="import-file" accept=".json" class="hidden" onchange="importRules(this.files[0])" aria-label="Import rules from JSON file">
+            <a href="/rules/new" class="btn btn-primary flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Rule
+            </a>
         </div>
-    </div>
-
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
-        <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-            Rules automatically assign categories or tags to expenses based on description patterns.
-            Use regular expressions for flexible matching.
-        </p>
-        <form hx-post="/rules/create" hx-target="#rules-table tbody" hx-swap="beforeend" hx-on::after-request="this.reset()" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                    <label for="rule-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
-                    <input type="text" id="rule-name" name="name" required placeholder="e.g. Grocery stores"
-                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
-                </div>
-                <div>
-                    <label for="rule-pattern" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Pattern (regex)</label>
-                    <input type="text" id="rule-pattern" name="pattern" required placeholder="e.g. walmart|costco|kroger"
-                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 font-mono text-sm">
-                </div>
-                <div>
-                    <label for="action-type-select" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Action</label>
-                    <select name="action_type" id="action-type-select"
-                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500"
-                        onchange="toggleActionValue(this)">
-                        <option value="assign_category">Assign Category</option>
-                        <option value="assign_tag">Assign Tag</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="action-value-category" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Value</label>
-                    <select name="action_value" id="action-value-category"
-                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
-                        {% for cat in categories %}
-                        <option value="{{ cat.category.id }}">{{ cat.path }}</option>
-                        {% endfor %}
-                    </select>
-                    <select name="action_value" id="action-value-tag"
-                        class="hidden w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
-                        {% for tag in tags %}
-                        <option value="{{ tag.id }}">{{ tag.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div>
-                <button type="submit" class="btn btn-primary">
-                    Add Rule
-                </button>
-            </div>
-        </form>
     </div>
 
     <div id="rules-table" class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
@@ -91,7 +47,7 @@
                 {% else %}
                 <tr id="no-rules-row">
                     <td colspan="4" class="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400">
-                        No rules yet. Create one above to automatically categorize your expenses.
+                        No rules yet. Click "Add Rule" to automatically categorize your expenses.
                     </td>
                 </tr>
                 {% endfor %}
@@ -101,23 +57,6 @@
 </div>
 
 <script>
-function toggleActionValue(select) {
-    const categorySelect = document.getElementById('action-value-category');
-    const tagSelect = document.getElementById('action-value-tag');
-
-    if (select.value === 'assign_category') {
-        categorySelect.classList.remove('hidden');
-        categorySelect.name = 'action_value';
-        tagSelect.classList.add('hidden');
-        tagSelect.name = '';
-    } else {
-        categorySelect.classList.add('hidden');
-        categorySelect.name = '';
-        tagSelect.classList.remove('hidden');
-        tagSelect.name = 'action_value';
-    }
-}
-
 async function importRules(file) {
     if (!file) return;
     try {

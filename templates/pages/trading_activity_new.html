@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-2xl mx-auto">
+    <div class="flex items-center gap-4">
+        <a href="/trading/activities" class="p-2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Back to activities">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="page-title">Add Activity</h1>
+            <p class="mt-1 text-muted">Record a new trading activity</p>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        <form method="POST" action="/trading/activities/create" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="new-date" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Date</label>
+                    <input type="date" id="new-date" name="date" required
+                        class="input w-full">
+                </div>
+                <div>
+                    <label for="new-symbol" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Symbol</label>
+                    <input type="text" id="new-symbol" name="symbol" required list="symbol-list" placeholder="e.g., AAPL"
+                        class="input w-full font-mono">
+                    <datalist id="symbol-list">
+                        {% for sym in symbols %}
+                        <option value="{{ sym }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="new-activity-type" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Activity Type</label>
+                    <select id="new-activity-type" name="activity_type" required class="input w-full">
+                        {% for at in activity_types %}
+                        <option value="{{ at.as_str() }}">{{ at.label() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="new-quantity" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Quantity</label>
+                    <input type="number" id="new-quantity" name="quantity" step="0.0001"
+                        class="input w-full">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="new-unit-price" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Unit Price</label>
+                    <input type="number" id="new-unit-price" name="unit_price" step="0.01"
+                        class="input w-full">
+                </div>
+                <div>
+                    <label for="new-currency" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Currency</label>
+                    <select id="new-currency" name="currency" class="input w-full">
+                        <option value="USD" selected>USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="JPY">JPY</option>
+                        <option value="CAD">CAD</option>
+                        <option value="AUD">AUD</option>
+                        <option value="CHF">CHF</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label for="new-fee" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Fee (optional)</label>
+                <input type="number" id="new-fee" name="fee" step="0.01"
+                    class="input w-full">
+            </div>
+
+            <div>
+                <label for="new-notes" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Notes (optional)</label>
+                <textarea id="new-notes" name="notes" rows="2"
+                    class="input w-full"></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <a href="/trading/activities" class="btn btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary flex-1">
+                    Add Activity
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -44,6 +44,7 @@ pub fn routes() -> Router<AppState> {
         .route("/categories/:id", delete(categories::delete))
         // Tag management
         .route("/tags", get(tags::index))
+        .route("/tags/new", get(tags::new_form))
         .route("/tags/create", post(tags::create))
         .route("/tags/export", get(tags::export))
         .route("/tags/import", post(tags::import))
@@ -51,6 +52,7 @@ pub fn routes() -> Router<AppState> {
         .route("/tags/:id", delete(tags::delete))
         // Rule management
         .route("/rules", get(rules::index))
+        .route("/rules/new", get(rules::new_form))
         .route("/rules/create", post(rules::create))
         .route("/rules/export", get(rules::export))
         .route("/rules/import", post(rules::import))

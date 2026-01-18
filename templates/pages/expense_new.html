@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-2xl mx-auto">
+    <div class="flex items-center gap-4">
+        <a href="/expenses" class="p-2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Back to expenses">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="page-title">Add Expense</h1>
+            <p class="mt-1 text-muted">Record a new expense</p>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        <form method="POST" action="/expenses/create" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="new-date" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Date</label>
+                    <input type="date" id="new-date" name="date" required
+                        class="input w-full">
+                </div>
+                <div>
+                    <label for="new-amount" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Amount</label>
+                    <input type="number" id="new-amount" name="amount" step="0.01" required
+                        class="input w-full">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="new-currency" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Currency</label>
+                    <select id="new-currency" name="currency" class="input w-full">
+                        <option value="USD" selected>USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="JPY">JPY</option>
+                        <option value="CAD">CAD</option>
+                        <option value="AUD">AUD</option>
+                        <option value="CHF">CHF</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="new-category" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Category</label>
+                    <select id="new-category" name="category_id" class="input w-full">
+                        <option value="">No Category</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.category.id }}">{{ cat.display_name() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label for="new-description" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description</label>
+                <input type="text" id="new-description" name="description" required
+                    class="input w-full">
+            </div>
+
+            <div>
+                <label for="new-notes" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Notes (optional)</label>
+                <textarea id="new-notes" name="notes" rows="2"
+                    class="input w-full"></textarea>
+            </div>
+
+            <fieldset>
+                <legend class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Tags</legend>
+                <div class="flex flex-wrap gap-2">
+                    {% for tag in tags %}
+                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" name="tag_ids" value="{{ tag.id }}"
+                            class="w-4 h-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500">
+                        <span class="text-sm px-2 py-0.5 rounded" style="background-color: {{ tag.color }}20; color: {{ tag.color }};">{{ tag.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <div class="flex gap-3 pt-4">
+                <a href="/expenses" class="btn btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary flex-1">
+                    Add Expense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

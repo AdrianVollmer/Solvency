@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::extract::{Path, Query, State};
 use axum::http::header;
-use axum::response::{Html, IntoResponse, Json};
+use axum::response::{Html, IntoResponse, Json, Redirect};
 use axum::Form;
 use serde::{Deserialize, Serialize};
 
@@ -19,6 +19,15 @@ pub struct TagsTemplate {
     pub manifest: JsManifest,
     pub version: &'static str,
     pub tags: Vec<Tag>,
+}
+
+#[derive(Template)]
+#[template(path = "pages/tag_form.html")]
+pub struct TagFormTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+    pub version: &'static str,
 }
 
 #[derive(Template)]
@@ -57,6 +66,20 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     Ok(Html(template.render().unwrap()))
 }
 
+pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = settings::get_settings(&conn)?;
+
+    let template = TagFormTemplate {
+        title: "Add Tag".into(),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+    };
+
+    Ok(Html(template.render().unwrap()))
+}
+
 pub async fn search(
     State(state): State<AppState>,
     Query(params): Query<TagSearchParams>,
@@ -76,7 +99,7 @@ pub async fn search(
 pub async fn create(
     State(state): State<AppState>,
     Form(form): Form<TagFormData>,
-) -> AppResult<Html<String>> {
+) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
     let new_tag = NewTag {
@@ -85,14 +108,9 @@ pub async fn create(
         style: form.style.map(|s| TagStyle::parse(&s)).unwrap_or_default(),
     };
 
-    let id = tags::create_tag(&conn, &new_tag)?;
+    tags::create_tag(&conn, &new_tag)?;
 
-    let tag = tags::get_tag(&conn, id)?
-        .ok_or_else(|| AppError::Internal("Failed to retrieve created tag".into()))?;
-
-    let template = TagBadgeTemplate { tag };
-
-    Ok(Html(template.render().unwrap()))
+    Ok(Redirect::to("/tags"))
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {

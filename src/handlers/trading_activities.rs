@@ -51,6 +51,17 @@ pub struct TradingActivityFormTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "pages/trading_activity_new.html")]
+pub struct TradingActivityNewTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub symbols: Vec<String>,
+    pub activity_types: &'static [TradingActivityType],
+}
+
+#[derive(Template)]
 #[template(path = "components/trading_activity_row.html")]
 pub struct TradingActivityRowTemplate {
     pub settings: Settings,
@@ -312,13 +323,16 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
+    let app_settings = settings::get_settings(&conn)?;
     let symbols = trading::get_unique_symbols(&conn)?;
 
-    let template = TradingActivityFormTemplate {
-        activity: None,
+    let template = TradingActivityNewTemplate {
+        title: "Add Activity".into(),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
+        version: VERSION,
         symbols,
         activity_types: TradingActivityType::all(),
-        is_edit: false,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -353,23 +367,13 @@ pub async fn edit_form(
 pub async fn create(
     State(state): State<AppState>,
     Form(form): Form<TradingActivityFormData>,
-) -> AppResult<Html<String>> {
+) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
     let new_activity = form.to_new_activity()?;
-    let id = trading::create_activity(&conn, &new_activity)?;
+    trading::create_activity(&conn, &new_activity)?;
 
-    let activity = trading::get_activity(&conn, id)?
-        .ok_or_else(|| AppError::Internal("Failed to retrieve created activity".into()))?;
-
-    let app_settings = settings::get_settings(&conn)?;
-
-    let template = TradingActivityRowTemplate {
-        settings: app_settings,
-        activity,
-    };
-
-    Ok(Html(template.render().unwrap()))
+    Ok(Redirect::to("/trading/activities"))
 }
 
 pub async fn update(

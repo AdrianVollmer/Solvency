@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::extract::{Path, State};
 use axum::http::header;
-use axum::response::{Html, IntoResponse, Json};
+use axum::response::{Html, IntoResponse, Json, Redirect};
 use axum::Form;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -20,6 +20,17 @@ pub struct RulesTemplate {
     pub manifest: JsManifest,
     pub version: &'static str,
     pub rules: Vec<Rule>,
+    pub categories: Vec<CategoryWithPath>,
+    pub tags: Vec<Tag>,
+}
+
+#[derive(Template)]
+#[template(path = "pages/rule_form.html")]
+pub struct RuleFormTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub manifest: JsManifest,
+    pub version: &'static str,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
 }
@@ -62,10 +73,28 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     Ok(Html(template.render().unwrap()))
 }
 
+pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = settings::get_settings(&conn)?;
+    let category_list = categories::list_categories_with_path(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+
+    let template = RuleFormTemplate {
+        title: "Add Rule".into(),
+        settings: app_settings,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        categories: category_list,
+        tags: tag_list,
+    };
+
+    Ok(Html(template.render().unwrap()))
+}
+
 pub async fn create(
     State(state): State<AppState>,
     Form(form): Form<RuleFormData>,
-) -> AppResult<Html<String>> {
+) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
     let action_type = RuleActionType::parse(&form.action_type)
@@ -78,21 +107,9 @@ pub async fn create(
         action_value: form.action_value,
     };
 
-    let id = rules::create_rule(&conn, &new_rule)?;
+    rules::create_rule(&conn, &new_rule)?;
 
-    let rule = rules::get_rule(&conn, id)?
-        .ok_or_else(|| AppError::Internal("Failed to retrieve created rule".into()))?;
-
-    let category_list = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
-
-    let template = RuleRowTemplate {
-        rule,
-        categories: category_list,
-        tags: tag_list,
-    };
-
-    Ok(Html(template.render().unwrap()))
+    Ok(Redirect::to("/rules"))
 }
 
 pub async fn update(
