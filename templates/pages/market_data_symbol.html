@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js" defer></script>
+<script src="/static/js/dist/{{ manifest.get("price-chart.js") }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="/trading/market-data" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="page-title">{{ symbol }}</h1>
+            <p class="mt-1 text-muted">Price history and data coverage</p>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">Latest Price</p>
+            {% match latest_price %}
+            {% when Some with (price) %}
+            <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ price.close_price_formatted() }}</p>
+            <p class="text-xs text-neutral-400">{{ price.date }}</p>
+            {% when None %}
+            <p class="text-2xl font-semibold text-neutral-400">-</p>
+            {% endmatch %}
+        </div>
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">Data Points</p>
+            <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ data_points.len() }}</p>
+        </div>
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">Status</p>
+            {% match coverage %}
+            {% when Some with (cov) %}
+            <p class="text-2xl font-semibold {{ cov.status_color() }}">{{ cov.coverage_status() }}</p>
+            {% when None %}
+            <p class="text-2xl font-semibold text-neutral-400">Unknown</p>
+            {% endmatch %}
+        </div>
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">Missing Ranges</p>
+            <p class="text-2xl font-semibold {% if missing_ranges.is_empty() %}text-green-600 dark:text-green-400{% else %}text-yellow-600 dark:text-yellow-400{% endif %}">{{ missing_ranges.len() }}</p>
+        </div>
+    </div>
+
+    <!-- Price Chart -->
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Price History</h2>
+        {% if data_points.is_empty() %}
+        <div class="h-80 flex items-center justify-center text-neutral-500">
+            <div class="text-center">
+                <p class="mb-4">No price data available for this symbol.</p>
+                <form action="/trading/market-data/refresh/{{ symbol }}" method="POST">
+                    <button type="submit" class="btn btn-primary">Fetch Data</button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="h-80">
+            <canvas id="price-chart" data-symbol="{{ symbol }}" aria-label="Price chart for {{ symbol }}"></canvas>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Missing Data Ranges -->
+    {% if !missing_ranges.is_empty() %}
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Missing Data</h2>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">Date ranges where price data is not available</p>
+            </div>
+            <form action="/trading/market-data/refresh/{{ symbol }}" method="POST">
+                <button type="submit" class="btn btn-primary text-sm">Fetch Missing Data</button>
+            </form>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead class="bg-neutral-50 dark:bg-neutral-900">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">From</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">To</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Trading Days (approx)</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {% for range in missing_ranges %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm text-neutral-900 dark:text-white">{{ range.0 }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm text-neutral-900 dark:text-white">{{ range.1 }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <span class="text-sm text-neutral-600 dark:text-neutral-400">~</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Coverage Details -->
+    {% match coverage %}
+    {% when Some with (cov) %}
+    <div class="bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+        <h3 class="text-sm font-medium text-neutral-900 dark:text-white mb-2">Coverage Details</h3>
+        <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+                <dt class="text-neutral-500 dark:text-neutral-400">First Activity</dt>
+                <dd class="text-neutral-900 dark:text-white font-medium">{{ cov.first_activity_date }}</dd>
+            </div>
+            <div>
+                <dt class="text-neutral-500 dark:text-neutral-400">Last Activity</dt>
+                <dd class="text-neutral-900 dark:text-white font-medium">{{ cov.last_activity_date }}</dd>
+            </div>
+            <div>
+                <dt class="text-neutral-500 dark:text-neutral-400">First Data</dt>
+                <dd class="text-neutral-900 dark:text-white font-medium">
+                    {% match cov.first_data_date %}
+                    {% when Some with (d) %}{{ d }}{% when None %}-{% endmatch %}
+                </dd>
+            </div>
+            <div>
+                <dt class="text-neutral-500 dark:text-neutral-400">Last Data</dt>
+                <dd class="text-neutral-900 dark:text-white font-medium">
+                    {% match cov.last_data_date %}
+                    {% when Some with (d) %}{{ d }}{% when None %}-{% endmatch %}
+                </dd>
+            </div>
+        </dl>
+    </div>
+    {% when None %}
+    {% endmatch %}
+</div>
+{% endblock %}

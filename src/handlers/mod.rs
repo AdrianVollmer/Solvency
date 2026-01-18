@@ -106,6 +106,14 @@ pub fn routes() -> Router<AppState> {
             post(market_data::refresh_symbol),
         )
         .route("/trading/market-data/status", get(market_data::status))
+        .route(
+            "/trading/market-data/:symbol",
+            get(market_data::symbol_detail),
+        )
+        .route(
+            "/api/market-data/:symbol",
+            get(market_data::symbol_chart_data),
+        )
         // Trading Import
         .route("/trading/import", get(trading_import::index))
         .route("/trading/import/format", get(trading_import::format))

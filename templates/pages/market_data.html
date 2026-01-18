@@ -68,9 +68,9 @@
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                     {% for item in coverage %}
-                    <tr>
+                    <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ item.symbol }}</span>
+                            <a href="/trading/market-data/{{ item.symbol }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">{{ item.symbol }}</a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ item.first_activity_date }} to {{ item.last_activity_date }}</span>
