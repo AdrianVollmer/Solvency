@@ -208,15 +208,17 @@ pub async fn symbol_detail(
     let all_coverage = market_data::get_symbol_coverage(&conn)?;
     let coverage = all_coverage.into_iter().find(|c| c.symbol == symbol);
 
-    // Get all price data for this symbol (limit to most recent 100 for display)
+    // Get all price data for this symbol
     let all_data = market_data::get_prices_for_symbol(&conn, &symbol)?;
-    let data_points: Vec<MarketData> = all_data.into_iter().take(100).collect();
 
     // Get latest price
     let latest_price = market_data::get_latest_price(&conn, &symbol)?;
 
-    // Calculate missing date ranges
-    let missing_ranges = calculate_missing_ranges(&data_points, coverage.as_ref());
+    // Calculate missing date ranges using ALL data (before limiting for display)
+    let missing_ranges = calculate_missing_ranges(&all_data, coverage.as_ref());
+
+    // Limit data points for display (most recent 100)
+    let data_points: Vec<MarketData> = all_data.into_iter().take(100).collect();
 
     let display_name = symbol_info
         .display_name()
@@ -239,7 +241,11 @@ pub async fn symbol_detail(
     Ok(Html(template.render().unwrap()))
 }
 
-/// Calculate date ranges where data is missing
+/// Minimum number of consecutive missing weekdays to count as a significant gap
+/// Smaller gaps are likely market holidays (Christmas, New Year, etc.)
+const MIN_GAP_WEEKDAYS: i64 = 5;
+
+/// Calculate date ranges where data is missing (filtering out small gaps like holidays)
 fn calculate_missing_ranges(
     data_points: &[MarketData],
     coverage: Option<&SymbolDataCoverage>,
@@ -275,6 +281,7 @@ fn calculate_missing_ranges(
     if let (Ok(start_date), Ok(end_date)) = (start, end) {
         let mut current = start_date;
         let mut gap_start: Option<chrono::NaiveDate> = None;
+        let mut gap_weekday_count = 0i64;
 
         while current <= end_date {
             let date_str = current.format("%Y-%m-%d").to_string();
@@ -282,31 +289,41 @@ fn calculate_missing_ranges(
 
             if is_weekday {
                 if dates_set.contains(&date_str) {
-                    // We have data for this day
+                    // We have data for this day - end any current gap
                     if let Some(gs) = gap_start {
-                        // End of a gap
-                        let prev_day = current - chrono::Duration::days(1);
-                        missing.push((
-                            gs.format("%Y-%m-%d").to_string(),
-                            prev_day.format("%Y-%m-%d").to_string(),
-                        ));
+                        // Only add gap if it's significant (>= MIN_GAP_WEEKDAYS)
+                        if gap_weekday_count >= MIN_GAP_WEEKDAYS {
+                            let prev_day = current - chrono::Duration::days(1);
+                            missing.push((
+                                gs.format("%Y-%m-%d").to_string(),
+                                prev_day.format("%Y-%m-%d").to_string(),
+                            ));
+                        }
                         gap_start = None;
+                        gap_weekday_count = 0;
                     }
-                } else if gap_start.is_none() {
-                    // Start of a gap
-                    gap_start = Some(current);
+                } else {
+                    // Missing data for this weekday
+                    if gap_start.is_none() {
+                        gap_start = Some(current);
+                        gap_weekday_count = 1;
+                    } else {
+                        gap_weekday_count += 1;
+                    }
                 }
             }
 
             current += chrono::Duration::days(1);
         }
 
-        // If we ended in a gap
+        // If we ended in a significant gap
         if let Some(gs) = gap_start {
-            missing.push((
-                gs.format("%Y-%m-%d").to_string(),
-                end_date.format("%Y-%m-%d").to_string(),
-            ));
+            if gap_weekday_count >= MIN_GAP_WEEKDAYS {
+                missing.push((
+                    gs.format("%Y-%m-%d").to_string(),
+                    end_date.format("%Y-%m-%d").to_string(),
+                ));
+            }
         }
     }
 
