@@ -424,22 +424,26 @@ fn calculate_position_totals(activities: &[TradingActivity]) -> (i64, i64, i64, 
     let mut running_cost_cents: i64 = 0;
 
     for activity in activities {
-        // Sum all fees
-        total_fees_cents += activity.fee_cents;
+        // Fee activity type stores fee amount in unit_price_cents
+        if activity.activity_type == TradingActivityType::Fee {
+            if let Some(price) = activity.unit_price_cents {
+                total_fees_cents += price;
+            }
+        }
 
-        // Sum taxes (Tax activity type has value in quantity * unit_price)
+        // Sum taxes (Tax activity type stores total tax amount in unit_price_cents)
         if activity.activity_type == TradingActivityType::Tax {
-            if let (Some(qty), Some(price)) = (activity.quantity, activity.unit_price_cents) {
-                total_taxes_cents += (qty * price as f64).round() as i64;
+            if let Some(price) = activity.unit_price_cents {
+                total_taxes_cents += price;
             }
         }
 
         // Sum dividends and include in realized gain/loss
+        // Dividend activity type stores total dividend amount in unit_price_cents
         if activity.activity_type == TradingActivityType::Dividend {
-            if let (Some(qty), Some(price)) = (activity.quantity, activity.unit_price_cents) {
-                let dividend_amount = (qty * price as f64).round() as i64;
-                total_dividends_cents += dividend_amount;
-                realized_gain_loss_cents += dividend_amount;
+            if let Some(price) = activity.unit_price_cents {
+                total_dividends_cents += price;
+                realized_gain_loss_cents += price;
             }
         }
 
@@ -518,7 +522,12 @@ fn calculate_position_totals(activities: &[TradingActivity]) -> (i64, i64, i64, 
         }
     }
 
-    (total_fees_cents, total_taxes_cents, total_dividends_cents, realized_gain_loss_cents)
+    (
+        total_fees_cents,
+        total_taxes_cents,
+        total_dividends_cents,
+        realized_gain_loss_cents,
+    )
 }
 
 // Chart data API
