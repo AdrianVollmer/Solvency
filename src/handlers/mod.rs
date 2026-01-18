@@ -33,6 +33,7 @@ pub fn routes() -> Router<AppState> {
         .route("/expenses/:id/edit", get(expenses::edit_form))
         .route("/expenses/:id/update", post(expenses::update))
         .route("/expenses/:id/delete", delete(expenses::delete))
+        .route("/expenses/delete-all", delete(expenses::delete_all))
         // Category management
         .route("/categories", get(categories::index))
         .route("/categories/create", post(categories::create))
@@ -96,8 +97,17 @@ pub fn routes() -> Router<AppState> {
             "/trading/activities/:id/delete",
             delete(trading_activities::delete),
         )
+        .route(
+            "/trading/activities/delete-all",
+            delete(trading_activities::delete_all),
+        )
         // Trading Positions
         .route("/trading/positions", get(trading_positions::index))
+        .route("/trading/positions/:symbol", get(trading_positions::detail))
+        .route(
+            "/api/positions/:symbol/chart",
+            get(trading_positions::position_chart_data),
+        )
         // Trading Market Data
         .route("/trading/market-data", get(market_data::index))
         .route("/trading/market-data/refresh", post(market_data::refresh))

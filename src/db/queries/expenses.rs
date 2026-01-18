@@ -265,6 +265,12 @@ pub fn delete_expense(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     Ok(rows > 0)
 }
 
+pub fn delete_all_expenses(conn: &Connection) -> rusqlite::Result<usize> {
+    conn.execute("DELETE FROM expense_tags", [])?;
+    let rows = conn.execute("DELETE FROM expenses", [])?;
+    Ok(rows)
+}
+
 fn get_expense_tags(conn: &Connection, expense_id: i64) -> rusqlite::Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
         "SELECT t.id, t.name, t.color, t.style, t.created_at

@@ -392,3 +392,11 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 
     Ok(Html(String::new()))
 }
+
+pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+
+    trading::delete_all_activities(&conn)?;
+
+    Ok(Html(String::new()))
+}
