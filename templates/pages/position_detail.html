@@ -44,23 +44,23 @@
         </div>
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Total Cost</p>
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ pos.position.total_cost_formatted() }}</p>
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(pos.position.total_cost_cents, pos.position.currency) }}</p>
         </div>
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Value</p>
-            {% match pos.current_value_formatted() %}
-            {% when Some with (val) %}
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ val }}</p>
+            {% match pos.current_value_cents %}
+            {% when Some with (cents) %}
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
             {% when None %}
             <p class="text-xl font-semibold text-neutral-400">-</p>
             {% endmatch %}
         </div>
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Gain/Loss</p>
-            {% match pos.gain_loss_formatted() %}
-            {% when Some with (gl) %}
+            {% match pos.gain_loss_cents %}
+            {% when Some with (cents) %}
             <div>
-                <p class="text-xl font-semibold {{ pos.gain_loss_color() }}">{{ gl }}</p>
+                <p class="text-xl font-semibold {{ pos.gain_loss_color() }}">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
                 {% match pos.gain_loss_percent_display() %}
                 {% when Some with (pct) %}
                 <p class="text-sm {{ pos.gain_loss_color() }}">{{ pct }}</p>
@@ -83,18 +83,18 @@
         {% when Some with (pos) %}
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Avg Cost/Share</p>
-            {% match pos.position.average_cost_formatted() %}
-            {% when Some with (cost) %}
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ cost }}</p>
+            {% match pos.position.average_cost_cents() %}
+            {% when Some with (cents) %}
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
             {% when None %}
             <p class="text-xl font-semibold text-neutral-400">-</p>
             {% endmatch %}
         </div>
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Price</p>
-            {% match pos.current_price_formatted() %}
-            {% when Some with (price) %}
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ price }}</p>
+            {% match pos.current_price_cents %}
+            {% when Some with (cents) %}
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
             {% when None %}
             <p class="text-xl font-semibold text-neutral-400">-</p>
             {% endmatch %}
@@ -173,17 +173,17 @@
                             <span class="text-sm text-neutral-900 dark:text-white">{{ activity.quantity_display() }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            {% match activity.unit_price_formatted() %}
-                            {% when Some with (price) %}
-                            <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ price }}</span>
+                            {% match activity.unit_price_cents %}
+                            {% when Some with (cents) %}
+                            <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ settings.format_money_neutral_with_currency(cents, activity.currency) }}</span>
                             {% when None %}
                             <span class="text-sm text-neutral-400">-</span>
                             {% endmatch %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            {% match activity.total_value_formatted() %}
-                            {% when Some with (total) %}
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ total }}</span>
+                            {% match activity.total_value_cents() %}
+                            {% when Some with (cents) %}
+                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, activity.currency) }}</span>
                             {% when None %}
                             <span class="text-sm text-neutral-400">-</span>
                             {% endmatch %}

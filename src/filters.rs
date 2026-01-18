@@ -20,6 +20,20 @@ pub fn format_money_plain(cents: i64, currency: &str, locale: &str) -> String {
     formatted
 }
 
+/// Format cents as plain text without sign prefix, useful for prices/fees.
+/// This is "neutral" formatting - no +/- sign, no color coding.
+pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String {
+    let abs_cents = cents.abs();
+    let whole = abs_cents / 100;
+    let fractional = abs_cents % 100;
+
+    let (thousands_sep, decimal_sep) = locale_separators(locale);
+    let whole_str = format_with_thousands(whole, thousands_sep);
+    let symbol = currency_symbol(currency);
+
+    format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+}
+
 fn format_money_impl(cents: i64, currency: &str, locale: &str) -> (String, &'static str) {
     // Determine color class based on amount
     let color_class = if cents > 0 {
@@ -170,5 +184,23 @@ mod tests {
     fn test_color_class_zero() {
         let result = format_money(0, "USD", "en-US");
         assert!(result.contains("text-gray-900"));
+    }
+
+    #[test]
+    fn test_neutral_no_sign() {
+        let result = format_money_neutral(12345, "USD", "en-US");
+        assert_eq!(result, "$123.45");
+    }
+
+    #[test]
+    fn test_neutral_thousands_separator_en() {
+        let result = format_money_neutral(123456789, "USD", "en-US");
+        assert_eq!(result, "$1,234,567.89");
+    }
+
+    #[test]
+    fn test_neutral_thousands_separator_de() {
+        let result = format_money_neutral(123456789, "EUR", "de-DE");
+        assert_eq!(result, "\u{20ac}1.234.567,89");
     }
 }

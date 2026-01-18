@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::db::queries::{market_data, settings, trading};
 use crate::error::AppResult;
+use crate::filters;
 use crate::models::trading::{
     ClosedPosition, PositionWithMarketData, TradingActivity, TradingActivityType,
 };
@@ -95,24 +96,16 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         _ => "text-neutral-600 dark:text-neutral-400",
     };
 
-    let total_gain_loss_formatted = total_gain_loss.map(|gl| {
-        let sign = if gl < 0 { "-" } else { "" };
-        let dollars = gl.abs() / 100;
-        let cents = gl.abs() % 100;
-        format!("{}${}.{:02}", sign, dollars, cents)
-    });
+    let currency = &app_settings.currency;
+    let locale = &app_settings.locale;
 
-    let total_cost_formatted = {
-        let dollars = total_cost / 100;
-        let cents = total_cost.abs() % 100;
-        format!("${}.{:02}", dollars, cents)
-    };
+    let total_gain_loss_formatted =
+        total_gain_loss.map(|gl| filters::format_money_neutral(gl, currency, locale));
 
-    let total_current_value_formatted = total_current_value.map(|val| {
-        let dollars = val / 100;
-        let cents = val.abs() % 100;
-        format!("${}.{:02}", dollars, cents)
-    });
+    let total_cost_formatted = filters::format_money_neutral(total_cost, currency, locale);
+
+    let total_current_value_formatted =
+        total_current_value.map(|val| filters::format_money_neutral(val, currency, locale));
 
     let template = TradingPositionsTemplate {
         title: "Positions".into(),
@@ -173,12 +166,15 @@ pub async fn closed_positions(State(state): State<AppState>) -> AppResult<Html<S
         "text-neutral-600 dark:text-neutral-400"
     };
 
-    let format_cents = |cents: i64| {
-        let sign = if cents < 0 { "-" } else { "" };
-        let dollars = cents.abs() / 100;
-        let remainder = cents.abs() % 100;
-        format!("{}${}.{:02}", sign, dollars, remainder)
-    };
+    let total_cost_formatted =
+        filters::format_money_neutral(total_cost, &app_settings.currency, &app_settings.locale);
+    let total_proceeds_formatted =
+        filters::format_money_neutral(total_proceeds, &app_settings.currency, &app_settings.locale);
+    let total_gain_loss_formatted = filters::format_money_neutral(
+        total_gain_loss,
+        &app_settings.currency,
+        &app_settings.locale,
+    );
 
     let template = ClosedPositionsTemplate {
         title: "Closed Positions".into(),
@@ -187,11 +183,11 @@ pub async fn closed_positions(State(state): State<AppState>) -> AppResult<Html<S
         version: VERSION,
         positions,
         total_cost,
-        total_cost_formatted: format_cents(total_cost),
+        total_cost_formatted,
         total_proceeds,
-        total_proceeds_formatted: format_cents(total_proceeds),
+        total_proceeds_formatted,
         total_gain_loss,
-        total_gain_loss_formatted: format_cents(total_gain_loss),
+        total_gain_loss_formatted,
         total_gain_loss_color,
     };
 
@@ -291,24 +287,16 @@ pub async fn detail(
     let currency = position
         .as_ref()
         .map(|p| p.position.currency.as_str())
-        .unwrap_or("USD");
+        .unwrap_or(&app_settings.currency);
 
-    let format_cents = |cents: i64| {
-        let sign = if cents < 0 { "-" } else { "" };
-        let symbol = match currency.to_uppercase().as_str() {
-            "EUR" => "€",
-            "GBP" => "£",
-            _ => "$",
-        };
-        let dollars = cents.abs() / 100;
-        let remainder = cents.abs() % 100;
-        format!("{}{}{}.{:02}", sign, symbol, dollars, remainder)
-    };
+    let locale = &app_settings.locale;
 
-    let total_fees_formatted = format_cents(total_fees_cents);
-    let total_taxes_formatted = format_cents(total_taxes_cents);
-    let total_dividends_formatted = format_cents(total_dividends_cents);
-    let realized_gain_loss_formatted = format_cents(realized_gain_loss_cents);
+    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, currency, locale);
+    let total_taxes_formatted = filters::format_money_neutral(total_taxes_cents, currency, locale);
+    let total_dividends_formatted =
+        filters::format_money_neutral(total_dividends_cents, currency, locale);
+    let realized_gain_loss_formatted =
+        filters::format_money_neutral(realized_gain_loss_cents, currency, locale);
 
     let realized_gain_loss_color = if realized_gain_loss_cents > 0 {
         "text-green-600 dark:text-green-400"

@@ -71,4 +71,22 @@ impl Settings {
     pub fn format_money_plain(&self, cents: &i64) -> String {
         filters::format_money_plain(*cents, &self.currency, &self.locale)
     }
+
+    /// Format a monetary amount (in cents) with a specific currency and color coding.
+    /// Useful for trading items that have their own currency field.
+    pub fn format_money_with_currency(&self, cents: &i64, currency: &str) -> String {
+        filters::format_money(*cents, currency, &self.locale)
+    }
+
+    /// Format a monetary amount (in cents) as neutral text (no sign, no color).
+    /// Useful for prices, fees, and other amounts that shouldn't show +/-.
+    pub fn format_money_neutral(&self, cents: &i64) -> String {
+        filters::format_money_neutral(*cents, &self.currency, &self.locale)
+    }
+
+    /// Format a monetary amount (in cents) as neutral text with a specific currency.
+    /// Useful for trading prices/fees that have their own currency field.
+    pub fn format_money_neutral_with_currency(&self, cents: &i64, currency: &str) -> String {
+        filters::format_money_neutral(*cents, currency, &self.locale)
+    }
 }

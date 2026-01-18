@@ -24,17 +24,17 @@
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
         <span class="text-sm text-neutral-600 dark:text-neutral-400 tabular-nums">
-            {% match activity.unit_price_formatted() %}
-            {% when Some with (price) %}{{ price }}{% when None %}-{% endmatch %}
+            {% match activity.unit_price_cents %}
+            {% when Some with (cents) %}{{ settings.format_money_neutral_with_currency(cents, activity.currency) }}{% when None %}-{% endmatch %}
         </span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
         <span class="text-sm font-medium text-neutral-900 dark:text-white tabular-nums">
-            {% match activity.total_value_formatted() %}
-            {% when Some with (total) %}{{ total }}{% when None %}-{% endmatch %}
+            {% match activity.total_value_cents() %}
+            {% when Some with (cents) %}{{ settings.format_money_neutral_with_currency(cents, activity.currency) }}{% when None %}-{% endmatch %}
         </span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
-        <span class="text-sm text-neutral-600 dark:text-neutral-400 tabular-nums">{{ activity.fee_formatted() }}</span>
+        <span class="text-sm text-neutral-600 dark:text-neutral-400 tabular-nums">{{ settings.format_money_neutral_with_currency(activity.fee_cents, activity.currency) }}</span>
     </td>
 </tr>

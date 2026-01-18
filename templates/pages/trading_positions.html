@@ -35,7 +35,7 @@
                             <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ position.symbol }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ position.total_cost_formatted() }}</span>
+                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(position.total_cost_cents, position.currency) }}</span>
                         </td>
                     </tr>
                     {% endfor %}
@@ -78,15 +78,15 @@
                             <span class="text-sm text-neutral-900 dark:text-white">{{ pos.position.quantity_display() }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            {% match pos.current_price_formatted() %}
-                            {% when Some with (price) %}
+                            {% match pos.current_price_cents %}
+                            {% when Some with (cents) %}
                             {% if pos.price_is_approximated %}
                             <span class="text-sm text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
-                                {{ price }}
+                                {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </span>
                             {% else %}
-                            <span class="text-sm text-neutral-900 dark:text-white">{{ price }}</span>
+                            <span class="text-sm text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</span>
                             {% endif %}
                             {% when None %}
                             <span class="text-sm text-neutral-400 dark:text-neutral-500 italic">-</span>
@@ -94,33 +94,33 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
                             <span class="text-sm text-neutral-600 dark:text-neutral-400">
-                                {% match pos.position.average_cost_formatted() %}
-                                {% when Some with (cost) %}{{ cost }}{% when None %}-{% endmatch %}
+                                {% match pos.position.average_cost_cents() %}
+                                {% when Some with (cents) %}{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}{% when None %}-{% endmatch %}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <span class="text-sm text-neutral-900 dark:text-white">{{ pos.position.total_cost_formatted() }}</span>
+                            <span class="text-sm text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(pos.position.total_cost_cents, pos.position.currency) }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            {% match pos.current_value_formatted() %}
-                            {% when Some with (value) %}
+                            {% match pos.current_value_cents %}
+                            {% when Some with (cents) %}
                             {% if pos.price_is_approximated %}
                             <span class="text-sm font-medium text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
-                                {{ value }}
+                                {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </span>
                             {% else %}
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ value }}</span>
+                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</span>
                             {% endif %}
                             {% when None %}
                             <span class="text-sm text-neutral-400 dark:text-neutral-500 italic">-</span>
                             {% endmatch %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            {% match pos.gain_loss_formatted() %}
-                            {% when Some with (gl) %}
+                            {% match pos.gain_loss_cents %}
+                            {% when Some with (cents) %}
                             <div class="flex flex-col items-end">
-                                <span class="text-sm font-medium {{ pos.gain_loss_color() }}">{{ gl }}</span>
+                                <span class="text-sm font-medium {{ pos.gain_loss_color() }}">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</span>
                                 {% match pos.gain_loss_percent_display() %}
                                 {% when Some with (pct) %}
                                 <span class="text-xs {{ pos.gain_loss_color() }}">{{ pct }}</span>

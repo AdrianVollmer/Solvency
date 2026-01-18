@@ -42,7 +42,7 @@
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Latest Price</p>
             {% match latest_price %}
             {% when Some with (price) %}
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ price.close_price_formatted() }}</p>
+            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(price.close_price_cents, price.currency) }}</p>
             <p class="text-xs text-neutral-400">{{ price.date }}</p>
             {% when None %}
             <p class="text-xl font-semibold text-neutral-400">-</p>

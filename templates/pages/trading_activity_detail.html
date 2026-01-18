@@ -37,9 +37,9 @@
                     <p class="mt-1 text-gray-600 dark:text-gray-400">{{ activity.date }}</p>
                 </div>
                 <div class="text-right">
-                    {% match activity.total_value_formatted() %}
-                    {% when Some with (total) %}
-                    <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total }}</div>
+                    {% match activity.total_value_cents() %}
+                    {% when Some with (cents) %}
+                    <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ settings.format_money_neutral_with_currency(cents, activity.currency) }}</div>
                     {% when None %}
                     <div class="text-2xl font-bold text-gray-400">-</div>
                     {% endmatch %}
@@ -87,20 +87,20 @@
 
             <!-- Right Column -->
             <div class="space-y-4">
-                {% match activity.unit_price_formatted() %}
-                {% when Some with (price) %}
+                {% match activity.unit_price_cents %}
+                {% when Some with (cents) %}
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Unit Price</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100 tabular-nums">{{ price }}</dd>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100 tabular-nums">{{ settings.format_money_neutral_with_currency(cents, activity.currency) }}</dd>
                 </div>
                 {% when None %}
                 {% endmatch %}
 
-                {% match activity.total_value_formatted() %}
-                {% when Some with (total) %}
+                {% match activity.total_value_cents() %}
+                {% when Some with (cents) %}
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Value</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100 font-semibold tabular-nums">{{ total }}</dd>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100 font-semibold tabular-nums">{{ settings.format_money_neutral_with_currency(cents, activity.currency) }}</dd>
                 </div>
                 {% when None %}
                 {% endmatch %}
@@ -113,7 +113,7 @@
                 {% if activity.fee_cents != 0 %}
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fee</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100 tabular-nums">{{ activity.fee_formatted() }}</dd>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100 tabular-nums">{{ settings.format_money_neutral_with_currency(activity.fee_cents, activity.currency) }}</dd>
                 </div>
                 {% endif %}
             </div>
