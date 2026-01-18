@@ -275,6 +275,11 @@ pub fn delete_market_data_for_symbol(conn: &Connection, symbol: &str) -> rusqlit
     conn.execute("DELETE FROM market_data WHERE symbol = ?1", [symbol])
 }
 
+/// Delete all market data
+pub fn delete_all_market_data(conn: &Connection) -> rusqlite::Result<usize> {
+    conn.execute("DELETE FROM market_data", [])
+}
+
 /// Get the count of market data points
 pub fn count_market_data(conn: &Connection) -> rusqlite::Result<i64> {
     conn.query_row("SELECT COUNT(*) FROM market_data", [], |row| row.get(0))

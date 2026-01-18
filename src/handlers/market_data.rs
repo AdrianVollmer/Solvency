@@ -519,3 +519,18 @@ pub async fn symbol_chart_data(
         missing_ranges,
     }))
 }
+
+pub async fn delete_symbol(
+    State(state): State<AppState>,
+    Path(symbol): Path<String>,
+) -> AppResult<Redirect> {
+    let conn = state.db.get()?;
+    market_data::delete_market_data_for_symbol(&conn, &symbol)?;
+    Ok(Redirect::to("/trading/market-data"))
+}
+
+pub async fn delete_all(State(state): State<AppState>) -> AppResult<Redirect> {
+    let conn = state.db.get()?;
+    market_data::delete_all_market_data(&conn)?;
+    Ok(Redirect::to("/trading/market-data"))
+}

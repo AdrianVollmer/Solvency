@@ -124,8 +124,16 @@ pub fn routes() -> Router<AppState> {
         )
         .route("/trading/market-data/status", get(market_data::status))
         .route(
+            "/trading/market-data/delete-all",
+            delete(market_data::delete_all),
+        )
+        .route(
             "/trading/market-data/:symbol",
             get(market_data::symbol_detail),
+        )
+        .route(
+            "/trading/market-data/:symbol/delete",
+            delete(market_data::delete_symbol),
         )
         .route(
             "/api/market-data/:symbol",
