@@ -115,7 +115,8 @@
             <li>Market data is fetched from Yahoo Finance for symbols with active positions</li>
             <li>Data is fetched for the date range from your first activity to today</li>
             <li>Only daily closing prices are stored (one data point per trading day)</li>
-            <li>Status indicates: <span class="text-green-600 dark:text-green-400">Complete</span> (up to date), <span class="text-yellow-600 dark:text-yellow-400">Partial</span> (some missing), <span class="text-orange-600 dark:text-orange-400">Stale</span> (no recent data), <span class="text-red-600 dark:text-red-400">No data</span> (not yet fetched)</li>
+            <li>Gaps of up to 5 days are normal (weekends and holidays)</li>
+            <li>Status indicates: <span class="text-green-600 dark:text-green-400">Complete</span> (data within last 5 days), <span class="text-orange-600 dark:text-orange-400">Stale</span> (no recent data), <span class="text-red-600 dark:text-red-400">No data</span> (not yet fetched)</li>
         </ul>
     </div>
 </div>

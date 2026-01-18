@@ -149,12 +149,12 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
                 .as_ref()
                 .map(|d| {
                     d >= &today || {
-                        // Check if within last 3 days (for weekends/holidays)
+                        // Check if within last 5 days (for weekends/holidays)
                         if let (Ok(last), Ok(now)) = (
                             chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d"),
                             chrono::NaiveDate::parse_from_str(&today, "%Y-%m-%d"),
                         ) {
-                            (now - last).num_days() <= 3
+                            (now - last).num_days() <= 5
                         } else {
                             false
                         }

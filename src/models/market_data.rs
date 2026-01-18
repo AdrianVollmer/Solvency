@@ -54,10 +54,10 @@ impl SymbolDataCoverage {
     pub fn coverage_status(&self) -> &'static str {
         if self.data_points == 0 {
             "No data"
-        } else if self.missing_days == 0 && self.has_current_price {
-            "Complete"
         } else if self.has_current_price {
-            "Partial"
+            // If we have recent price data (within 5 days), consider it complete
+            // Gaps up to 5 days are expected due to weekends and holidays
+            "Complete"
         } else {
             "Stale"
         }
@@ -66,7 +66,6 @@ impl SymbolDataCoverage {
     pub fn status_color(&self) -> &'static str {
         match self.coverage_status() {
             "Complete" => "text-green-600 dark:text-green-400",
-            "Partial" => "text-yellow-600 dark:text-yellow-400",
             "Stale" => "text-orange-600 dark:text-orange-400",
             _ => "text-red-600 dark:text-red-400",
         }
