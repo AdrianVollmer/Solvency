@@ -1,5 +1,6 @@
 use crate::models::rule::{NewRule, Rule, RuleActionType};
 use rusqlite::{params, Connection, OptionalExtension};
+use tracing::debug;
 
 pub fn list_rules(conn: &Connection) -> rusqlite::Result<Vec<Rule>> {
     let mut stmt = conn.prepare(
@@ -60,7 +61,9 @@ pub fn create_rule(conn: &Connection, rule: &NewRule) -> rusqlite::Result<i64> {
             rule.action_value
         ],
     )?;
-    Ok(conn.last_insert_rowid())
+    let id = conn.last_insert_rowid();
+    debug!(rule_id = id, name = %rule.name, pattern = %rule.pattern, "Created rule");
+    Ok(id)
 }
 
 pub fn update_rule(conn: &Connection, id: i64, rule: &NewRule) -> rusqlite::Result<bool> {
@@ -74,10 +77,16 @@ pub fn update_rule(conn: &Connection, id: i64, rule: &NewRule) -> rusqlite::Resu
             id
         ],
     )?;
+    if rows > 0 {
+        debug!(rule_id = id, name = %rule.name, "Updated rule");
+    }
     Ok(rows > 0)
 }
 
 pub fn delete_rule(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM rules WHERE id = ?", [id])?;
+    if rows > 0 {
+        debug!(rule_id = id, "Deleted rule");
+    }
     Ok(rows > 0)
 }

@@ -3,6 +3,7 @@ use axum::extract::{Path, Query, State};
 use axum::response::{Html, Redirect};
 use axum::Form;
 use serde::Deserialize;
+use tracing::{debug, info, warn};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
 use crate::db::queries::{categories, expenses, settings, tags};
@@ -349,10 +350,12 @@ pub async fn create(
     State(state): State<AppState>,
     Form(form): Form<ExpenseFormData>,
 ) -> AppResult<Redirect> {
+    debug!(description = %form.description, amount = %form.amount, "Creating expense");
     let conn = state.db.get()?;
 
     let new_expense = form.to_new_expense()?;
-    expenses::create_expense(&conn, &new_expense)?;
+    let id = expenses::create_expense(&conn, &new_expense)?;
+    info!(expense_id = id, "Expense created via web form");
 
     Ok(Redirect::to("/expenses"))
 }
@@ -362,15 +365,18 @@ pub async fn update(
     Path(id): Path<i64>,
     Form(form): Form<ExpenseFormData>,
 ) -> AppResult<Redirect> {
+    debug!(expense_id = id, "Updating expense");
     let conn = state.db.get()?;
 
     let new_expense = form.to_new_expense()?;
     expenses::update_expense(&conn, id, &new_expense)?;
+    info!(expense_id = id, "Expense updated via web form");
 
     Ok(Redirect::to(&format!("/expenses/{}", id)))
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
+    info!(expense_id = id, "Deleting expense");
     let conn = state.db.get()?;
 
     expenses::delete_expense(&conn, id)?;
@@ -379,6 +385,7 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 }
 
 pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>> {
+    warn!("Deleting all expenses");
     let conn = state.db.get()?;
 
     expenses::delete_all_expenses(&conn)?;

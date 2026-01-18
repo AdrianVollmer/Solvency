@@ -6,6 +6,7 @@ use crate::models::trading::{
 use crate::services::trading_csv_parser::ParsedTradingActivity;
 use rusqlite::{params, Connection, OptionalExtension};
 use std::collections::HashMap;
+use tracing::debug;
 
 /// Raw activity row for position calculations: (symbol, activity_type, quantity, unit_price_cents, fee_cents, currency)
 type ActivityRow = (String, String, Option<f64>, Option<i64>, i64, String);
@@ -161,7 +162,14 @@ pub fn create_activity(conn: &Connection, activity: &NewTradingActivity) -> rusq
             activity.notes,
         ],
     )?;
-    Ok(conn.last_insert_rowid())
+    let id = conn.last_insert_rowid();
+    debug!(
+        activity_id = id,
+        symbol = %activity.symbol,
+        activity_type = %activity.activity_type.as_str(),
+        "Created trading activity"
+    );
+    Ok(id)
 }
 
 pub fn update_activity(
@@ -185,16 +193,21 @@ pub fn update_activity(
             id,
         ],
     )?;
+    debug!(activity_id = id, symbol = %activity.symbol, "Updated trading activity");
     Ok(())
 }
 
 pub fn delete_activity(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM trading_activities WHERE id = ?", [id])?;
+    if rows > 0 {
+        debug!(activity_id = id, "Deleted trading activity");
+    }
     Ok(rows > 0)
 }
 
 pub fn delete_all_activities(conn: &Connection) -> rusqlite::Result<usize> {
     let rows = conn.execute("DELETE FROM trading_activities", [])?;
+    tracing::warn!(count = rows, "Deleted all trading activities");
     Ok(rows)
 }
 

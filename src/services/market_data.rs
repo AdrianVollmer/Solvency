@@ -3,6 +3,7 @@ use crate::models::NewMarketData;
 use std::time::Duration;
 use time::{Date, Month, OffsetDateTime, Time};
 use tokio::time::sleep;
+use tracing::{debug, info, warn};
 use yahoo_finance_api as yahoo;
 
 /// Delay between API requests to avoid rate limiting
@@ -15,6 +16,8 @@ pub async fn fetch_historical_quotes(
     start_date: &str,
     end_date: &str,
 ) -> AppResult<Vec<NewMarketData>> {
+    debug!(symbol = %symbol, start_date = %start_date, end_date = %end_date, "Fetching historical quotes");
+
     let provider = yahoo::YahooConnector::new()
         .map_err(|e| AppError::Internal(format!("Failed to create Yahoo connector: {}", e)))?;
 
@@ -68,18 +71,24 @@ pub async fn fetch_historical_quotes(
         })
         .collect();
 
+    info!(symbol = %symbol, quote_count = market_data.len(), "Fetched historical quotes");
     Ok(market_data)
 }
 
 /// Fetch the latest quote for a symbol
 pub async fn fetch_latest_quote(symbol: &str) -> AppResult<Option<NewMarketData>> {
+    debug!(symbol = %symbol, "Fetching latest quote");
+
     let provider = yahoo::YahooConnector::new()
         .map_err(|e| AppError::Internal(format!("Failed to create Yahoo connector: {}", e)))?;
 
     let response = provider
         .get_latest_quotes(symbol, "1d")
         .await
-        .map_err(|e| AppError::Internal(format!("Yahoo Finance API error: {}", e)))?;
+        .map_err(|e| {
+            warn!(symbol = %symbol, error = %e, "Failed to fetch latest quote");
+            AppError::Internal(format!("Yahoo Finance API error: {}", e))
+        })?;
 
     // Get currency from metadata (defaults to USD if not available)
     let currency = response
@@ -124,6 +133,8 @@ pub struct SymbolMetadata {
 
 /// Fetch metadata for a symbol (name, exchange, type)
 pub async fn fetch_symbol_metadata(symbol: &str) -> AppResult<Option<SymbolMetadata>> {
+    debug!(symbol = %symbol, "Fetching symbol metadata");
+
     let provider = yahoo::YahooConnector::new()
         .map_err(|e| AppError::Internal(format!("Failed to create Yahoo connector: {}", e)))?;
 
@@ -137,6 +148,12 @@ pub async fn fetch_symbol_metadata(symbol: &str) -> AppResult<Option<SymbolMetad
         .quotes
         .into_iter()
         .find(|q| q.symbol.to_uppercase() == symbol.to_uppercase());
+
+    if quote.is_some() {
+        debug!(symbol = %symbol, "Found symbol metadata");
+    } else {
+        debug!(symbol = %symbol, "Symbol metadata not found");
+    }
 
     Ok(quote.map(|q| SymbolMetadata {
         symbol: q.symbol,
@@ -178,6 +195,7 @@ fn parse_date(date_str: &str) -> AppResult<Date> {
 pub async fn fetch_quotes_for_symbols(
     symbols: &[(&str, &str, &str)], // (symbol, start_date, end_date)
 ) -> Vec<(String, AppResult<Vec<NewMarketData>>)> {
+    info!(symbol_count = symbols.len(), "Fetching quotes for multiple symbols");
     let mut results = Vec::new();
 
     for (i, (symbol, start_date, end_date)) in symbols.iter().enumerate() {
@@ -197,6 +215,7 @@ pub async fn fetch_quotes_for_symbols(
 pub async fn fetch_latest_quotes_for_symbols(
     symbols: &[&str],
 ) -> Vec<(String, AppResult<Option<NewMarketData>>)> {
+    info!(symbol_count = symbols.len(), "Fetching latest quotes for multiple symbols");
     let mut results = Vec::new();
 
     for (i, symbol) in symbols.iter().enumerate() {

@@ -5,8 +5,12 @@ use std::path::Path;
 pub type DbPool = Pool<SqliteConnectionManager>;
 
 pub fn create_pool(database_path: &Path) -> Result<DbPool, r2d2::Error> {
+    tracing::info!(path = %database_path.display(), "Creating database connection pool");
+
     if let Some(parent) = database_path.parent() {
-        std::fs::create_dir_all(parent).ok();
+        if std::fs::create_dir_all(parent).is_ok() {
+            tracing::debug!(dir = %parent.display(), "Ensured database directory exists");
+        }
     }
 
     let manager = SqliteConnectionManager::file(database_path).with_init(|conn| {
@@ -18,5 +22,7 @@ pub fn create_pool(database_path: &Path) -> Result<DbPool, r2d2::Error> {
         )
     });
 
-    Pool::builder().max_size(10).build(manager)
+    let pool = Pool::builder().max_size(10).build(manager)?;
+    tracing::info!(max_size = 10, "Database connection pool created");
+    Ok(pool)
 }

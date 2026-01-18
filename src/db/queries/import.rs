@@ -1,4 +1,5 @@
 use rusqlite::{params, Connection};
+use tracing::{debug, info};
 
 use crate::error::AppResult;
 use crate::models::{ImportRow, ImportSession, ImportStatus};
@@ -11,6 +12,7 @@ pub fn create_session(conn: &Connection, id: &str) -> AppResult<ImportSession> {
         "INSERT INTO import_sessions (id, status) VALUES (?1, ?2)",
         params![id, ImportStatus::Parsing.as_str()],
     )?;
+    info!(session_id = %id, "Created import session");
     get_session(conn, id)
 }
 
@@ -49,6 +51,7 @@ pub fn update_session_status(conn: &Connection, id: &str, status: ImportStatus) 
         "UPDATE import_sessions SET status = ?2, updated_at = datetime('now') WHERE id = ?1",
         params![id, status.as_str()],
     )?;
+    debug!(session_id = %id, status = %status.as_str(), "Updated import session status");
     Ok(())
 }
 
@@ -97,6 +100,7 @@ pub fn increment_session_error_count(conn: &Connection, id: &str) -> AppResult<(
 
 pub fn delete_session(conn: &Connection, id: &str) -> AppResult<()> {
     conn.execute("DELETE FROM import_sessions WHERE id = ?1", params![id])?;
+    debug!(session_id = %id, "Deleted import session");
     Ok(())
 }
 
@@ -105,6 +109,9 @@ pub fn cleanup_old_sessions(conn: &Connection, hours: i64) -> AppResult<usize> {
         "DELETE FROM import_sessions WHERE created_at < datetime('now', ?1)",
         params![format!("-{} hours", hours)],
     )?;
+    if deleted > 0 {
+        info!(count = deleted, older_than_hours = hours, "Cleaned up old import sessions");
+    }
     Ok(deleted)
 }
 
@@ -258,6 +265,7 @@ pub fn update_all_rows_category(
         "UPDATE import_rows SET category_id = ?2 WHERE session_id = ?1 AND status = 'pending'",
         params![session_id, category_id],
     )?;
+    debug!(session_id = %session_id, count = updated, "Updated category for all import rows");
     Ok(updated)
 }
 

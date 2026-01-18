@@ -3,6 +3,8 @@ use std::fs;
 use std::path::Path;
 
 pub fn run_migrations(conn: &Connection, migrations_dir: &Path) -> rusqlite::Result<()> {
+    tracing::debug!(dir = %migrations_dir.display(), "Checking for database migrations");
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS _migrations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +28,9 @@ pub fn run_migrations(conn: &Connection, migrations_dir: &Path) -> rusqlite::Res
         .unwrap_or_default();
 
     entries.sort_by_key(|e| e.file_name());
+    tracing::debug!(count = entries.len(), "Found migration files");
 
+    let mut applied_count = 0;
     for entry in entries {
         let file_name = entry.file_name();
         let name = file_name.to_string_lossy();
@@ -41,11 +45,18 @@ pub fn run_migrations(conn: &Connection, migrations_dir: &Path) -> rusqlite::Res
             let sql = fs::read_to_string(entry.path())
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
 
-            tracing::info!("Applying migration: {}", name);
+            tracing::info!(migration = %name, "Applying migration");
             conn.execute_batch(&sql)?;
 
             conn.execute("INSERT INTO _migrations (name) VALUES (?)", [&*name])?;
+            applied_count += 1;
         }
+    }
+
+    if applied_count > 0 {
+        tracing::info!(count = applied_count, "Migrations applied successfully");
+    } else {
+        tracing::debug!("No new migrations to apply");
     }
 
     Ok(())

@@ -1,6 +1,7 @@
 use crate::models::expense::{Expense, ExpenseWithRelations, NewExpense};
 use crate::models::tag::{Tag, TagStyle};
 use rusqlite::{params, Connection, OptionalExtension};
+use tracing::{debug, trace};
 
 #[derive(Default)]
 pub struct ExpenseFilter {
@@ -101,6 +102,7 @@ pub fn list_expenses(
         expense.tags = tags_map.remove(&expense.expense.id).unwrap_or_default();
     }
 
+    debug!(count = expenses.len(), "Listed expenses");
     Ok(expenses)
 }
 
@@ -134,6 +136,7 @@ pub fn count_expenses(conn: &Connection, filter: &ExpenseFilter) -> rusqlite::Re
 }
 
 pub fn get_expense(conn: &Connection, id: i64) -> rusqlite::Result<Option<ExpenseWithRelations>> {
+    trace!(expense_id = id, "Fetching expense");
     let expense = conn
         .query_row(
             "SELECT e.id, e.date, e.amount_cents, e.currency, e.description,
@@ -217,6 +220,7 @@ pub fn create_expense(conn: &Connection, expense: &NewExpense) -> rusqlite::Resu
         )?;
     }
 
+    debug!(expense_id = id, amount_cents = expense.amount_cents, "Created expense");
     Ok(id)
 }
 
@@ -257,17 +261,22 @@ pub fn update_expense(conn: &Connection, id: i64, expense: &NewExpense) -> rusql
         )?;
     }
 
+    debug!(expense_id = id, "Updated expense");
     Ok(())
 }
 
 pub fn delete_expense(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM expenses WHERE id = ?", [id])?;
+    if rows > 0 {
+        debug!(expense_id = id, "Deleted expense");
+    }
     Ok(rows > 0)
 }
 
 pub fn delete_all_expenses(conn: &Connection) -> rusqlite::Result<usize> {
     conn.execute("DELETE FROM expense_tags", [])?;
     let rows = conn.execute("DELETE FROM expenses", [])?;
+    tracing::warn!(count = rows, "Deleted all expenses");
     Ok(rows)
 }
 

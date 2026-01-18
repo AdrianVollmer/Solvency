@@ -1,5 +1,6 @@
 use crate::error::AppError;
 use serde::{Deserialize, Serialize};
+use tracing::{debug, trace, warn};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedExpense {
@@ -43,6 +44,8 @@ pub struct ParseResult {
 }
 
 pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
+    trace!(content_size = content.len(), "Starting CSV parsing");
+
     let content_str =
         std::str::from_utf8(content).map_err(|e| AppError::CsvParse(e.to_string()))?;
 
@@ -55,6 +58,8 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
         .headers()
         .map_err(|e| AppError::CsvParse(e.to_string()))?
         .clone();
+
+    debug!(column_count = headers.len(), "CSV headers parsed");
 
     // Required columns
     let date_col = find_column(&headers, "date");
@@ -164,6 +169,15 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
             row_number,
         });
     }
+
+    if !errors.is_empty() {
+        warn!(error_count = errors.len(), "CSV parsing completed with errors");
+    }
+    debug!(
+        row_count = expenses.len(),
+        error_count = errors.len(),
+        "CSV parsing completed"
+    );
 
     Ok(ParseResult { expenses, errors })
 }

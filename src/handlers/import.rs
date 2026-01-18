@@ -3,6 +3,7 @@ use axum::extract::{Multipart, Path, Query, State};
 use axum::response::{Html, Redirect};
 use axum::Form;
 use serde::{Deserialize, Serialize};
+use tracing::{debug, info, warn};
 use uuid::Uuid;
 
 use crate::db::queries::{categories, expenses, import, settings, tags};
@@ -131,6 +132,7 @@ pub async fn upload(
     mut multipart: Multipart,
 ) -> AppResult<Redirect> {
     let session_id = Uuid::new_v4().to_string();
+    info!(session_id = %session_id, "Starting CSV upload");
 
     // Create session
     {
@@ -159,17 +161,21 @@ pub async fn upload(
                 .to_vec();
 
             if !content.is_empty() {
+                debug!(file_name = %file_name, size_bytes = content.len(), "Received CSV file");
                 files.push((file_name, content));
             }
         }
     }
 
     if files.is_empty() {
+        warn!(session_id = %session_id, "No files uploaded");
         let conn = state.db.get()?;
         import::update_session_status(&conn, &session_id, ImportStatus::Failed)?;
         import::update_session_errors(&conn, &session_id, 1, &["No files uploaded".to_string()])?;
         return Ok(Redirect::to(&format!("/import/{}", session_id)));
     }
+
+    info!(session_id = %session_id, file_count = files.len(), "Processing uploaded files");
 
     // Spawn background parsing task
     let state_clone = state.clone();
@@ -187,12 +193,20 @@ async fn parse_files_background(
     session_id: String,
     files: Vec<(String, Vec<u8>)>,
 ) {
+    debug!(session_id = %session_id, file_count = files.len(), "Starting background CSV parsing");
     let mut all_errors: Vec<String> = Vec::new();
     let mut row_index: i64 = 0;
 
-    for (file_name, content) in files {
-        match parse_csv(&content) {
+    for (file_name, content) in &files {
+        debug!(session_id = %session_id, file_name = %file_name, "Parsing CSV file");
+        match parse_csv(content) {
             Ok(result) => {
+                debug!(
+                    file_name = %file_name,
+                    rows_parsed = result.expenses.len(),
+                    parse_errors = result.errors.len(),
+                    "CSV file parsed"
+                );
                 // Insert rows into database
                 if let Ok(conn) = state.db.get() {
                     for expense in result.expenses {
@@ -219,6 +233,7 @@ async fn parse_files_background(
                 }
             }
             Err(e) => {
+                warn!(file_name = %file_name, error = %e, "Failed to parse CSV file");
                 all_errors.push(format!("{}: {}", file_name, e));
             }
         }
@@ -231,8 +246,15 @@ async fn parse_files_background(
             import::update_session_errors(&conn, &session_id, all_errors.len() as i64, &all_errors);
 
         if row_index == 0 && !all_errors.is_empty() {
+            warn!(session_id = %session_id, "Import failed - no valid rows parsed");
             let _ = import::update_session_status(&conn, &session_id, ImportStatus::Failed);
         } else {
+            info!(
+                session_id = %session_id,
+                total_rows = row_index,
+                error_count = all_errors.len(),
+                "CSV parsing completed, ready for preview"
+            );
             let _ = import::update_session_status(&conn, &session_id, ImportStatus::Preview);
         }
     }
@@ -363,12 +385,15 @@ pub async fn confirm(
     State(state): State<AppState>,
     Path(session_id): Path<String>,
 ) -> AppResult<Html<String>> {
+    info!(session_id = %session_id, "Confirming import");
+
     // Update status to importing
     {
         let conn = state.db.get()?;
         let session = import::get_session(&conn, &session_id)?;
 
         if session.status != ImportStatus::Preview {
+            warn!(session_id = %session_id, status = %session.status.as_str(), "Import session not ready");
             return Err(AppError::Validation(
                 "Session is not ready for import".into(),
             ));
@@ -399,15 +424,25 @@ pub async fn confirm(
 }
 
 async fn import_rows_background(state: AppState, session_id: String) {
+    debug!(session_id = %session_id, "Starting background import");
+
     let conn = match state.db.get() {
         Ok(c) => c,
-        Err(_) => return,
+        Err(e) => {
+            tracing::error!(session_id = %session_id, error = %e, "Failed to get database connection");
+            return;
+        }
     };
 
     let pending_rows = match import::get_pending_rows(&conn, &session_id) {
         Ok(r) => r,
-        Err(_) => return,
+        Err(e) => {
+            tracing::error!(session_id = %session_id, error = %e, "Failed to get pending rows");
+            return;
+        }
     };
+
+    info!(session_id = %session_id, row_count = pending_rows.len(), "Importing rows");
 
     let mut error_count = 0;
     let mut errors: Vec<String> = Vec::new();
@@ -480,6 +515,12 @@ async fn import_rows_background(state: AppState, session_id: String) {
     // Finalize
     let _ = import::update_session_errors(&conn, &session_id, error_count, &errors);
     let _ = import::update_session_status(&conn, &session_id, ImportStatus::Completed);
+
+    info!(
+        session_id = %session_id,
+        error_count = error_count,
+        "Import completed"
+    );
 }
 
 pub async fn result(
@@ -502,6 +543,7 @@ pub async fn cancel(
     State(state): State<AppState>,
     Path(session_id): Path<String>,
 ) -> AppResult<Redirect> {
+    info!(session_id = %session_id, "Cancelling import");
     let conn = state.db.get()?;
     import::delete_session(&conn, &session_id)?;
     Ok(Redirect::to("/import"))

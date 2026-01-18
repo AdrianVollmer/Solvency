@@ -1,5 +1,6 @@
 use crate::models::category::{Category, CategoryWithPath, NewCategory};
 use rusqlite::{params, Connection, OptionalExtension};
+use tracing::debug;
 
 pub fn list_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
     let mut stmt = conn.prepare(
@@ -95,7 +96,9 @@ pub fn create_category(conn: &Connection, category: &NewCategory) -> rusqlite::R
             category.icon
         ],
     )?;
-    Ok(conn.last_insert_rowid())
+    let id = conn.last_insert_rowid();
+    debug!(category_id = id, name = %category.name, "Created category");
+    Ok(id)
 }
 
 pub fn update_category(
@@ -114,11 +117,17 @@ pub fn update_category(
             id
         ],
     )?;
+    if rows > 0 {
+        debug!(category_id = id, name = %category.name, "Updated category");
+    }
     Ok(rows > 0)
 }
 
 pub fn delete_category(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM categories WHERE id = ?", [id])?;
+    if rows > 0 {
+        debug!(category_id = id, "Deleted category");
+    }
     Ok(rows > 0)
 }
 

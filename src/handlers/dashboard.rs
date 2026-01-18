@@ -1,6 +1,7 @@
 use askama::Template;
 use axum::extract::State;
 use axum::response::Html;
+use tracing::debug;
 
 use crate::db::queries::{expenses, settings};
 use crate::error::AppResult;
@@ -22,6 +23,7 @@ pub struct DashboardTemplate {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
+    debug!("Loading dashboard");
     let conn = state.db.get()?;
 
     let settings = settings::get_settings(&conn)?;
@@ -60,6 +62,13 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         .sum();
 
     let expense_count = expenses::count_expenses(&conn, &expenses::ExpenseFilter::default())?;
+
+    debug!(
+        expense_count = expense_count,
+        total_this_month = total_this_month,
+        total_last_month = total_last_month,
+        "Dashboard data loaded"
+    );
 
     let template = DashboardTemplate {
         title: "Dashboard".into(),
