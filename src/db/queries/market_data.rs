@@ -1,6 +1,9 @@
 use crate::models::market_data::{MarketData, NewMarketData, SymbolDataCoverage};
 use rusqlite::{params, Connection, OptionalExtension};
 
+/// Maximum gap in days that's considered acceptable (weekends + holidays)
+pub const MAX_GAP_DAYS: i64 = 5;
+
 /// Insert or update market data for a symbol on a date
 pub fn upsert_market_data(conn: &Connection, data: &NewMarketData) -> rusqlite::Result<()> {
     conn.execute(
@@ -149,12 +152,12 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
                 .as_ref()
                 .map(|d| {
                     d >= &today || {
-                        // Check if within last 5 days (for weekends/holidays)
+                        // Check if within acceptable gap (for weekends/holidays)
                         if let (Ok(last), Ok(now)) = (
                             chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d"),
                             chrono::NaiveDate::parse_from_str(&today, "%Y-%m-%d"),
                         ) {
-                            (now - last).num_days() <= 5
+                            (now - last).num_days() <= MAX_GAP_DAYS
                         } else {
                             false
                         }
@@ -228,12 +231,12 @@ pub fn get_symbols_needing_data(
         FROM position_symbols ps
         LEFT JOIN latest_data ld ON ps.symbol = ld.symbol
         WHERE ld.last_data_date IS NULL
-           OR ld.last_data_date < ?1
+           OR ld.last_data_date < date(?1, '-' || ?2 || ' days')
         ORDER BY ps.symbol",
     )?;
 
     let symbols = stmt
-        .query_map([&today], |row| {
+        .query_map(rusqlite::params![&today, MAX_GAP_DAYS], |row| {
             let symbol: String = row.get(0)?;
             let start_date: String = row.get(1)?;
             Ok((symbol, start_date, today.clone()))
