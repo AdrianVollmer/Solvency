@@ -98,6 +98,41 @@ pub async fn fetch_latest_quote(symbol: &str) -> AppResult<Option<NewMarketData>
     }))
 }
 
+/// Symbol metadata from Yahoo Finance
+#[derive(Debug, Clone)]
+pub struct SymbolMetadata {
+    pub symbol: String,
+    pub short_name: Option<String>,
+    pub long_name: Option<String>,
+    pub exchange: String,
+    pub quote_type: String,
+}
+
+/// Fetch metadata for a symbol (name, exchange, type)
+pub async fn fetch_symbol_metadata(symbol: &str) -> AppResult<Option<SymbolMetadata>> {
+    let provider = yahoo::YahooConnector::new()
+        .map_err(|e| AppError::Internal(format!("Failed to create Yahoo connector: {}", e)))?;
+
+    let response = provider
+        .search_ticker_opt(symbol)
+        .await
+        .map_err(|e| AppError::Internal(format!("Yahoo Finance API error: {}", e)))?;
+
+    // Find exact match for the symbol
+    let quote = response
+        .quotes
+        .into_iter()
+        .find(|q| q.symbol.to_uppercase() == symbol.to_uppercase());
+
+    Ok(quote.map(|q| SymbolMetadata {
+        symbol: q.symbol,
+        short_name: q.short_name,
+        long_name: q.long_name,
+        exchange: q.exchange,
+        quote_type: q.quote_type,
+    }))
+}
+
 /// Parse a date string in YYYY-MM-DD format
 fn parse_date(date_str: &str) -> AppResult<Date> {
     let parts: Vec<&str> = date_str.split('-').collect();

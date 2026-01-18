@@ -155,6 +155,21 @@ pub async fn status(State(state): State<AppState>) -> AppResult<Html<String>> {
 
 // Symbol detail page
 
+/// Symbol metadata for display
+#[derive(Debug, Clone, Default)]
+pub struct SymbolInfo {
+    pub short_name: Option<String>,
+    pub long_name: Option<String>,
+    pub exchange: Option<String>,
+    pub quote_type: Option<String>,
+}
+
+impl SymbolInfo {
+    pub fn display_name(&self) -> Option<&String> {
+        self.long_name.as_ref().or(self.short_name.as_ref())
+    }
+}
+
 #[derive(Template)]
 #[template(path = "pages/market_data_symbol.html")]
 pub struct MarketDataSymbolTemplate {
@@ -163,6 +178,7 @@ pub struct MarketDataSymbolTemplate {
     pub manifest: JsManifest,
     pub version: &'static str,
     pub symbol: String,
+    pub symbol_info: SymbolInfo,
     pub coverage: Option<SymbolDataCoverage>,
     pub latest_price: Option<MarketData>,
     pub data_points: Vec<MarketData>,
@@ -177,12 +193,24 @@ pub async fn symbol_detail(
 
     let app_settings = settings::get_settings(&conn)?;
 
+    // Fetch symbol metadata from Yahoo Finance
+    let symbol_info = match market_data_service::fetch_symbol_metadata(&symbol).await {
+        Ok(Some(meta)) => SymbolInfo {
+            short_name: meta.short_name,
+            long_name: meta.long_name,
+            exchange: Some(meta.exchange),
+            quote_type: Some(meta.quote_type),
+        },
+        _ => SymbolInfo::default(),
+    };
+
     // Get coverage info for this symbol
     let all_coverage = market_data::get_symbol_coverage(&conn)?;
     let coverage = all_coverage.into_iter().find(|c| c.symbol == symbol);
 
-    // Get all price data for this symbol
-    let data_points = market_data::get_prices_for_symbol(&conn, &symbol)?;
+    // Get all price data for this symbol (limit to most recent 100 for display)
+    let all_data = market_data::get_prices_for_symbol(&conn, &symbol)?;
+    let data_points: Vec<MarketData> = all_data.into_iter().take(100).collect();
 
     // Get latest price
     let latest_price = market_data::get_latest_price(&conn, &symbol)?;
@@ -190,12 +218,18 @@ pub async fn symbol_detail(
     // Calculate missing date ranges
     let missing_ranges = calculate_missing_ranges(&data_points, coverage.as_ref());
 
+    let display_name = symbol_info
+        .display_name()
+        .map(|n| format!("{} ({})", n, symbol))
+        .unwrap_or_else(|| symbol.clone());
+
     let template = MarketDataSymbolTemplate {
-        title: format!("{} - Market Data", symbol),
+        title: format!("{} - Market Data", display_name),
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
         symbol: symbol.clone(),
+        symbol_info,
         coverage,
         latest_price,
         data_points,

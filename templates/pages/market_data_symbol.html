@@ -15,9 +15,24 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </a>
-        <div>
-            <h1 class="page-title">{{ symbol }}</h1>
-            <p class="mt-1 text-muted">Price history and data coverage</p>
+        <div class="flex-1">
+            <div class="flex items-center gap-3">
+                <h1 class="page-title">{{ symbol }}</h1>
+                {% match symbol_info.quote_type %}
+                {% when Some with (qt) %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">{{ qt }}</span>
+                {% when None %}{% endmatch %}
+            </div>
+            {% match symbol_info.display_name() %}
+            {% when Some with (name) %}
+            <p class="mt-1 text-lg text-neutral-700 dark:text-neutral-300">{{ name }}</p>
+            {% when None %}{% endmatch %}
+            {% match symbol_info.exchange %}
+            {% when Some with (ex) %}
+            <p class="text-sm text-muted">{{ ex }}</p>
+            {% when None %}
+            <p class="text-sm text-muted">Price history and data coverage</p>
+            {% endmatch %}
         </div>
     </div>
 
