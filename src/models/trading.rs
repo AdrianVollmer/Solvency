@@ -236,6 +236,105 @@ pub struct Position {
     pub currency: String,
 }
 
+/// Position with market data for display
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PositionWithMarketData {
+    pub position: Position,
+    pub current_price_cents: Option<i64>,
+    pub current_value_cents: Option<i64>,
+    pub gain_loss_cents: Option<i64>,
+    pub gain_loss_percent: Option<f64>,
+    pub price_date: Option<String>,
+}
+
+impl PositionWithMarketData {
+    pub fn from_position(position: Position) -> Self {
+        Self {
+            position,
+            current_price_cents: None,
+            current_value_cents: None,
+            gain_loss_cents: None,
+            gain_loss_percent: None,
+            price_date: None,
+        }
+    }
+
+    pub fn with_market_data(position: Position, price_cents: i64, price_date: String) -> Self {
+        let current_value = (position.quantity * price_cents as f64).round() as i64;
+        let gain_loss = current_value - position.total_cost_cents;
+        let gain_loss_pct = if position.total_cost_cents != 0 {
+            (gain_loss as f64 / position.total_cost_cents as f64) * 100.0
+        } else {
+            0.0
+        };
+
+        Self {
+            position,
+            current_price_cents: Some(price_cents),
+            current_value_cents: Some(current_value),
+            gain_loss_cents: Some(gain_loss),
+            gain_loss_percent: Some(gain_loss_pct),
+            price_date: Some(price_date),
+        }
+    }
+
+    pub fn current_price_display(&self) -> Option<String> {
+        self.current_price_cents.map(|cents| {
+            let dollars = cents / 100;
+            let remainder = cents % 100;
+            format!("{}.{:02}", dollars, remainder)
+        })
+    }
+
+    pub fn current_price_formatted(&self) -> Option<String> {
+        self.current_price_display()
+            .map(|price| format!("{}{}", currency_symbol(&self.position.currency), price))
+    }
+
+    pub fn current_value_display(&self) -> Option<String> {
+        self.current_value_cents.map(|cents| {
+            let dollars = cents / 100;
+            let remainder = cents.abs() % 100;
+            format!("{}.{:02}", dollars, remainder)
+        })
+    }
+
+    pub fn current_value_formatted(&self) -> Option<String> {
+        self.current_value_display()
+            .map(|value| format!("{}{}", currency_symbol(&self.position.currency), value))
+    }
+
+    pub fn gain_loss_display(&self) -> Option<String> {
+        self.gain_loss_cents.map(|cents| {
+            let sign = if cents >= 0 { "" } else { "-" };
+            let dollars = cents.abs() / 100;
+            let remainder = cents.abs() % 100;
+            format!("{}{}.{:02}", sign, dollars, remainder)
+        })
+    }
+
+    pub fn gain_loss_formatted(&self) -> Option<String> {
+        self.gain_loss_display()
+            .map(|value| format!("{}{}", currency_symbol(&self.position.currency), value))
+    }
+
+    pub fn gain_loss_percent_display(&self) -> Option<String> {
+        self.gain_loss_percent.map(|pct| format!("{:+.2}%", pct))
+    }
+
+    pub fn gain_loss_color(&self) -> &'static str {
+        match self.gain_loss_cents {
+            Some(cents) if cents > 0 => "text-green-600 dark:text-green-400",
+            Some(cents) if cents < 0 => "text-red-600 dark:text-red-400",
+            _ => "text-neutral-600 dark:text-neutral-400",
+        }
+    }
+
+    pub fn is_cash(&self) -> bool {
+        self.position.is_cash()
+    }
+}
+
 impl Position {
     pub fn average_cost_cents(&self) -> Option<i64> {
         if self.quantity > 0.0 {

@@ -48,8 +48,9 @@
     <!-- Security Positions -->
     {% if !security_positions.is_empty() %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
-        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Securities</h2>
+            <a href="/trading/market-data" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Manage Market Data</a>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -59,29 +60,84 @@
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Quantity</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Avg Cost</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Total Cost</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Price</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Current Value</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Gain/Loss</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {% for position in security_positions %}
+                    {% for pos in security_positions %}
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ position.symbol }}</span>
+                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ pos.position.symbol }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <span class="text-sm text-neutral-900 dark:text-white">{{ position.quantity_display() }}</span>
+                            <span class="text-sm text-neutral-900 dark:text-white">{{ pos.position.quantity_display() }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
                             <span class="text-sm text-neutral-600 dark:text-neutral-400">
-                                {% match position.average_cost_formatted() %}
+                                {% match pos.position.average_cost_formatted() %}
                                 {% when Some with (cost) %}{{ cost }}{% when None %}-{% endmatch %}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ position.total_cost_formatted() }}</span>
+                            <span class="text-sm text-neutral-900 dark:text-white">{{ pos.position.total_cost_formatted() }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            {% match pos.current_price_formatted() %}
+                            {% when Some with (price) %}
+                            <span class="text-sm text-neutral-900 dark:text-white">{{ price }}</span>
+                            {% when None %}
+                            <span class="text-sm text-neutral-400 dark:text-neutral-500 italic">-</span>
+                            {% endmatch %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            {% match pos.current_value_formatted() %}
+                            {% when Some with (value) %}
+                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ value }}</span>
+                            {% when None %}
+                            <span class="text-sm text-neutral-400 dark:text-neutral-500 italic">-</span>
+                            {% endmatch %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            {% match pos.gain_loss_formatted() %}
+                            {% when Some with (gl) %}
+                            <div class="flex flex-col items-end">
+                                <span class="text-sm font-medium {{ pos.gain_loss_color() }}">{{ gl }}</span>
+                                {% match pos.gain_loss_percent_display() %}
+                                {% when Some with (pct) %}
+                                <span class="text-xs {{ pos.gain_loss_color() }}">{{ pct }}</span>
+                                {% when None %}{% endmatch %}
+                            </div>
+                            {% when None %}
+                            <span class="text-sm text-neutral-400 dark:text-neutral-500 italic">-</span>
+                            {% endmatch %}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
+                {% if total_current_value.is_some() %}
+                <tfoot class="bg-neutral-50 dark:bg-neutral-900">
+                    <tr>
+                        <td colspan="3" class="px-6 py-3 text-right text-sm font-medium text-neutral-700 dark:text-neutral-300">Total</td>
+                        <td class="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
+                            {{ total_cost_formatted }}
+                        </td>
+                        <td class="px-6 py-3"></td>
+                        <td class="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
+                            {% match total_current_value_formatted %}
+                            {% when Some with (val) %}{{ val }}
+                            {% when None %}-{% endmatch %}
+                        </td>
+                        <td class="px-6 py-3 text-right">
+                            {% match total_gain_loss_formatted %}
+                            {% when Some with (gl) %}
+                            <span class="text-sm font-semibold {{ total_gain_loss_color }}">{{ gl }}</span>
+                            {% when None %}-{% endmatch %}
+                        </td>
+                    </tr>
+                </tfoot>
+                {% endif %}
             </table>
         </div>
     </div>

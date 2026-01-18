@@ -4,6 +4,7 @@ pub mod categories;
 pub mod dashboard;
 pub mod expenses;
 pub mod import;
+pub mod market_data;
 pub mod rules;
 pub mod settings;
 pub mod tags;
@@ -97,6 +98,14 @@ pub fn routes() -> Router<AppState> {
         )
         // Trading Positions
         .route("/trading/positions", get(trading_positions::index))
+        // Trading Market Data
+        .route("/trading/market-data", get(market_data::index))
+        .route("/trading/market-data/refresh", post(market_data::refresh))
+        .route(
+            "/trading/market-data/refresh/:symbol",
+            post(market_data::refresh_symbol),
+        )
+        .route("/trading/market-data/status", get(market_data::status))
         // Trading Import
         .route("/trading/import", get(trading_import::index))
         .route("/trading/import/format", get(trading_import::format))
