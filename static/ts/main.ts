@@ -1,3 +1,58 @@
+// Toast notification system
+interface ToastOptions {
+  type?: "success" | "error" | "info" | "warning";
+  duration?: number;
+}
+
+function showToast(message: string, options: ToastOptions = {}): void {
+  const { type = "info", duration = 5000 } = options;
+
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+
+  const baseClasses =
+    "p-4 rounded-lg shadow-lg transform transition-all duration-300 ease-out translate-y-2 opacity-0 max-w-sm";
+  const typeClasses: Record<string, string> = {
+    error: "bg-red-600 text-white",
+    success: "bg-green-600 text-white",
+    warning: "bg-yellow-500 text-white",
+    info: "bg-neutral-800 text-white dark:bg-neutral-700",
+  };
+
+  toast.className = `${baseClasses} ${typeClasses[type] || typeClasses.info}`;
+
+  toast.innerHTML = `
+    <div class="flex items-start gap-3">
+      <div class="flex-1 text-sm">${message}</div>
+      <button class="text-white/80 hover:text-white flex-shrink-0" onclick="this.closest('.toast-item')?.remove(); this.parentElement?.parentElement?.remove();">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  `;
+
+  container.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.classList.remove("translate-y-2", "opacity-0");
+  });
+
+  // Auto-remove
+  if (duration > 0) {
+    setTimeout(() => {
+      toast.classList.add("translate-y-2", "opacity-0");
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+}
+
+// Make available globally
+(window as unknown as Record<string, unknown>).showToast = showToast;
+
 function initTheme(): void {
   const stored = localStorage.getItem("theme");
   const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;

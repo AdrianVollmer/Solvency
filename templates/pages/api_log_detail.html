@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="/trading/api-logs" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div class="flex items-center gap-3">
+            <h1 class="page-title">API Log #{{ log.id }}</h1>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if log.is_error() %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% else %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400{% endif %}">
+                {{ log.status }}
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Request Info -->
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Request</h2>
+            <dl class="space-y-4">
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">API</dt>
+                    <dd class="mt-1 text-sm font-mono text-neutral-900 dark:text-white">{{ log.api_name }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Action</dt>
+                    <dd class="mt-1 text-sm font-mono text-neutral-900 dark:text-white">{{ log.action }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Symbol</dt>
+                    <dd class="mt-1 text-sm text-neutral-900 dark:text-white">
+                        {% match log.symbol %}
+                        {% when Some with (s) %}
+                            <a href="/trading/market-data/{{ s }}" class="text-blue-600 dark:text-blue-400 hover:underline">{{ s }}</a>
+                        {% when None %}
+                            <span class="text-neutral-400">-</span>
+                        {% endmatch %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Parameters</dt>
+                    <dd class="mt-2">
+                        <pre class="bg-neutral-100 dark:bg-neutral-900 p-3 rounded-lg text-sm overflow-x-auto font-mono text-neutral-800 dark:text-neutral-200">{{ log.request_params }}</pre>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Timestamp</dt>
+                    <dd class="mt-1 text-sm text-neutral-900 dark:text-white">{{ log.created_at }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Response Info -->
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Response</h2>
+            <dl class="space-y-4">
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Status</dt>
+                    <dd class="mt-1 text-sm font-medium {{ log.status_color() }}">{{ log.status }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Duration</dt>
+                    <dd class="mt-1 text-sm text-neutral-900 dark:text-white">
+                        {% match log.duration_ms %}
+                        {% when Some with (ms) %}{{ ms }}ms{% when None %}Unknown{% endmatch %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Summary</dt>
+                    <dd class="mt-1 text-sm text-neutral-900 dark:text-white">
+                        {% match log.response_summary %}
+                        {% when Some with (s) %}{{ s }}{% when None %}-{% endmatch %}
+                    </dd>
+                </div>
+                {% match log.response_details %}
+                {% when Some with (details) %}
+                <div>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Details</dt>
+                    <dd class="mt-2">
+                        <pre class="bg-neutral-100 dark:bg-neutral-900 p-3 rounded-lg text-sm overflow-x-auto font-mono text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap break-words">{{ details }}</pre>
+                    </dd>
+                </div>
+                {% when None %}{% endmatch %}
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}

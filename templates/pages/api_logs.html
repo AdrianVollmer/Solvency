@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="/trading/market-data" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="page-title">API Logs</h1>
+            <p class="mt-1 text-muted">View history of Yahoo Finance API calls</p>
+        </div>
+    </div>
+
+    {% if logs.is_empty() %}
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+        <p class="text-neutral-500 dark:text-neutral-400">No API calls logged yet.</p>
+        <p class="mt-2 text-sm text-neutral-400 dark:text-neutral-500">API calls will appear here when you fetch market data.</p>
+    </div>
+    {% else %}
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead class="bg-neutral-50 dark:bg-neutral-900">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Time</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Action</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Symbol</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Summary</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Duration</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {% for log in logs %}
+                    <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer transition-colors"
+                        onclick="window.location='/trading/api-logs/{{ log.id }}'">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">{{ log.created_at }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-900 dark:text-white">{{ log.action }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-white">
+                            {% match log.symbol %}
+                            {% when Some with (s) %}{{ s }}{% when None %}<span class="text-neutral-400">-</span>{% endmatch %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if log.is_error() %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% else %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400{% endif %}">
+                                {{ log.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400 max-w-xs truncate">
+                            {% match log.response_summary %}
+                            {% when Some with (s) %}{{ s }}{% when None %}<span class="text-neutral-400">-</span>{% endmatch %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-neutral-500 dark:text-neutral-400">
+                            {% match log.duration_ms %}
+                            {% when Some with (ms) %}{{ ms }}ms{% when None %}-{% endmatch %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    window.latestLogId = {{ latest_log_id }};
+</script>
+{% endblock %}

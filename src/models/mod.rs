@@ -1,3 +1,4 @@
+pub mod api_log;
 pub mod category;
 pub mod expense;
 pub mod import;
@@ -7,6 +8,7 @@ pub mod settings;
 pub mod tag;
 pub mod trading;
 
+pub use api_log::{ApiLog, NewApiLog};
 pub use category::{Category, CategoryWithPath, NewCategory};
 pub use expense::{Expense, ExpenseWithRelations, NewExpense};
 pub use import::{ImportRow, ImportRowStatus, ImportSession, ImportStatus};

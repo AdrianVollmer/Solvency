@@ -1,5 +1,6 @@
 pub mod analytics;
 pub mod api;
+pub mod api_logs;
 pub mod categories;
 pub mod dashboard;
 pub mod expenses;
@@ -128,6 +129,10 @@ pub fn routes() -> Router<AppState> {
             "/api/market-data/:symbol",
             get(market_data::symbol_chart_data),
         )
+        // API Logs
+        .route("/trading/api-logs", get(api_logs::index))
+        .route("/trading/api-logs/:id", get(api_logs::detail))
+        .route("/api/api-logs/poll", get(api_logs::poll_errors))
         // Trading Import
         .route("/trading/import", get(trading_import::index))
         .route("/trading/import/format", get(trading_import::format))

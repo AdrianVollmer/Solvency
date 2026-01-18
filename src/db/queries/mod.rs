@@ -1,3 +1,4 @@
+pub mod api_logs;
 pub mod categories;
 pub mod expenses;
 pub mod import;

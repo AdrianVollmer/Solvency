@@ -6,9 +6,9 @@ use serde::Serialize;
 
 use chrono::Datelike;
 
-use crate::db::queries::{market_data, settings};
+use crate::db::queries::{api_logs, market_data, settings};
 use crate::error::AppResult;
-use crate::models::{MarketData, Settings, SymbolDataCoverage};
+use crate::models::{MarketData, NewApiLog, Settings, SymbolDataCoverage};
 use crate::services::market_data as market_data_service;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -25,6 +25,7 @@ pub struct MarketDataTemplate {
     pub symbols_needing_data: usize,
     pub is_refreshing: bool,
     pub refresh_message: Option<String>,
+    pub latest_log_id: i64,
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -34,6 +35,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let coverage = market_data::get_symbol_coverage(&conn)?;
     let total_data_points = market_data::count_market_data(&conn)?;
     let symbols_needing_data = market_data::get_symbols_needing_data(&conn)?.len();
+    let latest_log_id = api_logs::get_latest_log_id(&conn).unwrap_or(0);
 
     let template = MarketDataTemplate {
         title: "Market Data".into(),
@@ -45,6 +47,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         symbols_needing_data,
         is_refreshing: false,
         refresh_message: None,
+        latest_log_id,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -73,11 +76,45 @@ pub async fn refresh(State(state): State<AppState>) -> AppResult<Redirect> {
     let state_clone = state.clone();
     tokio::spawn(async move {
         for (symbol, start_date, end_date) in symbols_to_fetch {
+            let start_time = std::time::Instant::now();
+            let request_params = serde_json::json!({
+                "symbol": &symbol,
+                "start_date": &start_date,
+                "end_date": &end_date
+            })
+            .to_string();
+
             match market_data_service::fetch_historical_quotes(&symbol, &start_date, &end_date)
                 .await
             {
                 Ok(data) => {
+                    let duration_ms = start_time.elapsed().as_millis() as i64;
                     if let Ok(conn) = state_clone.db.get() {
+                        // Log success
+                        let _ = api_logs::insert_api_log(
+                            &conn,
+                            &NewApiLog {
+                                api_name: "yahoo_finance".to_string(),
+                                action: "fetch_historical_quotes".to_string(),
+                                symbol: Some(symbol.clone()),
+                                request_params: request_params.clone(),
+                                status: "success".to_string(),
+                                response_summary: Some(format!(
+                                    "Retrieved {} data points",
+                                    data.len()
+                                )),
+                                response_details: Some(
+                                    serde_json::json!({
+                                        "data_points": data.len(),
+                                        "first_date": data.first().map(|d| &d.date),
+                                        "last_date": data.last().map(|d| &d.date),
+                                    })
+                                    .to_string(),
+                                ),
+                                duration_ms: Some(duration_ms),
+                            },
+                        );
+
                         if let Err(e) = market_data::insert_market_data_batch(&conn, &data) {
                             tracing::error!("Failed to insert market data for {}: {}", symbol, e);
                         } else {
@@ -86,6 +123,23 @@ pub async fn refresh(State(state): State<AppState>) -> AppResult<Redirect> {
                     }
                 }
                 Err(e) => {
+                    let duration_ms = start_time.elapsed().as_millis() as i64;
+                    if let Ok(conn) = state_clone.db.get() {
+                        // Log error
+                        let _ = api_logs::insert_api_log(
+                            &conn,
+                            &NewApiLog {
+                                api_name: "yahoo_finance".to_string(),
+                                action: "fetch_historical_quotes".to_string(),
+                                symbol: Some(symbol.clone()),
+                                request_params,
+                                status: "error".to_string(),
+                                response_summary: Some(format!("{}", e)),
+                                response_details: Some(format!("{:?}", e)),
+                                duration_ms: Some(duration_ms),
+                            },
+                        );
+                    }
                     tracing::error!("Failed to fetch market data for {}: {}", symbol, e);
                 }
             }
@@ -116,9 +170,43 @@ pub async fn refresh_symbol(
         // Spawn background task
         let state_clone = state.clone();
         tokio::spawn(async move {
+            let start_time = std::time::Instant::now();
+            let request_params = serde_json::json!({
+                "symbol": &sym,
+                "start_date": &start,
+                "end_date": &end
+            })
+            .to_string();
+
             match market_data_service::fetch_historical_quotes(&sym, &start, &end).await {
                 Ok(data) => {
+                    let duration_ms = start_time.elapsed().as_millis() as i64;
                     if let Ok(conn) = state_clone.db.get() {
+                        // Log success
+                        let _ = api_logs::insert_api_log(
+                            &conn,
+                            &NewApiLog {
+                                api_name: "yahoo_finance".to_string(),
+                                action: "fetch_historical_quotes".to_string(),
+                                symbol: Some(sym.clone()),
+                                request_params: request_params.clone(),
+                                status: "success".to_string(),
+                                response_summary: Some(format!(
+                                    "Retrieved {} data points",
+                                    data.len()
+                                )),
+                                response_details: Some(
+                                    serde_json::json!({
+                                        "data_points": data.len(),
+                                        "first_date": data.first().map(|d| &d.date),
+                                        "last_date": data.last().map(|d| &d.date),
+                                    })
+                                    .to_string(),
+                                ),
+                                duration_ms: Some(duration_ms),
+                            },
+                        );
+
                         if let Err(e) = market_data::insert_market_data_batch(&conn, &data) {
                             tracing::error!("Failed to insert market data for {}: {}", sym, e);
                         } else {
@@ -127,6 +215,23 @@ pub async fn refresh_symbol(
                     }
                 }
                 Err(e) => {
+                    let duration_ms = start_time.elapsed().as_millis() as i64;
+                    if let Ok(conn) = state_clone.db.get() {
+                        // Log error
+                        let _ = api_logs::insert_api_log(
+                            &conn,
+                            &NewApiLog {
+                                api_name: "yahoo_finance".to_string(),
+                                action: "fetch_historical_quotes".to_string(),
+                                symbol: Some(sym.clone()),
+                                request_params,
+                                status: "error".to_string(),
+                                response_summary: Some(format!("{}", e)),
+                                response_details: Some(format!("{:?}", e)),
+                                duration_ms: Some(duration_ms),
+                            },
+                        );
+                    }
                     tracing::error!("Failed to fetch market data for {}: {}", sym, e);
                 }
             }
