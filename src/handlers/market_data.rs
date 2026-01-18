@@ -327,6 +327,7 @@ pub struct MarketDataSymbolTemplate {
     pub coverage: Option<SymbolDataCoverage>,
     pub latest_price: Option<MarketData>,
     pub data_points: Vec<MarketData>,
+    pub data_points_total: usize,
     pub missing_ranges: Vec<(String, String)>,
 }
 
@@ -362,6 +363,9 @@ pub async fn symbol_detail(
     // Calculate missing date ranges using ALL data (before limiting for display)
     let missing_ranges = calculate_missing_ranges(&all_data, coverage.as_ref());
 
+    // Track total count before limiting for display
+    let data_points_total = all_data.len();
+
     // Limit data points for display (most recent 100)
     let data_points: Vec<MarketData> = all_data.into_iter().take(100).collect();
 
@@ -380,6 +384,7 @@ pub async fn symbol_detail(
         coverage,
         latest_price,
         data_points,
+        data_points_total,
         missing_ranges,
     };
 
