@@ -32,6 +32,13 @@ pub async fn fetch_historical_quotes(
         .await
         .map_err(|e| AppError::Internal(format!("Yahoo Finance API error: {}", e)))?;
 
+    // Get currency from metadata (defaults to USD if not available)
+    let currency = response
+        .metadata()
+        .ok()
+        .and_then(|m| m.currency)
+        .unwrap_or_else(|| "USD".to_string());
+
     let quotes = response
         .quotes()
         .map_err(|e| AppError::Internal(format!("Failed to parse quotes: {}", e)))?;
@@ -56,7 +63,7 @@ pub async fn fetch_historical_quotes(
                 symbol: symbol.to_string(),
                 date,
                 close_price_cents,
-                currency: "USD".to_string(), // Yahoo Finance returns USD by default
+                currency: currency.clone(),
             })
         })
         .collect();
@@ -73,6 +80,13 @@ pub async fn fetch_latest_quote(symbol: &str) -> AppResult<Option<NewMarketData>
         .get_latest_quotes(symbol, "1d")
         .await
         .map_err(|e| AppError::Internal(format!("Yahoo Finance API error: {}", e)))?;
+
+    // Get currency from metadata (defaults to USD if not available)
+    let currency = response
+        .metadata()
+        .ok()
+        .and_then(|m| m.currency)
+        .unwrap_or_else(|| "USD".to_string());
 
     let quote = match response.last_quote() {
         Ok(q) => q,
@@ -94,7 +108,7 @@ pub async fn fetch_latest_quote(symbol: &str) -> AppResult<Option<NewMarketData>
         symbol: symbol.to_string(),
         date,
         close_price_cents,
-        currency: "USD".to_string(),
+        currency,
     }))
 }
 
