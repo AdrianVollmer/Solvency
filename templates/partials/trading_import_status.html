@@ -1,3 +1,9 @@
+<div id="import-status"
+     {% if session.is_processing() %}
+     hx-get="/trading/import/{{ session.id }}/status"
+     hx-trigger="every 500ms"
+     hx-swap="outerHTML"
+     {% endif %}>
 {% match session.status %}
     {% when crate::models::TradingImportStatus::Parsing %}
         <!-- Parsing Status -->
@@ -25,7 +31,7 @@
                     <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Preview</h2>
                     <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ session.total_rows }} activities ready to import</p>
                 </div>
-                <form hx-post="/trading/import/{{ session.id }}/confirm" hx-target="#import-status" hx-swap="innerHTML">
+                <form hx-post="/trading/import/{{ session.id }}/confirm" hx-target="#import-status" hx-swap="outerHTML">
                     <button type="submit" class="btn btn-primary">
                         Confirm Import
                     </button>
@@ -49,10 +55,7 @@
 
     {% when crate::models::TradingImportStatus::Importing %}
         <!-- Importing Status -->
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center"
-            hx-get="/trading/import/{{ session.id }}/status"
-            hx-trigger="every 500ms"
-            hx-swap="innerHTML">
+        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -126,3 +129,4 @@
             </div>
         </div>
 {% endmatch %}
+</div>

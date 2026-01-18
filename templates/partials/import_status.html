@@ -1,3 +1,9 @@
+<div id="wizard-content"
+     {% if session.is_processing() %}
+     hx-get="/import/{{ session.id }}/status"
+     hx-trigger="every 500ms"
+     hx-swap="outerHTML"
+     {% endif %}>
 {% match session.status %}
     {% when crate::models::ImportStatus::Parsing %}
         <!-- Parsing Progress -->
@@ -66,7 +72,7 @@
                 </a>
                 <button hx-post="/import/{{ session.id }}/confirm"
                         hx-target="#wizard-content"
-                        hx-swap="innerHTML"
+                        hx-swap="outerHTML"
                         class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
                     Import {{ session.total_rows }} Expense{% if session.total_rows != 1 %}s{% endif %}
                 </button>
@@ -86,10 +92,7 @@
 
     {% when crate::models::ImportStatus::Importing %}
         <!-- Importing Progress -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8"
-             hx-get="/import/{{ session.id }}/status"
-             hx-trigger="every 500ms"
-             hx-swap="outerHTML">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
                 <svg class="w-16 h-16 mx-auto text-primary-600 animate-spin lucide-icon mb-4"><use href="#loader-2"></use></svg>
                 <h2 class="text-xl font-semibold mb-2">Importing expenses...</h2>
@@ -179,3 +182,4 @@
             </div>
         </div>
 {% endmatch %}
+</div>

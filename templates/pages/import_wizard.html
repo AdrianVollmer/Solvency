@@ -57,13 +57,6 @@
     </div>
 
     <!-- Main Content Area -->
-    <div id="wizard-content"
-         {% if session.is_processing() %}
-         hx-get="/import/{{ session.id }}/status"
-         hx-trigger="every 500ms"
-         hx-swap="innerHTML"
-         {% endif %}>
-        {% include "partials/import_status.html" %}
-    </div>
+    {% include "partials/import_status.html" %}
 </div>
 {% endblock %}

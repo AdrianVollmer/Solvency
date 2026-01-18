@@ -31,13 +31,6 @@
     </div>
 
     <!-- Status Content -->
-    <div id="import-status"
-        {% if session.is_processing() %}
-        hx-get="/trading/import/{{ session.id }}/status"
-        hx-trigger="every 500ms"
-        hx-swap="innerHTML"
-        {% endif %}>
-        {% include "partials/trading_import_status.html" %}
-    </div>
+    {% include "partials/trading_import_status.html" %}
 </div>
 {% endblock %}
