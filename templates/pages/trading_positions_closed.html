@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/table.html" as table %}
 
 {% block content %}
 <div class="space-y-6">
@@ -28,36 +29,11 @@
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions/closed?{{ sort.query_string_for_str("symbol") }}"
-                               class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Symbol <span>{{ sort.indicator_str("symbol") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions/closed?{{ sort.query_string_for_str("totalcost") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Total Cost <span>{{ sort.indicator_str("totalcost") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions/closed?{{ sort.query_string_for_str("proceeds") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Total Proceeds <span>{{ sort.indicator_str("proceeds") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions/closed?{{ sort.query_string_for_str("gainloss") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Realized Gain/Loss <span>{{ sort.indicator_str("gainloss") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions/closed?{{ sort.query_string_for_str("period") }}"
-                               class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Period <span>{{ sort.indicator_str("period") }}</span>
-                            </a>
-                        </th>
+                        {% call table::th_sort(label="Symbol", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}
+                        {% call table::th_sort(label="Total Cost", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("totalcost"), indicator=sort.indicator_str("totalcost"), align="right", extra="") %}
+                        {% call table::th_sort(label="Total Proceeds", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("proceeds"), indicator=sort.indicator_str("proceeds"), align="right", extra="") %}
+                        {% call table::th_sort(label="Realized Gain/Loss", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("gainloss"), indicator=sort.indicator_str("gainloss"), align="right", extra="") %}
+                        {% call table::th_sort(label="Period", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("period"), indicator=sort.indicator_str("period"), align="left", extra="") %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/table.html" as table %}
 
 {% block head %}
 <script src="/static/js/dist/{{ manifest.get("api-log-polling.js") }}" defer></script>
@@ -81,37 +82,12 @@
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/market-data?{{ sort.query_string_for_str("symbol") }}"
-                               class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Symbol <span>{{ sort.indicator_str("symbol") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/market-data?{{ sort.query_string_for_str("activityrange") }}"
-                               class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Activity Range <span>{{ sort.indicator_str("activityrange") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/market-data?{{ sort.query_string_for_str("datarange") }}"
-                               class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Data Range <span>{{ sort.indicator_str("datarange") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/market-data?{{ sort.query_string_for_str("datapoints") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Data Points <span>{{ sort.indicator_str("datapoints") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/market-data?{{ sort.query_string_for_str("status") }}"
-                               class="flex items-center justify-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Status <span>{{ sort.indicator_str("status") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Actions</th>
+                        {% call table::th_sort(label="Symbol", url="/trading/market-data", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}
+                        {% call table::th_sort(label="Activity Range", url="/trading/market-data", sort_qs=sort.query_string_for_str("activityrange"), indicator=sort.indicator_str("activityrange"), align="left", extra="") %}
+                        {% call table::th_sort(label="Data Range", url="/trading/market-data", sort_qs=sort.query_string_for_str("datarange"), indicator=sort.indicator_str("datarange"), align="left", extra="") %}
+                        {% call table::th_sort(label="Data Points", url="/trading/market-data", sort_qs=sort.query_string_for_str("datapoints"), indicator=sort.indicator_str("datapoints"), align="right", extra="") %}
+                        {% call table::th_sort(label="Status", url="/trading/market-data", sort_qs=sort.query_string_for_str("status"), indicator=sort.indicator_str("status"), align="center", extra="") %}
+                        {% call table::th(label="Actions", align="right") %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">

@@ -219,6 +219,17 @@ impl ExpenseFilterParams {
         }
         parts.join("&")
     }
+
+    /// Returns query string combining date range and filter params (for preserving state in sort links).
+    pub fn preserve_query_string(&self, date_range: &DateRange) -> String {
+        let mut qs = date_range.query_string();
+        let base = self.base_query_string();
+        if !base.is_empty() {
+            qs.push('&');
+            qs.push_str(&base);
+        }
+        qs
+    }
 }
 
 #[derive(Debug, Deserialize)]

@@ -1,3 +1,4 @@
+{% import "macros/table.html" as table %}
 <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
     {% if activities.is_empty() %}
     <div class="p-8 text-center">
@@ -8,62 +9,13 @@
         <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
             <thead class="bg-neutral-50 dark:bg-neutral-900">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/trading/activities/table?{{ sort.query_string_for_str("date") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/trading/activities/table?{{ sort.query_string_for_str("date") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#activity-table"
-                           class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Date <span>{{ sort.indicator_str("date") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/trading/activities/table?{{ sort.query_string_for_str("symbol") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/trading/activities/table?{{ sort.query_string_for_str("symbol") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#activity-table"
-                           class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Symbol <span>{{ sort.indicator_str("symbol") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/trading/activities/table?{{ sort.query_string_for_str("type") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/trading/activities/table?{{ sort.query_string_for_str("type") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#activity-table"
-                           class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Type <span>{{ sort.indicator_str("type") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/trading/activities/table?{{ sort.query_string_for_str("quantity") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/trading/activities/table?{{ sort.query_string_for_str("quantity") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#activity-table"
-                           class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Quantity <span>{{ sort.indicator_str("quantity") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/trading/activities/table?{{ sort.query_string_for_str("price") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/trading/activities/table?{{ sort.query_string_for_str("price") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#activity-table"
-                           class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Price <span>{{ sort.indicator_str("price") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/trading/activities/table?{{ sort.query_string_for_str("total") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/trading/activities/table?{{ sort.query_string_for_str("total") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#activity-table"
-                           class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Total <span>{{ sort.indicator_str("total") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/trading/activities/table?{{ sort.query_string_for_str("fee") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/trading/activities/table?{{ sort.query_string_for_str("fee") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#activity-table"
-                           class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Fee <span>{{ sort.indicator_str("fee") }}</span>
-                        </a>
-                    </th>
+                    {% call table::th_sort_htmx(label="Date", url="/trading/activities/table", target="#activity-table", sort_qs=sort.query_string_for_str("date"), indicator=sort.indicator_str("date"), align="left", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Symbol", url="/trading/activities/table", target="#activity-table", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Type", url="/trading/activities/table", target="#activity-table", sort_qs=sort.query_string_for_str("type"), indicator=sort.indicator_str("type"), align="left", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Quantity", url="/trading/activities/table", target="#activity-table", sort_qs=sort.query_string_for_str("quantity"), indicator=sort.indicator_str("quantity"), align="right", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Price", url="/trading/activities/table", target="#activity-table", sort_qs=sort.query_string_for_str("price"), indicator=sort.indicator_str("price"), align="right", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Total", url="/trading/activities/table", target="#activity-table", sort_qs=sort.query_string_for_str("total"), indicator=sort.indicator_str("total"), align="right", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Fee", url="/trading/activities/table", target="#activity-table", sort_qs=sort.query_string_for_str("fee"), indicator=sort.indicator_str("fee"), align="right", extra=filter.preserve_query_string(date_range)) %}
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700" id="activities-list">
@@ -82,13 +34,13 @@
         </p>
         <div class="flex gap-2">
             {% if page > 1 %}
-            <a href="/trading/activities?from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}&page={{ page - 1 }}&{{ sort.query_string() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
+            <a href="/trading/activities?page={{ page - 1 }}&{{ filter.preserve_query_string(date_range) }}&{{ sort.query_string() }}"
                 class="px-3 py-1 text-sm border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-700">
                 Previous
             </a>
             {% endif %}
             {% if page * page_size < total_count %}
-            <a href="/trading/activities?from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}&page={{ page + 1 }}&{{ sort.query_string() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
+            <a href="/trading/activities?page={{ page + 1 }}&{{ filter.preserve_query_string(date_range) }}&{{ sort.query_string() }}"
                 class="px-3 py-1 text-sm border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-700">
                 Next
             </a>

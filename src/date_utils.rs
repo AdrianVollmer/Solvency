@@ -245,6 +245,17 @@ impl DateRange {
     pub fn is_preset(&self, preset: &DatePreset) -> bool {
         self.preset == Some(*preset)
     }
+
+    /// Returns query string for preserving date range state in URLs.
+    /// Format: `from_date=YYYY-MM-DD&to_date=YYYY-MM-DD` with optional `&preset=X`
+    pub fn query_string(&self) -> String {
+        let mut qs = format!("from_date={}&to_date={}", self.from_str(), self.to_str());
+        if let Some(preset) = &self.preset {
+            qs.push_str("&preset=");
+            qs.push_str(preset.as_str());
+        }
+        qs
+    }
 }
 
 impl Default for DateRange {

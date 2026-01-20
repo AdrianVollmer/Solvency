@@ -1,50 +1,16 @@
+{% import "macros/table.html" as table %}
 <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full">
             <caption class="sr-only">Expenses list</caption>
-            <thead class="bg-neutral-50 dark:bg-neutral-900/50">
+            <thead class="bg-neutral-50 dark:bg-neutral-900">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/expenses/table?{{ sort.query_string_for_str("date") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/expenses/table?{{ sort.query_string_for_str("date") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#expense-table"
-                           class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Date <span>{{ sort.indicator_str("date") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/expenses/table?{{ sort.query_string_for_str("description") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/expenses/table?{{ sort.query_string_for_str("description") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#expense-table"
-                           class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Description <span>{{ sort.indicator_str("description") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/expenses/table?{{ sort.query_string_for_str("counterparty") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/expenses/table?{{ sort.query_string_for_str("counterparty") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#expense-table"
-                           class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Counterparty <span>{{ sort.indicator_str("counterparty") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/expenses/table?{{ sort.query_string_for_str("category") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/expenses/table?{{ sort.query_string_for_str("category") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#expense-table"
-                           class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Category <span>{{ sort.indicator_str("category") }}</span>
-                        </a>
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Tags</th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <a href="/expenses/table?{{ sort.query_string_for_str("amount") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-get="/expenses/table?{{ sort.query_string_for_str("amount") }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
-                           hx-target="#expense-table"
-                           class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                            Amount <span>{{ sort.indicator_str("amount") }}</span>
-                        </a>
-                    </th>
+                    {% call table::th_sort_htmx(label="Date", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("date"), indicator=sort.indicator_str("date"), align="left", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Description", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("description"), indicator=sort.indicator_str("description"), align="left", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Counterparty", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("counterparty"), indicator=sort.indicator_str("counterparty"), align="left", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th_sort_htmx(label="Category", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("category"), indicator=sort.indicator_str("category"), align="left", extra=filter.preserve_query_string(date_range)) %}
+                    {% call table::th(label="Tags", align="left") %}
+                    {% call table::th_sort_htmx(label="Amount", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("amount"), indicator=sort.indicator_str("amount"), align="right", extra=filter.preserve_query_string(date_range)) %}
                 </tr>
             </thead>
             <tbody class="divide-y divide-neutral-100 dark:divide-neutral-700">
@@ -72,13 +38,13 @@
         </p>
         <div class="flex gap-2">
             {% if page > 1 %}
-            <a href="/expenses?page={{ page - 1 }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}&{{ sort.query_string() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
+            <a href="/expenses?page={{ page - 1 }}&{{ filter.preserve_query_string(date_range) }}&{{ sort.query_string() }}"
                 class="btn btn-secondary text-sm">
                 Previous
             </a>
             {% endif %}
             {% if page * page_size < total_count %}
-            <a href="/expenses?page={{ page + 1 }}&from_date={{ date_range.from_str() }}&to_date={{ date_range.to_str() }}{% if date_range.preset.is_some() %}&preset={{ date_range.preset.unwrap().as_str() }}{% endif %}&{{ sort.query_string() }}{% if filter.base_query_string() != "" %}&{{ filter.base_query_string() }}{% endif %}"
+            <a href="/expenses?page={{ page + 1 }}&{{ filter.preserve_query_string(date_range) }}&{{ sort.query_string() }}"
                 class="btn btn-secondary text-sm">
                 Next
             </a>

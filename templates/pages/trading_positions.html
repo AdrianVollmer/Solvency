@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/table.html" as table %}
 
 {% block content %}
 <div class="space-y-6">
@@ -24,8 +25,8 @@
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Currency</th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Balance</th>
+                        {% call table::th(label="Currency", align="left") %}
+                        {% call table::th(label="Balance", align="right") %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -59,48 +60,13 @@
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions?{{ sort.query_string_for_str("symbol") }}"
-                               class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Symbol <span>{{ sort.indicator_str("symbol") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions?{{ sort.query_string_for_str("quantity") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Quantity <span>{{ sort.indicator_str("quantity") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions?{{ sort.query_string_for_str("price") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Price <span>{{ sort.indicator_str("price") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions?{{ sort.query_string_for_str("avgcost") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Avg Cost <span>{{ sort.indicator_str("avgcost") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions?{{ sort.query_string_for_str("totalcost") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Total Cost <span>{{ sort.indicator_str("totalcost") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions?{{ sort.query_string_for_str("value") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Current Value <span>{{ sort.indicator_str("value") }}</span>
-                            </a>
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                            <a href="/trading/positions?{{ sort.query_string_for_str("gainloss") }}"
-                               class="flex items-center justify-end gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
-                                Gain/Loss <span>{{ sort.indicator_str("gainloss") }}</span>
-                            </a>
-                        </th>
+                        {% call table::th_sort(label="Symbol", url="/trading/positions", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}
+                        {% call table::th_sort(label="Quantity", url="/trading/positions", sort_qs=sort.query_string_for_str("quantity"), indicator=sort.indicator_str("quantity"), align="right", extra="") %}
+                        {% call table::th_sort(label="Price", url="/trading/positions", sort_qs=sort.query_string_for_str("price"), indicator=sort.indicator_str("price"), align="right", extra="") %}
+                        {% call table::th_sort(label="Avg Cost", url="/trading/positions", sort_qs=sort.query_string_for_str("avgcost"), indicator=sort.indicator_str("avgcost"), align="right", extra="") %}
+                        {% call table::th_sort(label="Total Cost", url="/trading/positions", sort_qs=sort.query_string_for_str("totalcost"), indicator=sort.indicator_str("totalcost"), align="right", extra="") %}
+                        {% call table::th_sort(label="Current Value", url="/trading/positions", sort_qs=sort.query_string_for_str("value"), indicator=sort.indicator_str("value"), align="right", extra="") %}
+                        {% call table::th_sort(label="Gain/Loss", url="/trading/positions", sort_qs=sort.query_string_for_str("gainloss"), indicator=sort.indicator_str("gainloss"), align="right", extra="") %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
