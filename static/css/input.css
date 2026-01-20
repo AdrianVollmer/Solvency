@@ -131,6 +131,20 @@
     @apply font-display text-2xl font-bold tracking-tight text-neutral-900 dark:text-white;
   }
 
+  /* Net Worth Hero Display - dramatic, confident typography */
+  .net-worth-hero {
+    @apply font-display font-bold tracking-tighter leading-none tabular-nums;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+  }
+
+  .net-worth-positive {
+    @apply text-neutral-900 dark:text-white;
+  }
+
+  .net-worth-negative {
+    @apply text-red-600 dark:text-red-400;
+  }
+
   /* Subtle text */
   .text-muted {
     @apply text-neutral-500 dark:text-neutral-400;

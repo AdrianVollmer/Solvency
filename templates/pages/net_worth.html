@@ -22,6 +22,20 @@
     </div>
     {% else %}
 
+    <!-- Hero Net Worth Display -->
+    <div class="py-8 md:py-12">
+        <p class="text-xs uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500 font-medium mb-3">Current Net Worth</p>
+        <div class="net-worth-hero {% if current_net_worth_cents >= 0 %}net-worth-positive{% else %}net-worth-negative{% endif %}">
+            {{ current_net_worth_formatted }}
+        </div>
+        <div class="mt-4 flex items-baseline gap-3">
+            <span class="text-sm {% if change_cents >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-500 dark:text-red-400{% endif %} font-medium tabular-nums">
+                {% if change_cents >= 0 %}+{% endif %}{{ change_formatted }}
+            </span>
+            <span class="text-xs text-neutral-400 dark:text-neutral-500">since {{ start_date }}</span>
+        </div>
+    </div>
+
     <!-- Chart -->
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="p-4">
@@ -64,28 +78,11 @@
         </div>
     </div>
 
-    <!-- Stats Table -->
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
-        <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-            <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
-                <tr>
-                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Current</td>
-                    <td class="px-4 py-2 text-sm font-medium text-right {% if current_net_worth_cents >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">{{ current_net_worth_formatted }}</td>
-                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">All-Time High</td>
-                    <td class="px-4 py-2 text-sm font-medium text-neutral-900 dark:text-white text-right">{{ highest_net_worth_formatted }}</td>
-                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">All-Time Low</td>
-                    <td class="px-4 py-2 text-sm font-medium text-neutral-900 dark:text-white text-right">{{ lowest_net_worth_formatted }}</td>
-                </tr>
-                <tr>
-                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Starting</td>
-                    <td class="px-4 py-2 text-sm font-medium text-neutral-900 dark:text-white text-right">{{ starting_net_worth_formatted }}</td>
-                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Change</td>
-                    <td class="px-4 py-2 text-sm font-medium text-right {% if change_cents >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">{{ change_formatted }}</td>
-                    <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Period</td>
-                    <td class="px-4 py-2 text-sm text-neutral-900 dark:text-white text-right">{{ start_date }} to {{ end_date }} ({{ total_days }} days)</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Stats -->
+    <div class="flex flex-wrap gap-x-8 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <span>High <span class="font-medium text-neutral-900 dark:text-white tabular-nums">{{ highest_net_worth_formatted }}</span></span>
+        <span>Low <span class="font-medium text-neutral-900 dark:text-white tabular-nums">{{ lowest_net_worth_formatted }}</span></span>
+        <span>{{ total_days }} days tracked</span>
     </div>
 
     {% endif %}
