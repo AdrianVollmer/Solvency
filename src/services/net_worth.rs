@@ -326,19 +326,22 @@ pub fn decimate_for_display(
     }
 
     // Find indices of min and max points
-    let (min_idx, max_idx) = data.iter().enumerate().fold((0, 0), |(min_i, max_i), (i, p)| {
-        let new_min = if p.net_worth_cents < data[min_i].net_worth_cents {
-            i
-        } else {
-            min_i
-        };
-        let new_max = if p.net_worth_cents > data[max_i].net_worth_cents {
-            i
-        } else {
-            max_i
-        };
-        (new_min, new_max)
-    });
+    let (min_idx, max_idx) = data
+        .iter()
+        .enumerate()
+        .fold((0, 0), |(min_i, max_i), (i, p)| {
+            let new_min = if p.net_worth_cents < data[min_i].net_worth_cents {
+                i
+            } else {
+                min_i
+            };
+            let new_max = if p.net_worth_cents > data[max_i].net_worth_cents {
+                i
+            } else {
+                max_i
+            };
+            (new_min, new_max)
+        });
 
     let step = data.len() / max_points;
     let mut result: Vec<NetWorthDataPoint> = Vec::with_capacity(max_points + 4);

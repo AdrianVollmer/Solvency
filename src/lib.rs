@@ -1,12 +1,12 @@
 pub mod config;
 pub mod date_utils;
 pub mod db;
-pub mod sort_utils;
 pub mod error;
 pub mod filters;
 pub mod handlers;
 pub mod models;
 pub mod services;
+pub mod sort_utils;
 pub mod state;
 
 /// Application version from Cargo.toml (single source of truth)

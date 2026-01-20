@@ -124,7 +124,11 @@ impl<C: SortableColumn> TableSort<C> {
 
     /// Generate query string for current sort state.
     pub fn query_string(&self) -> String {
-        format!("sort={}&dir={}", self.column.as_str(), self.direction.as_str())
+        format!(
+            "sort={}&dir={}",
+            self.column.as_str(),
+            self.direction.as_str()
+        )
     }
 
     /// Generate query string for sorting by a specific column.

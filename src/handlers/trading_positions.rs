@@ -13,7 +13,7 @@ use crate::models::trading::{
 };
 use crate::models::{MarketData, Position, Settings};
 use crate::services::xirr::{calculate_xirr, CashFlow};
-use crate::sort_utils::{Sortable, SortableColumn, SortDirection, TableSort};
+use crate::sort_utils::{SortDirection, Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -122,24 +122,22 @@ fn sort_positions(positions: &mut [PositionWithMarketData], sort: &TableSort<Pos
     positions.sort_by(|a, b| {
         let cmp = match sort.column {
             PositionSortColumn::Symbol => a.position.symbol.cmp(&b.position.symbol),
-            PositionSortColumn::Quantity => {
-                a.position.quantity.partial_cmp(&b.position.quantity).unwrap_or(std::cmp::Ordering::Equal)
-            }
-            PositionSortColumn::Price => {
-                a.current_price_cents.cmp(&b.current_price_cents)
-            }
-            PositionSortColumn::AvgCost => {
-                a.position.average_cost_cents().cmp(&b.position.average_cost_cents())
-            }
-            PositionSortColumn::TotalCost => {
-                a.position.total_cost_cents.cmp(&b.position.total_cost_cents)
-            }
-            PositionSortColumn::Value => {
-                a.current_value_cents.cmp(&b.current_value_cents)
-            }
-            PositionSortColumn::GainLoss => {
-                a.gain_loss_cents.cmp(&b.gain_loss_cents)
-            }
+            PositionSortColumn::Quantity => a
+                .position
+                .quantity
+                .partial_cmp(&b.position.quantity)
+                .unwrap_or(std::cmp::Ordering::Equal),
+            PositionSortColumn::Price => a.current_price_cents.cmp(&b.current_price_cents),
+            PositionSortColumn::AvgCost => a
+                .position
+                .average_cost_cents()
+                .cmp(&b.position.average_cost_cents()),
+            PositionSortColumn::TotalCost => a
+                .position
+                .total_cost_cents
+                .cmp(&b.position.total_cost_cents),
+            PositionSortColumn::Value => a.current_value_cents.cmp(&b.current_value_cents),
+            PositionSortColumn::GainLoss => a.gain_loss_cents.cmp(&b.gain_loss_cents),
         };
 
         match sort.direction {
@@ -150,13 +148,20 @@ fn sort_positions(positions: &mut [PositionWithMarketData], sort: &TableSort<Pos
 }
 
 /// Sort closed positions in-memory based on sort configuration.
-fn sort_closed_positions(positions: &mut [ClosedPosition], sort: &TableSort<ClosedPositionSortColumn>) {
+fn sort_closed_positions(
+    positions: &mut [ClosedPosition],
+    sort: &TableSort<ClosedPositionSortColumn>,
+) {
     positions.sort_by(|a, b| {
         let cmp = match sort.column {
             ClosedPositionSortColumn::Symbol => a.symbol.cmp(&b.symbol),
             ClosedPositionSortColumn::TotalCost => a.total_cost_cents.cmp(&b.total_cost_cents),
-            ClosedPositionSortColumn::Proceeds => a.total_proceeds_cents.cmp(&b.total_proceeds_cents),
-            ClosedPositionSortColumn::GainLoss => a.realized_gain_loss_cents.cmp(&b.realized_gain_loss_cents),
+            ClosedPositionSortColumn::Proceeds => {
+                a.total_proceeds_cents.cmp(&b.total_proceeds_cents)
+            }
+            ClosedPositionSortColumn::GainLoss => {
+                a.realized_gain_loss_cents.cmp(&b.realized_gain_loss_cents)
+            }
             ClosedPositionSortColumn::Period => a.first_activity_date.cmp(&b.first_activity_date),
         };
 

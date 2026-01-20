@@ -10,7 +10,7 @@ use crate::db::queries::{api_logs, market_data, settings};
 use crate::error::AppResult;
 use crate::models::{MarketData, NewApiLog, Settings, SymbolDataCoverage};
 use crate::services::market_data as market_data_service;
-use crate::sort_utils::{Sortable, SortableColumn, SortDirection, TableSort};
+use crate::sort_utils::{SortDirection, Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -74,10 +74,10 @@ fn sort_coverage(coverage: &mut [SymbolDataCoverage], sort: &TableSort<MarketDat
     coverage.sort_by(|a, b| {
         let cmp = match sort.column {
             MarketDataSortColumn::Symbol => a.symbol.cmp(&b.symbol),
-            MarketDataSortColumn::ActivityRange => a.first_activity_date.cmp(&b.first_activity_date),
-            MarketDataSortColumn::DataRange => {
-                a.first_data_date.cmp(&b.first_data_date)
+            MarketDataSortColumn::ActivityRange => {
+                a.first_activity_date.cmp(&b.first_activity_date)
             }
+            MarketDataSortColumn::DataRange => a.first_data_date.cmp(&b.first_data_date),
             MarketDataSortColumn::DataPoints => a.data_points.cmp(&b.data_points),
             MarketDataSortColumn::Status => {
                 // Sort by coverage status: Complete < Stale < No data

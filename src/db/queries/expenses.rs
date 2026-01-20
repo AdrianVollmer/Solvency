@@ -54,10 +54,7 @@ pub fn list_expenses(
     }
 
     // Use provided sort or default to date DESC
-    let order_by = filter
-        .sort_sql
-        .as_deref()
-        .unwrap_or("e.date DESC");
+    let order_by = filter.sort_sql.as_deref().unwrap_or("e.date DESC");
     sql.push_str(&format!(" ORDER BY {}, e.id DESC", order_by));
 
     if let Some(limit) = filter.limit {
