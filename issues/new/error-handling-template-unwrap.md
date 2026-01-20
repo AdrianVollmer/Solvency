@@ -26,15 +26,7 @@ Examples:
 - And many more...
 
 ## Recommendation
-Use the `?` operator to propagate errors properly:
-
-```rust
-Ok(Html(template.render().map_err(|e| {
-    AppError::Internal(format!("Template render failed: {}", e))
-})?))
-```
-
-Or add a helper method:
+Use the `?` operator to propagate errors properly and add a helper method:
 
 ```rust
 trait RenderExt {
