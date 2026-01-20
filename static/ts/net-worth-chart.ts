@@ -1,4 +1,4 @@
-declare const Chart: any;
+declare const echarts: any;
 
 interface NetWorthChartResponse {
   labels: string[];
@@ -50,152 +50,149 @@ function formatMoney(cents: number, currency: string, locale: string): string {
   );
 }
 
-function getChartColors(): {
-  text: string;
-  grid: string;
-  netWorth: string;
-  netWorthFill: string;
-  expense: string;
-  portfolio: string;
-} {
-  const isDark = document.documentElement.classList.contains("dark");
-  return {
-    text: isDark ? "#e5e7eb" : "#374151",
-    grid: isDark ? "#374151" : "#e5e7eb",
-    netWorth: "#3b82f6", // blue
-    netWorthFill: isDark ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.1)",
-    expense: "#22c55e", // green
-    portfolio: "#f59e0b", // amber
-  };
+function isDarkMode(): boolean {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getTheme(): string | undefined {
+  return isDarkMode() ? "dark" : undefined;
 }
 
 async function loadNetWorthChart(): Promise<void> {
-  const canvas = document.getElementById("net-worth-chart") as HTMLCanvasElement;
-  if (!canvas) return;
+  const container = document.getElementById("net-worth-chart");
+  if (!container) return;
 
-  const currency = canvas.dataset.currency || "USD";
-  const locale = canvas.dataset.locale || "en-US";
+  const currency = container.dataset.currency || "USD";
+  const locale = container.dataset.locale || "en-US";
 
   try {
     const response = await fetch("/api/net-worth/chart");
     if (!response.ok) throw new Error("Failed to fetch data");
 
     const data: NetWorthChartResponse = await response.json();
-    const colors = getChartColors();
 
     if (netWorthChart) {
-      netWorthChart.destroy();
+      netWorthChart.dispose();
     }
+
+    netWorthChart = echarts.init(container, getTheme());
 
     // Convert cents to dollars for display
     const netWorthDollars = data.net_worth.map((c) => c / 100);
     const expenseDollars = data.expense_component.map((c) => c / 100);
     const portfolioDollars = data.portfolio_component.map((c) => c / 100);
 
-    netWorthChart = new Chart(canvas, {
-      type: "line",
-      data: {
-        labels: data.labels,
-        datasets: [
-          {
-            label: "Net Worth",
-            data: netWorthDollars,
-            borderColor: colors.netWorth,
-            backgroundColor: colors.netWorthFill,
-            fill: true,
-            tension: 0.1,
-            pointRadius: data.labels.length > 100 ? 0 : 2,
-            pointHoverRadius: 4,
-            borderWidth: 2,
-            order: 1,
-          },
-          {
-            label: "Expenses (Cumulative)",
-            data: expenseDollars,
-            borderColor: colors.expense,
-            backgroundColor: "transparent",
-            borderDash: [5, 5],
-            fill: false,
-            tension: 0.1,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            borderWidth: 1.5,
-            hidden: true,
-            order: 2,
-          },
-          {
-            label: "Portfolio Value",
-            data: portfolioDollars,
-            borderColor: colors.portfolio,
-            backgroundColor: "transparent",
-            borderDash: [5, 5],
-            fill: false,
-            tension: 0.1,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            borderWidth: 1.5,
-            hidden: true,
-            order: 3,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          intersect: false,
-          mode: "index",
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: "top",
-            labels: {
-              color: colors.text,
-              usePointStyle: true,
-              padding: 16,
-            },
-          },
-          tooltip: {
-            callbacks: {
-              label: (context: any) => {
-                const label = context.dataset.label || "";
-                const value = formatMoney(context.raw * 100, currency, locale);
-                return `${label}: ${value}`;
-              },
-            },
-          },
-        },
-        scales: {
-          x: {
-            type: "category",
-            grid: { color: colors.grid },
-            ticks: {
-              color: colors.text,
-              maxTicksLimit: 12,
-              maxRotation: 45,
-            },
-          },
-          y: {
-            grid: { color: colors.grid },
-            ticks: {
-              color: colors.text,
-              callback: (value: number) => formatMoney(value * 100, currency, locale),
-            },
-          },
+    const showSymbols = data.labels.length <= 100;
+
+    const option = {
+      tooltip: {
+        trigger: "axis",
+        formatter: (params: any) => {
+          let result = `<strong>${params[0].axisValue}</strong><br/>`;
+          for (const param of params) {
+            const value = formatMoney(param.value * 100, currency, locale);
+            result += `${param.marker} ${param.seriesName}: ${value}<br/>`;
+          }
+          return result;
         },
       },
+      legend: {
+        data: ["Net Worth", "Expenses (Cumulative)", "Portfolio Value"],
+        top: 0,
+        selected: {
+          "Net Worth": true,
+          "Expenses (Cumulative)": false,
+          "Portfolio Value": false,
+        },
+      },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "3%",
+        top: 40,
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        boundaryGap: false,
+        data: data.labels,
+        axisLabel: {
+          rotate: 45,
+        },
+      },
+      yAxis: {
+        type: "value",
+        axisLabel: {
+          formatter: (value: number) => formatMoney(value * 100, currency, locale),
+        },
+      },
+      series: [
+        {
+          name: "Net Worth",
+          type: "line",
+          smooth: true,
+          lineStyle: {
+            width: 2,
+            color: "#3b82f6",
+          },
+          itemStyle: {
+            color: "#3b82f6",
+          },
+          areaStyle: {
+            opacity: isDarkMode() ? 0.15 : 0.1,
+          },
+          symbol: showSymbols ? "circle" : "none",
+          symbolSize: 4,
+          data: netWorthDollars,
+          z: 3,
+        },
+        {
+          name: "Expenses (Cumulative)",
+          type: "line",
+          smooth: true,
+          lineStyle: {
+            width: 1.5,
+            color: "#22c55e",
+            type: "dashed",
+          },
+          itemStyle: {
+            color: "#22c55e",
+          },
+          symbol: "none",
+          data: expenseDollars,
+          z: 2,
+        },
+        {
+          name: "Portfolio Value",
+          type: "line",
+          smooth: true,
+          lineStyle: {
+            width: 1.5,
+            color: "#f59e0b",
+            type: "dashed",
+          },
+          itemStyle: {
+            color: "#f59e0b",
+          },
+          symbol: "none",
+          data: portfolioDollars,
+          z: 1,
+        },
+      ],
+    };
+
+    netWorthChart.setOption(option);
+
+    window.addEventListener("resize", () => {
+      if (netWorthChart) netWorthChart.resize();
     });
   } catch (error) {
     console.error("Failed to load net worth chart:", error);
-    const container = canvas.parentElement;
-    if (container) {
-      container.innerHTML = `
-        <div class="flex items-center justify-center h-full text-neutral-500">
-          Failed to load chart data.
-        </div>
-      `;
-    }
+    container.innerHTML = `
+      <div class="flex items-center justify-center h-full text-neutral-500">
+        Failed to load chart data.
+      </div>
+    `;
   }
 }
 

@@ -1,4 +1,4 @@
-declare const Chart: any;
+declare const echarts: any;
 
 interface PriceData {
   date: string;
@@ -29,30 +29,29 @@ function formatQuantity(qty: number): string {
   return qty.toFixed(4).replace(/\.?0+$/, "");
 }
 
-function getChartColors(): { text: string; grid: string; line: string; fill: string } {
-  const isDark = document.documentElement.classList.contains("dark");
-  return {
-    text: isDark ? "#e5e7eb" : "#374151",
-    grid: isDark ? "#374151" : "#e5e7eb",
-    line: "#3b82f6",
-    fill: isDark ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.1)",
-  };
+function isDarkMode(): boolean {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getTheme(): string | undefined {
+  return isDarkMode() ? "dark" : undefined;
 }
 
 async function loadPositionChart(symbol: string): Promise<void> {
-  const canvas = document.getElementById("position-chart") as HTMLCanvasElement;
-  if (!canvas) return;
+  const container = document.getElementById("position-chart");
+  if (!container) return;
 
   try {
     const response = await fetch(`/api/positions/${encodeURIComponent(symbol)}/chart`);
     if (!response.ok) throw new Error("Failed to fetch data");
 
     const chartData: ChartResponse = await response.json();
-    const colors = getChartColors();
 
     if (positionChart) {
-      positionChart.destroy();
+      positionChart.dispose();
     }
+
+    positionChart = echarts.init(container, getTheme());
 
     // Create a map of date -> price for quick lookup
     const priceMap = new Map<string, number>();
@@ -60,114 +59,120 @@ async function loadPositionChart(symbol: string): Promise<void> {
       priceMap.set(d.date, d.price_cents / 100);
     }
 
-    // Create annotations for buy/sell activities
-    const annotations: any = {};
-    for (const [i, activity] of chartData.activities.entries()) {
-      // Find the price at this date, or use the activity price
+    // Create markPoint data for buy/sell activities
+    const markPointData = chartData.activities.map((activity) => {
       const priceAtDate = priceMap.get(activity.date) ?? activity.price_cents / 100;
-
       const isBuy = activity.activity_type === "BUY";
-      const color = isBuy ? "#22c55e" : "#ef4444"; // green for buy, red for sell
 
-      annotations[`activity${i}`] = {
-        type: "point",
-        xValue: activity.date,
-        yValue: priceAtDate,
-        backgroundColor: color,
-        borderColor: color,
-        borderWidth: 2,
-        radius: 6,
-        label: {
-          display: false,
+      return {
+        coord: [activity.date, priceAtDate],
+        symbol: "circle",
+        symbolSize: 12,
+        itemStyle: {
+          color: isBuy ? "#22c55e" : "#ef4444",
+          borderColor: isBuy ? "#22c55e" : "#ef4444",
+          borderWidth: 2,
         },
+        // Store activity data for tooltip
+        activity: activity,
       };
+    });
+
+    const dates = chartData.data.map((d) => d.date);
+    const prices = chartData.data.map((d) => d.price_cents / 100);
+    const showSymbols = chartData.data.length <= 100;
+
+    // Create activity lookup map for tooltip
+    const activityMap = new Map<string, ActivityMarker>();
+    for (const activity of chartData.activities) {
+      activityMap.set(activity.date, activity);
     }
 
-    positionChart = new Chart(canvas, {
-      type: "line",
-      data: {
-        labels: chartData.data.map((d) => d.date),
-        datasets: [
-          {
-            label: `${symbol} Price`,
-            data: chartData.data.map((d) => d.price_cents / 100),
-            borderColor: colors.line,
-            backgroundColor: colors.fill,
-            fill: true,
-            tension: 0.1,
-            pointRadius: chartData.data.length > 100 ? 0 : 2,
-            pointHoverRadius: 4,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          intersect: false,
-          mode: "index",
-        },
-        plugins: {
-          legend: {
-            display: false,
-          },
-          tooltip: {
-            callbacks: {
-              label: (context: any) => {
-                const date = context.label;
-                const price = formatPrice(context.raw * 100);
+    const option = {
+      tooltip: {
+        trigger: "axis",
+        formatter: (params: any) => {
+          const point = params[0];
+          const date = point.axisValue;
+          const price = formatPrice(point.value * 100);
 
-                // Check if there's an activity on this date
-                const activity = chartData.activities.find((a) => a.date === date);
-                if (activity) {
-                  const type = activity.activity_type === "BUY" ? "Buy" : "Sell";
-                  const qty = formatQuantity(activity.quantity);
-                  const total = formatPrice(activity.total_cents);
-                  return [
-                    `Price: ${price}`,
-                    `${type}: ${qty} shares @ ${formatPrice(activity.price_cents)}`,
-                    `Total: ${total}`,
-                  ];
-                }
+          const activity = activityMap.get(date);
+          if (activity) {
+            const type = activity.activity_type === "BUY" ? "Buy" : "Sell";
+            const qty = formatQuantity(activity.quantity);
+            const total = formatPrice(activity.total_cents);
+            return [
+              `<strong>${date}</strong>`,
+              `Price: ${price}`,
+              `${type}: ${qty} shares @ ${formatPrice(activity.price_cents)}`,
+              `Total: ${total}`,
+            ].join("<br/>");
+          }
 
-                return `Price: ${price}`;
-              },
-            },
-          },
-          annotation: {
-            annotations: annotations,
-          },
-        },
-        scales: {
-          x: {
-            type: "category",
-            grid: { color: colors.grid },
-            ticks: {
-              color: colors.text,
-              maxTicksLimit: 10,
-              maxRotation: 45,
-            },
-          },
-          y: {
-            grid: { color: colors.grid },
-            ticks: {
-              color: colors.text,
-              callback: (value: number) => formatPrice(value * 100),
-            },
-          },
+          return `<strong>${date}</strong><br/>Price: ${price}`;
         },
       },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "3%",
+        top: 20,
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        boundaryGap: false,
+        data: dates,
+        axisLabel: {
+          rotate: 45,
+        },
+      },
+      yAxis: {
+        type: "value",
+        axisLabel: {
+          formatter: (value: number) => formatPrice(value * 100),
+        },
+      },
+      series: [
+        {
+          name: `${symbol} Price`,
+          type: "line",
+          smooth: true,
+          lineStyle: {
+            width: 2,
+            color: "#3b82f6",
+          },
+          itemStyle: {
+            color: "#3b82f6",
+          },
+          areaStyle: {
+            opacity: 0.1,
+          },
+          symbol: showSymbols ? "circle" : "none",
+          symbolSize: 4,
+          data: prices,
+          markPoint: {
+            data: markPointData,
+            label: {
+              show: false,
+            },
+          },
+        },
+      ],
+    };
+
+    positionChart.setOption(option);
+
+    window.addEventListener("resize", () => {
+      if (positionChart) positionChart.resize();
     });
   } catch (error) {
     console.error("Failed to load position chart:", error);
-    const container = canvas.parentElement;
-    if (container) {
-      container.innerHTML = `
-        <div class="flex items-center justify-center h-full text-neutral-500">
-          Failed to load chart data. <a href="/trading/market-data/${symbol}" class="text-blue-500 hover:underline ml-1">Fetch market data</a>
-        </div>
-      `;
-    }
+    container.innerHTML = `
+      <div class="flex items-center justify-center h-full text-neutral-500">
+        Failed to load chart data. <a href="/trading/market-data/${symbol}" class="text-blue-500 hover:underline ml-1">Fetch market data</a>
+      </div>
+    `;
   }
 }
 

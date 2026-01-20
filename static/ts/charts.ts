@@ -1,4 +1,4 @@
-declare const Chart: any;
+declare const echarts: any;
 
 interface CategoryData {
   category: string;
@@ -27,13 +27,12 @@ function formatCurrency(cents: number): string {
   return "$" + (cents / 100).toFixed(2);
 }
 
-function getChartColors(): { text: string; grid: string; background: string } {
-  const isDark = document.documentElement.classList.contains("dark");
-  return {
-    text: isDark ? "#e5e7eb" : "#374151",
-    grid: isDark ? "#374151" : "#e5e7eb",
-    background: isDark ? "#1f2937" : "#ffffff",
-  };
+function isDarkMode(): boolean {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getTheme(): string | undefined {
+  return isDarkMode() ? "dark" : undefined;
 }
 
 async function fetchData<T>(endpoint: string, params: URLSearchParams): Promise<T> {
@@ -43,174 +42,181 @@ async function fetchData<T>(endpoint: string, params: URLSearchParams): Promise<
 }
 
 async function updateCategoryChart(params: URLSearchParams): Promise<void> {
-  const canvas = document.getElementById("category-chart") as HTMLCanvasElement;
-  if (!canvas) return;
+  const container = document.getElementById("category-chart");
+  if (!container) return;
 
   const data = await fetchData<CategoryData[]>(
     "/api/analytics/spending-by-category",
     params
   );
-  const colors = getChartColors();
 
   if (categoryChart) {
-    categoryChart.destroy();
+    categoryChart.dispose();
   }
 
-  categoryChart = new Chart(canvas, {
-    type: "doughnut",
-    data: {
-      labels: data.map((d) => d.category),
-      datasets: [
-        {
-          data: data.map((d) => d.amount_cents / 100),
-          backgroundColor: data.map((d) => d.color),
-          borderWidth: 0,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: { color: colors.text },
-        },
-        tooltip: {
-          callbacks: {
-            label: (context: any) => {
-              const value = context.raw;
-              const percentage = data[context.dataIndex].percentage.toFixed(1);
-              return `${formatCurrency(value * 100)} (${percentage}%)`;
-            },
-          },
-        },
+  categoryChart = echarts.init(container, getTheme());
+
+  const option = {
+    tooltip: {
+      trigger: "item",
+      formatter: (params: any) => {
+        const value = params.value;
+        const percentage = params.percent.toFixed(1);
+        return `${params.name}: ${formatCurrency(value * 100)} (${percentage}%)`;
       },
     },
-  });
+    legend: {
+      orient: "horizontal",
+      bottom: 0,
+    },
+    series: [
+      {
+        type: "pie",
+        radius: ["40%", "70%"],
+        avoidLabelOverlap: false,
+        label: {
+          show: false,
+        },
+        labelLine: {
+          show: false,
+        },
+        data: data.map((d) => ({
+          value: d.amount_cents / 100,
+          name: d.category,
+          itemStyle: { color: d.color },
+        })),
+      },
+    ],
+  };
+
+  categoryChart.setOption(option);
 }
 
 async function updateTimeChart(params: URLSearchParams): Promise<void> {
-  const canvas = document.getElementById("time-chart") as HTMLCanvasElement;
-  if (!canvas) return;
+  const container = document.getElementById("time-chart");
+  if (!container) return;
 
   const data = await fetchData<TimeSeriesData[]>(
     "/api/analytics/spending-over-time",
     params
   );
-  const colors = getChartColors();
 
   if (timeChart) {
-    timeChart.destroy();
+    timeChart.dispose();
   }
 
-  timeChart = new Chart(canvas, {
-    type: "line",
-    data: {
-      labels: data.map((d) => d.date),
-      datasets: [
-        {
-          label: "Daily Spending",
-          data: data.map((d) => d.amount_cents / 100),
-          borderColor: "#22c55e",
-          backgroundColor: "rgba(34, 197, 94, 0.1)",
-          fill: true,
-          tension: 0.3,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          callbacks: {
-            label: (context: any) => formatCurrency(context.raw * 100),
-          },
-        },
-      },
-      scales: {
-        x: {
-          grid: { color: colors.grid },
-          ticks: { color: colors.text },
-        },
-        y: {
-          grid: { color: colors.grid },
-          ticks: {
-            color: colors.text,
-            callback: (value: number) => formatCurrency(value * 100),
-          },
-        },
+  timeChart = echarts.init(container, getTheme());
+
+  const option = {
+    tooltip: {
+      trigger: "axis",
+      formatter: (params: any) => {
+        const point = params[0];
+        return `${point.axisValue}<br/>${formatCurrency(point.value * 100)}`;
       },
     },
-  });
+    grid: {
+      left: "3%",
+      right: "4%",
+      bottom: "3%",
+      containLabel: true,
+    },
+    xAxis: {
+      type: "category",
+      boundaryGap: false,
+      data: data.map((d) => d.date),
+    },
+    yAxis: {
+      type: "value",
+      axisLabel: {
+        formatter: (value: number) => formatCurrency(value * 100),
+      },
+    },
+    series: [
+      {
+        name: "Daily Spending",
+        type: "line",
+        smooth: true,
+        areaStyle: {
+          opacity: 0.1,
+        },
+        lineStyle: {
+          color: "#22c55e",
+        },
+        itemStyle: {
+          color: "#22c55e",
+        },
+        data: data.map((d) => d.amount_cents / 100),
+      },
+    ],
+  };
+
+  timeChart.setOption(option);
 }
 
 async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
-  const canvas = document.getElementById("monthly-chart") as HTMLCanvasElement;
-  if (!canvas) return;
+  const container = document.getElementById("monthly-chart");
+  if (!container) return;
 
   const data = await fetchData<MonthlySummary[]>(
     "/api/analytics/monthly-summary",
     params
   );
-  const colors = getChartColors();
 
   if (monthlyChart) {
-    monthlyChart.destroy();
+    monthlyChart.dispose();
   }
 
-  monthlyChart = new Chart(canvas, {
-    type: "bar",
-    data: {
-      labels: data.map((d) => d.month),
-      datasets: [
-        {
-          label: "Monthly Total",
-          data: data.map((d) => d.total_cents / 100),
-          backgroundColor: "#3b82f6",
-          borderRadius: 4,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          callbacks: {
-            label: (context: any) => {
-              const item = data[context.dataIndex];
-              return [
-                `Total: ${formatCurrency(item.total_cents)}`,
-                `Expenses: ${item.expense_count}`,
-                `Average: ${formatCurrency(item.average_cents)}`,
-              ];
-            },
-          },
-        },
+  monthlyChart = echarts.init(container, getTheme());
+
+  const option = {
+    tooltip: {
+      trigger: "axis",
+      axisPointer: {
+        type: "shadow",
       },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: colors.text },
-        },
-        y: {
-          grid: { color: colors.grid },
-          ticks: {
-            color: colors.text,
-            callback: (value: number) => formatCurrency(value * 100),
-          },
-        },
+      formatter: (params: any) => {
+        const point = params[0];
+        const item = data[point.dataIndex];
+        return [
+          `<strong>${point.axisValue}</strong>`,
+          `Total: ${formatCurrency(item.total_cents)}`,
+          `Expenses: ${item.expense_count}`,
+          `Average: ${formatCurrency(item.average_cents)}`,
+        ].join("<br/>");
       },
     },
-  });
+    grid: {
+      left: "3%",
+      right: "4%",
+      bottom: "3%",
+      containLabel: true,
+    },
+    xAxis: {
+      type: "category",
+      data: data.map((d) => d.month),
+    },
+    yAxis: {
+      type: "value",
+      axisLabel: {
+        formatter: (value: number) => formatCurrency(value * 100),
+      },
+    },
+    series: [
+      {
+        name: "Monthly Total",
+        type: "bar",
+        barWidth: "60%",
+        itemStyle: {
+          color: "#3b82f6",
+          borderRadius: [4, 4, 0, 0],
+        },
+        data: data.map((d) => d.total_cents / 100),
+      },
+    ],
+  };
+
+  monthlyChart.setOption(option);
 }
 
 function getFilterParams(): URLSearchParams {
@@ -238,9 +244,15 @@ async function updateCharts(): Promise<void> {
   }
 }
 
+function handleResize(): void {
+  if (categoryChart) categoryChart.resize();
+  if (timeChart) timeChart.resize();
+  if (monthlyChart) monthlyChart.resize();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("category-chart")) {
-    // Date range is set by server via hidden inputs, just load charts
     updateCharts();
+    window.addEventListener("resize", handleResize);
   }
 });

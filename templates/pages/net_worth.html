@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
 <script src="/static/js/dist/{{ manifest.get("net-worth-chart.js") }}" defer></script>
 {% endblock %}
 
@@ -25,9 +25,7 @@
     <!-- Chart -->
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="p-4">
-            <div style="height: 500px; position: relative;">
-                <canvas id="net-worth-chart" data-currency="{{ settings.currency }}" data-locale="{{ settings.locale }}"></canvas>
-            </div>
+            <div id="net-worth-chart" style="height: 500px;" data-currency="{{ settings.currency }}" data-locale="{{ settings.locale }}"></div>
         </div>
         <div class="px-6 py-3 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900">
             <p class="text-xs text-muted">

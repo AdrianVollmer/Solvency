@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
 <script src="/static/js/dist/{{ manifest.get("charts.js") }}" defer></script>
 {% endblock %}
 
@@ -61,24 +61,18 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
             <h2 class="section-title mb-4">Spending by Category</h2>
-            <div class="aspect-square max-h-[400px]">
-                <canvas id="category-chart" aria-label="Pie chart showing spending by category"></canvas>
-            </div>
+            <div id="category-chart" class="aspect-square max-h-[400px]" role="img" aria-label="Pie chart showing spending by category"></div>
         </div>
 
         <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
             <h2 class="section-title mb-4">Spending Over Time</h2>
-            <div class="aspect-video">
-                <canvas id="time-chart" aria-label="Line chart showing spending over time"></canvas>
-            </div>
+            <div id="time-chart" class="aspect-video" role="img" aria-label="Line chart showing spending over time"></div>
         </div>
     </div>
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
         <h2 class="section-title mb-4">Monthly Summary</h2>
-        <div class="aspect-[2/1]">
-            <canvas id="monthly-chart" aria-label="Bar chart showing monthly spending summary"></canvas>
-        </div>
+        <div id="monthly-chart" class="aspect-[2/1]" role="img" aria-label="Bar chart showing monthly spending summary"></div>
     </div>
 </div>
 {% endblock %}

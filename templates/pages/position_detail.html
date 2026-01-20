@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
 <script src="/static/js/dist/{{ manifest.get("position-chart.js") }}" defer></script>
 {% endblock %}
 
@@ -139,9 +138,7 @@
     <!-- Price Chart -->
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
         <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Price History</h2>
-        <div class="h-80">
-            <canvas id="position-chart" data-symbol="{{ symbol }}" aria-label="Price chart for {{ symbol }} with buy/sell markers"></canvas>
-        </div>
+        <div id="position-chart" class="h-80" data-symbol="{{ symbol }}" role="img" aria-label="Price chart for {{ symbol }} with buy/sell markers"></div>
         <p class="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
             <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span> Buy
             <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1 ml-3"></span> Sell
