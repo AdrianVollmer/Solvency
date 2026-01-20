@@ -376,9 +376,9 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
         .filter_map(|r| r.ok())
         .collect();
 
-    // Calculate positions by symbol, tracking cost, proceeds, and dates
-    // (quantity, total_cost, total_proceeds, currency, first_date, last_date)
-    let mut positions_map: HashMap<String, (f64, i64, i64, String, String, String)> =
+    // Calculate positions by symbol, tracking cost, proceeds, fees, taxes, dividends, and dates
+    // (quantity, total_cost, total_proceeds, total_fees, total_taxes, total_dividends, currency, first_date, last_date)
+    let mut positions_map: HashMap<String, (f64, i64, i64, i64, i64, i64, String, String, String)> =
         HashMap::new();
 
     for (symbol, activity_type_str, quantity, unit_price_cents, currency, date) in activities {
@@ -392,14 +392,17 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
             0.0,
             0,
             0,
+            0,
+            0,
+            0,
             currency,
             date.clone(),
             date.clone(),
         ));
 
         // Update last activity date
-        if date > entry.5 {
-            entry.5 = date.clone();
+        if date > entry.8 {
+            entry.8 = date.clone();
         }
 
         match activity_type {
@@ -436,8 +439,20 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
                     entry.0 *= qty;
                 }
             }
+            TradingActivityType::Fee => {
+                // Fee amount is stored in unit_price_cents
+                entry.3 += price;
+            }
+            TradingActivityType::Tax => {
+                // Tax amount is stored in unit_price_cents
+                entry.4 += price;
+            }
+            TradingActivityType::Dividend => {
+                // Dividend amount is stored in unit_price_cents
+                entry.5 += price;
+            }
             _ => {
-                // Dividends, interest, fees, taxes don't affect position quantity
+                // Interest, deposits, withdrawals don't affect position calculations
             }
         }
     }
@@ -445,17 +460,32 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
     // Convert to ClosedPosition structs, filtering to only zero positions
     let mut closed_positions: Vec<ClosedPosition> = positions_map
         .into_iter()
-        .filter(|(_, (qty, _, _, _, _, _))| *qty == 0.0)
+        .filter(|(_, (qty, _, _, _, _, _, _, _, _))| *qty == 0.0)
         .map(
             |(
                 symbol,
-                (_, total_cost_cents, total_proceeds_cents, currency, first_date, last_date),
+                (
+                    _,
+                    total_cost_cents,
+                    total_proceeds_cents,
+                    total_fees_cents,
+                    total_taxes_cents,
+                    total_dividends_cents,
+                    currency,
+                    first_date,
+                    last_date,
+                ),
             )| {
+                // Net realized gain/loss = proceeds - cost + dividends - fees - taxes
+                let realized_gain_loss_cents = total_proceeds_cents - total_cost_cents
+                    + total_dividends_cents
+                    - total_fees_cents
+                    - total_taxes_cents;
                 ClosedPosition {
                     symbol,
                     total_cost_cents,
                     total_proceeds_cents,
-                    realized_gain_loss_cents: total_proceeds_cents - total_cost_cents,
+                    realized_gain_loss_cents,
                     currency,
                     first_activity_date: first_date,
                     last_activity_date: last_date,

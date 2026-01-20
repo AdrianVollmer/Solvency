@@ -683,11 +683,14 @@ fn calculate_position_totals(activities: &[TradingActivity]) -> (i64, i64, i64, 
         }
     }
 
+    // Subtract fees and taxes from realized gain/loss
+    let net_realized_gain_loss_cents = realized_gain_loss_cents - total_fees_cents - total_taxes_cents;
+
     (
         total_fees_cents,
         total_taxes_cents,
         total_dividends_cents,
-        realized_gain_loss_cents,
+        net_realized_gain_loss_cents,
     )
 }
 
