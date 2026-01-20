@@ -26,7 +26,7 @@
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="p-4">
             <div style="height: 500px; position: relative;">
-                <canvas id="net-worth-chart"></canvas>
+                <canvas id="net-worth-chart" data-currency="{{ settings.currency }}" data-locale="{{ settings.locale }}"></canvas>
             </div>
         </div>
         <div class="px-6 py-3 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900">
@@ -53,7 +53,7 @@
                     <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Starting</td>
                     <td class="px-4 py-2 text-sm font-medium text-neutral-900 dark:text-white text-right">{{ starting_net_worth_formatted }}</td>
                     <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Change</td>
-                    <td class="px-4 py-2 text-sm font-medium text-right {% if change_cents >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">{{ change_formatted }} ({{ change_percent_formatted }})</td>
+                    <td class="px-4 py-2 text-sm font-medium text-right {% if change_cents >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">{{ change_formatted }}</td>
                     <td class="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400">Period</td>
                     <td class="px-4 py-2 text-sm text-neutral-900 dark:text-white text-right">{{ start_date }} to {{ end_date }} ({{ total_days }} days)</td>
                 </tr>

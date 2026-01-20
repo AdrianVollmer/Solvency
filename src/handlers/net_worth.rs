@@ -68,7 +68,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let highest_net_worth_formatted =
         filters::format_money_neutral(summary.highest_net_worth_cents, currency, locale);
     let lowest_net_worth_formatted =
-        filters::format_money_neutral(summary.lowest_net_worth_cents, currency, locale);
+        filters::format_money_plain(summary.lowest_net_worth_cents, currency, locale);
     let starting_net_worth_formatted =
         filters::format_money_neutral(starting_net_worth_cents, currency, locale);
     let change_formatted = filters::format_money_plain(change_cents, currency, locale);

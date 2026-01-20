@@ -9,11 +9,41 @@ interface NetWorthChartResponse {
 
 let netWorthChart: any = null;
 
-function formatMoney(cents: number): string {
-  const dollars = cents / 100;
+function getCurrencySymbol(currency: string): string {
+  const symbols: Record<string, string> = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    JPY: "¥",
+    CNY: "¥",
+    CAD: "C$",
+    AUD: "A$",
+    CHF: "CHF ",
+    INR: "₹",
+    BRL: "R$",
+    MXN: "MX$",
+    KRW: "₩",
+    SEK: "kr ",
+    NOK: "kr ",
+    DKK: "kr ",
+    PLN: "zł ",
+    RUB: "₽",
+    TRY: "₺",
+    ZAR: "R ",
+    SGD: "S$",
+    HKD: "HK$",
+    NZD: "NZ$",
+    THB: "฿",
+  };
+  return symbols[currency.toUpperCase()] || "$";
+}
+
+function formatMoney(cents: number, currency: string, locale: string): string {
+  const value = cents / 100;
+  const symbol = getCurrencySymbol(currency);
   return (
-    "$" +
-    dollars.toLocaleString("en-US", {
+    symbol +
+    value.toLocaleString(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })
@@ -42,6 +72,9 @@ function getChartColors(): {
 async function loadNetWorthChart(): Promise<void> {
   const canvas = document.getElementById("net-worth-chart") as HTMLCanvasElement;
   if (!canvas) return;
+
+  const currency = canvas.dataset.currency || "USD";
+  const locale = canvas.dataset.locale || "en-US";
 
   try {
     const response = await fetch("/api/net-worth/chart");
@@ -127,7 +160,7 @@ async function loadNetWorthChart(): Promise<void> {
             callbacks: {
               label: (context: any) => {
                 const label = context.dataset.label || "";
-                const value = formatMoney(context.raw * 100);
+                const value = formatMoney(context.raw * 100, currency, locale);
                 return `${label}: ${value}`;
               },
             },
@@ -147,7 +180,7 @@ async function loadNetWorthChart(): Promise<void> {
             grid: { color: colors.grid },
             ticks: {
               color: colors.text,
-              callback: (value: number) => formatMoney(value * 100),
+              callback: (value: number) => formatMoney(value * 100, currency, locale),
             },
           },
         },
