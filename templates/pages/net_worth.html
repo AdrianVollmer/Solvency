@@ -30,8 +30,37 @@
         <div class="px-6 py-3 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900">
             <p class="text-xs text-muted">
                 Click the legend items to show/hide the expense and portfolio components.
-                Net Worth = Cumulative Expenses + Portfolio Value
+                Use the slider below to zoom. Hold <kbd class="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">Shift</kbd> and drag to select a period and see the largest expenses.
             </p>
+        </div>
+    </div>
+
+    <!-- Top Expenses (shown when shift+dragging on chart) -->
+    <div id="top-expenses-container" class="hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Largest Expenses</h2>
+                <p id="top-expenses-period" class="text-sm text-neutral-500 dark:text-neutral-400"></p>
+            </div>
+            <button id="top-expenses-close" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead class="bg-neutral-50 dark:bg-neutral-900">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Description</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Category</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="top-expenses-body" class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                </tbody>
+            </table>
         </div>
     </div>
 

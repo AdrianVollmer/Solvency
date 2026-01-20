@@ -1,10 +1,10 @@
 use askama::Template;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::response::Html;
 use axum::Json;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use crate::db::queries::settings;
+use crate::db::queries::{expenses, settings};
 use crate::error::AppResult;
 use crate::filters;
 use crate::models::net_worth::NetWorthDataPoint;
@@ -137,6 +137,70 @@ pub async fn chart_data(State(state): State<AppState>) -> AppResult<Json<NetWort
     let summary = calculate_net_worth_history(&conn)?;
 
     let response = NetWorthChartResponse::from_data_points(summary.data_points);
+
+    Ok(Json(response))
+}
+
+/// Query params for top expenses endpoint
+#[derive(Deserialize)]
+pub struct TopExpensesParams {
+    pub from_date: String,
+    pub to_date: String,
+}
+
+/// Single expense in the response
+#[derive(Serialize)]
+pub struct ExpenseItem {
+    pub id: i64,
+    pub date: String,
+    pub description: String,
+    pub amount_cents: i64,
+    pub currency: String,
+    pub category_name: Option<String>,
+    pub category_color: Option<String>,
+}
+
+/// Response for top expenses endpoint
+#[derive(Serialize)]
+pub struct TopExpensesResponse {
+    pub expenses: Vec<ExpenseItem>,
+    pub from_date: String,
+    pub to_date: String,
+}
+
+/// Get top 10 expenses by absolute value in a date range
+pub async fn top_expenses(
+    State(state): State<AppState>,
+    Query(params): Query<TopExpensesParams>,
+) -> AppResult<Json<TopExpensesResponse>> {
+    let conn = state.db.get()?;
+
+    let filter = expenses::ExpenseFilter {
+        from_date: Some(params.from_date.clone()),
+        to_date: Some(params.to_date.clone()),
+        sort_sql: Some("ABS(e.amount_cents) DESC".to_string()),
+        limit: Some(10),
+        ..Default::default()
+    };
+
+    let expense_list = expenses::list_expenses(&conn, &filter)?;
+
+    let response = TopExpensesResponse {
+        expenses: expense_list
+            .into_iter()
+            .map(|e| ExpenseItem {
+                id: e.expense.id,
+                date: e.expense.date,
+                description: e.expense.description,
+                amount_cents: e.expense.amount_cents,
+                currency: e.expense.currency,
+                category_name: e.category_name,
+                category_color: e.category_color,
+            })
+            .collect(),
+        from_date: params.from_date,
+        to_date: params.to_date,
+    };
 
     Ok(Json(response))
 }

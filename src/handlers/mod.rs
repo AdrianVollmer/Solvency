@@ -119,6 +119,7 @@ pub fn routes() -> Router<AppState> {
         // Net Worth
         .route("/trading/net-worth", get(net_worth::index))
         .route("/api/net-worth/chart", get(net_worth::chart_data))
+        .route("/api/net-worth/top-expenses", get(net_worth::top_expenses))
         // Trading Market Data
         .route("/trading/market-data", get(market_data::index))
         .route("/trading/market-data/refresh", post(market_data::refresh))
