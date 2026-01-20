@@ -21,6 +21,8 @@ pub struct TradingActivityFilter {
     pub to_date: Option<String>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
+    /// SQL ORDER BY expression (e.g., "date DESC"). Defaults to "date DESC, id DESC".
+    pub sort_sql: Option<String>,
 }
 
 pub fn list_activities(
@@ -52,7 +54,9 @@ pub fn list_activities(
         params_vec.push(Box::new(to_date.clone()));
     }
 
-    sql.push_str(" ORDER BY date DESC, id DESC");
+    // Use provided sort or default to date DESC
+    let order_by = filter.sort_sql.as_deref().unwrap_or("date DESC");
+    sql.push_str(&format!(" ORDER BY {}, id DESC", order_by));
 
     if let Some(limit) = filter.limit {
         sql.push_str(" LIMIT ?");

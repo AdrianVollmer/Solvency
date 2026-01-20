@@ -8,8 +8,61 @@ use crate::date_utils::{DateFilterable, DatePreset, DateRange};
 use crate::db::queries::{settings, trading};
 use crate::error::{AppError, AppResult};
 use crate::models::{NewTradingActivity, Settings, TradingActivity, TradingActivityType};
+use crate::sort_utils::{Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
+
+/// Sortable columns for the trading activities table.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum ActivitySortColumn {
+    #[default]
+    Date,
+    Symbol,
+    Type,
+    Quantity,
+    Price,
+    Total,
+    Fee,
+}
+
+impl SortableColumn for ActivitySortColumn {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "date" => Some(Self::Date),
+            "symbol" => Some(Self::Symbol),
+            "type" => Some(Self::Type),
+            "quantity" => Some(Self::Quantity),
+            "price" => Some(Self::Price),
+            "total" => Some(Self::Total),
+            "fee" => Some(Self::Fee),
+            _ => None,
+        }
+    }
+
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Date => "date",
+            Self::Symbol => "symbol",
+            Self::Type => "type",
+            Self::Quantity => "quantity",
+            Self::Price => "price",
+            Self::Total => "total",
+            Self::Fee => "fee",
+        }
+    }
+
+    fn sql_expression(&self) -> &'static str {
+        match self {
+            Self::Date => "date",
+            Self::Symbol => "symbol",
+            Self::Type => "activity_type",
+            Self::Quantity => "quantity",
+            Self::Price => "unit_price_cents",
+            Self::Total => "(COALESCE(quantity, 1) * COALESCE(unit_price_cents, 0))",
+            Self::Fee => "fee_cents",
+        }
+    }
+}
 
 #[derive(Template)]
 #[template(path = "pages/trading_activities.html")]
@@ -27,6 +80,7 @@ pub struct TradingActivitiesTemplate {
     pub filter: TradingActivityFilterParams,
     pub date_range: DateRange,
     pub presets: &'static [DatePreset],
+    pub sort: TableSort<ActivitySortColumn>,
 }
 
 #[derive(Template)]
@@ -39,6 +93,7 @@ pub struct TradingActivityTableTemplate {
     pub page_size: i64,
     pub filter: TradingActivityFilterParams,
     pub date_range: DateRange,
+    pub sort: TableSort<ActivitySortColumn>,
 }
 
 #[derive(Template)]
@@ -98,6 +153,8 @@ pub struct TradingActivityFilterParams {
     pub to_date: Option<String>,
     pub page: Option<i64>,
     pub preset: Option<String>,
+    pub sort: Option<String>,
+    pub dir: Option<String>,
 }
 
 impl DateFilterable for TradingActivityFilterParams {
@@ -114,6 +171,16 @@ impl DateFilterable for TradingActivityFilterParams {
     }
 }
 
+impl Sortable for TradingActivityFilterParams {
+    fn sort_by(&self) -> Option<&String> {
+        self.sort.as_ref()
+    }
+
+    fn sort_dir(&self) -> Option<&String> {
+        self.dir.as_ref()
+    }
+}
+
 impl TradingActivityFilterParams {
     pub fn matches_symbol(&self, sym: &str) -> bool {
         self.symbol.as_deref() == Some(sym)
@@ -123,6 +190,7 @@ impl TradingActivityFilterParams {
         self.activity_type.as_deref() == Some(at.as_str())
     }
 
+    /// Returns filter query string (symbol, activity_type).
     pub fn base_query_string(&self) -> String {
         let mut parts = Vec::new();
         if let Some(ref symbol) = self.symbol {
@@ -135,11 +203,23 @@ impl TradingActivityFilterParams {
                 parts.push(format!("activity_type={}", activity_type));
             }
         }
-        if parts.is_empty() {
-            String::new()
-        } else {
-            parts.join("&")
+        parts.join("&")
+    }
+
+    /// Returns full query string including sort parameters.
+    pub fn full_query_string(&self) -> String {
+        let mut parts = Vec::new();
+        let base = self.base_query_string();
+        if !base.is_empty() {
+            parts.push(base);
         }
+        if let Some(sort) = &self.sort {
+            parts.push(format!("sort={}", sort));
+        }
+        if let Some(dir) = &self.dir {
+            parts.push(format!("dir={}", dir));
+        }
+        parts.join("&")
     }
 }
 
@@ -220,6 +300,7 @@ pub async fn index(
     let page_size = app_settings.page_size;
 
     let date_range = params.resolve_date_range();
+    let sort: TableSort<ActivitySortColumn> = params.resolve_sort();
 
     let activity_type = params
         .activity_type
@@ -233,6 +314,7 @@ pub async fn index(
         to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
+        sort_sql: Some(sort.sql_order_by()),
     };
 
     let activity_list = trading::list_activities(&conn, &filter)?;
@@ -253,6 +335,7 @@ pub async fn index(
         filter: params,
         date_range,
         presets: DatePreset::all(),
+        sort,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -270,6 +353,7 @@ pub async fn table_partial(
     let page_size = app_settings.page_size;
 
     let date_range = params.resolve_date_range();
+    let sort: TableSort<ActivitySortColumn> = params.resolve_sort();
 
     let activity_type = params
         .activity_type
@@ -283,6 +367,7 @@ pub async fn table_partial(
         to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
+        sort_sql: Some(sort.sql_order_by()),
     };
 
     let activity_list = trading::list_activities(&conn, &filter)?;
@@ -296,6 +381,7 @@ pub async fn table_partial(
         page_size,
         filter: params,
         date_range,
+        sort,
     };
 
     Ok(Html(template.render().unwrap()))

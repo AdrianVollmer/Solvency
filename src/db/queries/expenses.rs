@@ -12,6 +12,8 @@ pub struct ExpenseFilter {
     pub to_date: Option<String>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
+    /// SQL ORDER BY expression (e.g., "e.date DESC"). Defaults to "e.date DESC, e.id DESC".
+    pub sort_sql: Option<String>,
 }
 
 pub fn list_expenses(
@@ -51,7 +53,12 @@ pub fn list_expenses(
         params_vec.push(Box::new(tag_id));
     }
 
-    sql.push_str(" ORDER BY e.date DESC, e.id DESC");
+    // Use provided sort or default to date DESC
+    let order_by = filter
+        .sort_sql
+        .as_deref()
+        .unwrap_or("e.date DESC");
+    sql.push_str(&format!(" ORDER BY {}, e.id DESC", order_by));
 
     if let Some(limit) = filter.limit {
         sql.push_str(" LIMIT ?");

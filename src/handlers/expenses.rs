@@ -9,8 +9,53 @@ use crate::date_utils::{DateFilterable, DatePreset, DateRange};
 use crate::db::queries::{categories, expenses, settings, tags};
 use crate::error::{AppError, AppResult};
 use crate::models::{CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag};
+use crate::sort_utils::{Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
+
+/// Sortable columns for the expenses table.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum ExpenseSortColumn {
+    #[default]
+    Date,
+    Description,
+    Counterparty,
+    Category,
+    Amount,
+}
+
+impl SortableColumn for ExpenseSortColumn {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "date" => Some(Self::Date),
+            "description" => Some(Self::Description),
+            "counterparty" => Some(Self::Counterparty),
+            "category" => Some(Self::Category),
+            "amount" => Some(Self::Amount),
+            _ => None,
+        }
+    }
+
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Date => "date",
+            Self::Description => "description",
+            Self::Counterparty => "counterparty",
+            Self::Category => "category",
+            Self::Amount => "amount",
+        }
+    }
+
+    fn sql_expression(&self) -> &'static str {
+        match self {
+            Self::Date => "e.date",
+            Self::Description => "e.description",
+            Self::Counterparty => "e.payee",
+            Self::Category => "c.name",
+            Self::Amount => "e.amount_cents",
+        }
+    }
+}
 
 #[derive(Template)]
 #[template(path = "pages/expenses.html")]
@@ -28,6 +73,7 @@ pub struct ExpensesTemplate {
     pub filter: ExpenseFilterParams,
     pub date_range: DateRange,
     pub presets: &'static [DatePreset],
+    pub sort: TableSort<ExpenseSortColumn>,
 }
 
 #[derive(Template)]
@@ -40,6 +86,7 @@ pub struct ExpenseTableTemplate {
     pub page_size: i64,
     pub filter: ExpenseFilterParams,
     pub date_range: DateRange,
+    pub sort: TableSort<ExpenseSortColumn>,
 }
 
 #[derive(Template)]
@@ -103,6 +150,8 @@ pub struct ExpenseFilterParams {
     pub page: Option<i64>,
     pub preset: Option<String>,
     pub nav: Option<String>, // "prev" or "next"
+    pub sort: Option<String>,
+    pub dir: Option<String>,
 }
 
 impl DateFilterable for ExpenseFilterParams {
@@ -123,11 +172,22 @@ impl DateFilterable for ExpenseFilterParams {
     }
 }
 
+impl Sortable for ExpenseFilterParams {
+    fn sort_by(&self) -> Option<&String> {
+        self.sort.as_ref()
+    }
+
+    fn sort_dir(&self) -> Option<&String> {
+        self.dir.as_ref()
+    }
+}
+
 impl ExpenseFilterParams {
     pub fn matches_category(&self, id: &i64) -> bool {
         self.category_id == Some(*id)
     }
 
+    /// Returns filter query string (search, category_id, tag_id).
     pub fn base_query_string(&self) -> String {
         let mut parts = Vec::new();
         if let Some(search) = &self.search {
@@ -141,11 +201,23 @@ impl ExpenseFilterParams {
         if let Some(tag_id) = self.tag_id {
             parts.push(format!("tag_id={}", tag_id));
         }
-        if parts.is_empty() {
-            String::new()
-        } else {
-            parts.join("&")
+        parts.join("&")
+    }
+
+    /// Returns full query string including sort parameters.
+    pub fn full_query_string(&self) -> String {
+        let mut parts = Vec::new();
+        let base = self.base_query_string();
+        if !base.is_empty() {
+            parts.push(base);
         }
+        if let Some(sort) = &self.sort {
+            parts.push(format!("sort={}", sort));
+        }
+        if let Some(dir) = &self.dir {
+            parts.push(format!("dir={}", dir));
+        }
+        parts.join("&")
     }
 }
 
@@ -202,6 +274,7 @@ pub async fn index(
     let page_size = app_settings.page_size;
 
     let date_range = params.resolve_date_range();
+    let sort: TableSort<ExpenseSortColumn> = params.resolve_sort();
 
     let filter = expenses::ExpenseFilter {
         search: params.search.clone(),
@@ -211,6 +284,7 @@ pub async fn index(
         to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
+        sort_sql: Some(sort.sql_order_by()),
     };
 
     let expense_list = expenses::list_expenses(&conn, &filter)?;
@@ -232,6 +306,7 @@ pub async fn index(
         filter: params,
         date_range,
         presets: DatePreset::all(),
+        sort,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -249,6 +324,7 @@ pub async fn table_partial(
     let page_size = app_settings.page_size;
 
     let date_range = params.resolve_date_range();
+    let sort: TableSort<ExpenseSortColumn> = params.resolve_sort();
 
     let filter = expenses::ExpenseFilter {
         search: params.search.clone(),
@@ -258,6 +334,7 @@ pub async fn table_partial(
         to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
+        sort_sql: Some(sort.sql_order_by()),
     };
 
     let expense_list = expenses::list_expenses(&conn, &filter)?;
@@ -271,6 +348,7 @@ pub async fn table_partial(
         page_size,
         filter: params,
         date_range,
+        sort,
     };
 
     Ok(Html(template.render().unwrap()))

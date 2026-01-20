@@ -1,8 +1,8 @@
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::response::{Html, Redirect};
 use axum::Json;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use chrono::Datelike;
 
@@ -10,8 +10,89 @@ use crate::db::queries::{api_logs, market_data, settings};
 use crate::error::AppResult;
 use crate::models::{MarketData, NewApiLog, Settings, SymbolDataCoverage};
 use crate::services::market_data as market_data_service;
+use crate::sort_utils::{Sortable, SortableColumn, SortDirection, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
+
+/// Sortable columns for the market data coverage table.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum MarketDataSortColumn {
+    #[default]
+    Symbol,
+    ActivityRange,
+    DataRange,
+    DataPoints,
+    Status,
+}
+
+impl SortableColumn for MarketDataSortColumn {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "symbol" => Some(Self::Symbol),
+            "activityrange" => Some(Self::ActivityRange),
+            "datarange" => Some(Self::DataRange),
+            "datapoints" => Some(Self::DataPoints),
+            "status" => Some(Self::Status),
+            _ => None,
+        }
+    }
+
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Symbol => "symbol",
+            Self::ActivityRange => "activityrange",
+            Self::DataRange => "datarange",
+            Self::DataPoints => "datapoints",
+            Self::Status => "status",
+        }
+    }
+
+    fn sql_expression(&self) -> &'static str {
+        // Not used for in-memory sorting
+        ""
+    }
+}
+
+#[derive(Debug, Default, Clone, Deserialize)]
+pub struct MarketDataFilterParams {
+    pub sort: Option<String>,
+    pub dir: Option<String>,
+}
+
+impl Sortable for MarketDataFilterParams {
+    fn sort_by(&self) -> Option<&String> {
+        self.sort.as_ref()
+    }
+
+    fn sort_dir(&self) -> Option<&String> {
+        self.dir.as_ref()
+    }
+}
+
+/// Sort market data coverage in-memory based on sort configuration.
+fn sort_coverage(coverage: &mut [SymbolDataCoverage], sort: &TableSort<MarketDataSortColumn>) {
+    coverage.sort_by(|a, b| {
+        let cmp = match sort.column {
+            MarketDataSortColumn::Symbol => a.symbol.cmp(&b.symbol),
+            MarketDataSortColumn::ActivityRange => a.first_activity_date.cmp(&b.first_activity_date),
+            MarketDataSortColumn::DataRange => {
+                a.first_data_date.cmp(&b.first_data_date)
+            }
+            MarketDataSortColumn::DataPoints => a.data_points.cmp(&b.data_points),
+            MarketDataSortColumn::Status => {
+                // Sort by coverage status: Complete < Stale < No data
+                let status_a = a.coverage_status();
+                let status_b = b.coverage_status();
+                status_a.cmp(&status_b)
+            }
+        };
+
+        match sort.direction {
+            SortDirection::Asc => cmp,
+            SortDirection::Desc => cmp.reverse(),
+        }
+    });
+}
 
 #[derive(Template)]
 #[template(path = "pages/market_data.html")]
@@ -26,13 +107,21 @@ pub struct MarketDataTemplate {
     pub is_refreshing: bool,
     pub refresh_message: Option<String>,
     pub latest_log_id: i64,
+    pub sort: TableSort<MarketDataSortColumn>,
 }
 
-pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
+pub async fn index(
+    State(state): State<AppState>,
+    Query(params): Query<MarketDataFilterParams>,
+) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     let app_settings = settings::get_settings(&conn)?;
-    let coverage = market_data::get_symbol_coverage(&conn)?;
+    let sort: TableSort<MarketDataSortColumn> = params.resolve_sort();
+
+    let mut coverage = market_data::get_symbol_coverage(&conn)?;
+    sort_coverage(&mut coverage, &sort);
+
     let total_data_points = market_data::count_market_data(&conn)?;
     let symbols_needing_data = market_data::get_symbols_needing_data(&conn)?.len();
     let latest_log_id = api_logs::get_latest_log_id(&conn).unwrap_or(0);
@@ -48,6 +137,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         is_refreshing: false,
         refresh_message: None,
         latest_log_id,
+        sort,
     };
 
     Ok(Html(template.render().unwrap()))

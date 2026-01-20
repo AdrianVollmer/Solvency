@@ -1,9 +1,9 @@
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::response::Html;
 use axum::Json;
 use chrono::NaiveDate;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::db::queries::{market_data, settings, trading};
 use crate::error::AppResult;
@@ -13,8 +13,159 @@ use crate::models::trading::{
 };
 use crate::models::{MarketData, Position, Settings};
 use crate::services::xirr::{calculate_xirr, CashFlow};
+use crate::sort_utils::{Sortable, SortableColumn, SortDirection, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
+
+/// Sortable columns for the positions table.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum PositionSortColumn {
+    #[default]
+    Symbol,
+    Quantity,
+    Price,
+    AvgCost,
+    TotalCost,
+    Value,
+    GainLoss,
+}
+
+/// Sortable columns for the closed positions table.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum ClosedPositionSortColumn {
+    #[default]
+    Symbol,
+    TotalCost,
+    Proceeds,
+    GainLoss,
+    Period,
+}
+
+impl SortableColumn for PositionSortColumn {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "symbol" => Some(Self::Symbol),
+            "quantity" => Some(Self::Quantity),
+            "price" => Some(Self::Price),
+            "avgcost" => Some(Self::AvgCost),
+            "totalcost" => Some(Self::TotalCost),
+            "value" => Some(Self::Value),
+            "gainloss" => Some(Self::GainLoss),
+            _ => None,
+        }
+    }
+
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Symbol => "symbol",
+            Self::Quantity => "quantity",
+            Self::Price => "price",
+            Self::AvgCost => "avgcost",
+            Self::TotalCost => "totalcost",
+            Self::Value => "value",
+            Self::GainLoss => "gainloss",
+        }
+    }
+
+    fn sql_expression(&self) -> &'static str {
+        // Not used for in-memory sorting
+        ""
+    }
+}
+
+impl SortableColumn for ClosedPositionSortColumn {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "symbol" => Some(Self::Symbol),
+            "totalcost" => Some(Self::TotalCost),
+            "proceeds" => Some(Self::Proceeds),
+            "gainloss" => Some(Self::GainLoss),
+            "period" => Some(Self::Period),
+            _ => None,
+        }
+    }
+
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Symbol => "symbol",
+            Self::TotalCost => "totalcost",
+            Self::Proceeds => "proceeds",
+            Self::GainLoss => "gainloss",
+            Self::Period => "period",
+        }
+    }
+
+    fn sql_expression(&self) -> &'static str {
+        // Not used for in-memory sorting
+        ""
+    }
+}
+
+#[derive(Debug, Default, Clone, Deserialize)]
+pub struct PositionFilterParams {
+    pub sort: Option<String>,
+    pub dir: Option<String>,
+}
+
+impl Sortable for PositionFilterParams {
+    fn sort_by(&self) -> Option<&String> {
+        self.sort.as_ref()
+    }
+
+    fn sort_dir(&self) -> Option<&String> {
+        self.dir.as_ref()
+    }
+}
+
+/// Sort positions in-memory based on sort configuration.
+fn sort_positions(positions: &mut [PositionWithMarketData], sort: &TableSort<PositionSortColumn>) {
+    positions.sort_by(|a, b| {
+        let cmp = match sort.column {
+            PositionSortColumn::Symbol => a.position.symbol.cmp(&b.position.symbol),
+            PositionSortColumn::Quantity => {
+                a.position.quantity.partial_cmp(&b.position.quantity).unwrap_or(std::cmp::Ordering::Equal)
+            }
+            PositionSortColumn::Price => {
+                a.current_price_cents.cmp(&b.current_price_cents)
+            }
+            PositionSortColumn::AvgCost => {
+                a.position.average_cost_cents().cmp(&b.position.average_cost_cents())
+            }
+            PositionSortColumn::TotalCost => {
+                a.position.total_cost_cents.cmp(&b.position.total_cost_cents)
+            }
+            PositionSortColumn::Value => {
+                a.current_value_cents.cmp(&b.current_value_cents)
+            }
+            PositionSortColumn::GainLoss => {
+                a.gain_loss_cents.cmp(&b.gain_loss_cents)
+            }
+        };
+
+        match sort.direction {
+            SortDirection::Asc => cmp,
+            SortDirection::Desc => cmp.reverse(),
+        }
+    });
+}
+
+/// Sort closed positions in-memory based on sort configuration.
+fn sort_closed_positions(positions: &mut [ClosedPosition], sort: &TableSort<ClosedPositionSortColumn>) {
+    positions.sort_by(|a, b| {
+        let cmp = match sort.column {
+            ClosedPositionSortColumn::Symbol => a.symbol.cmp(&b.symbol),
+            ClosedPositionSortColumn::TotalCost => a.total_cost_cents.cmp(&b.total_cost_cents),
+            ClosedPositionSortColumn::Proceeds => a.total_proceeds_cents.cmp(&b.total_proceeds_cents),
+            ClosedPositionSortColumn::GainLoss => a.realized_gain_loss_cents.cmp(&b.realized_gain_loss_cents),
+            ClosedPositionSortColumn::Period => a.first_activity_date.cmp(&b.first_activity_date),
+        };
+
+        match sort.direction {
+            SortDirection::Asc => cmp,
+            SortDirection::Desc => cmp.reverse(),
+        }
+    });
+}
 
 #[derive(Template)]
 #[template(path = "pages/trading_positions.html")]
@@ -33,12 +184,17 @@ pub struct TradingPositionsTemplate {
     pub total_gain_loss: Option<i64>,
     pub total_gain_loss_color: &'static str,
     pub total_gain_loss_formatted: Option<String>,
+    pub sort: TableSort<PositionSortColumn>,
 }
 
-pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
+pub async fn index(
+    State(state): State<AppState>,
+    Query(params): Query<PositionFilterParams>,
+) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     let app_settings = settings::get_settings(&conn)?;
+    let sort: TableSort<PositionSortColumn> = params.resolve_sort();
 
     let all_positions = trading::get_positions(&conn)?;
 
@@ -47,7 +203,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         all_positions.iter().cloned().partition(|p| p.is_cash());
 
     // Enrich security positions with market data
-    let security_positions: Vec<PositionWithMarketData> = security_only
+    let mut security_positions: Vec<PositionWithMarketData> = security_only
         .into_iter()
         .map(|pos| {
             // First try to get actual market data
@@ -67,6 +223,9 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
             PositionWithMarketData::from_position(pos)
         })
         .collect();
+
+    // Sort positions
+    sort_positions(&mut security_positions, &sort);
 
     // Calculate totals
     let total_cost: i64 = security_positions
@@ -121,6 +280,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         total_gain_loss,
         total_gain_loss_color,
         total_gain_loss_formatted,
+        sort,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -143,14 +303,22 @@ pub struct ClosedPositionsTemplate {
     pub total_gain_loss: i64,
     pub total_gain_loss_formatted: String,
     pub total_gain_loss_color: &'static str,
+    pub sort: TableSort<ClosedPositionSortColumn>,
 }
 
-pub async fn closed_positions(State(state): State<AppState>) -> AppResult<Html<String>> {
+pub async fn closed_positions(
+    State(state): State<AppState>,
+    Query(params): Query<PositionFilterParams>,
+) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     let app_settings = settings::get_settings(&conn)?;
+    let sort: TableSort<ClosedPositionSortColumn> = params.resolve_sort();
 
-    let positions = trading::get_closed_positions(&conn)?;
+    let mut positions = trading::get_closed_positions(&conn)?;
+
+    // Sort positions
+    sort_closed_positions(&mut positions, &sort);
 
     // Calculate totals
     let total_cost: i64 = positions.iter().map(|p| p.total_cost_cents).sum();
@@ -188,6 +356,7 @@ pub async fn closed_positions(State(state): State<AppState>) -> AppResult<Html<S
         total_gain_loss,
         total_gain_loss_formatted,
         total_gain_loss_color,
+        sort,
     };
 
     Ok(Html(template.render().unwrap()))
