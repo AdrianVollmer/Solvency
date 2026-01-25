@@ -32,6 +32,9 @@ so never worry about backwards compatibility.
   lines, but it's not a hard limit.
 - Functions should not have more than five positional arguments, but
   it's not a hard limit.
+- For UI components, use askama macros, leveraging composition.
+- For icons, we use Lucide vendored. The icons can be accessed using `
+  icons.get("name")`.
 
 ## Development
 
