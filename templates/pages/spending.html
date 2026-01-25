@@ -36,11 +36,11 @@
             <form action="/spending" method="get" class="flex items-center gap-2 ml-auto">
                 <label for="analytics_from_date" class="sr-only">From date</label>
                 <input type="date" id="analytics_from_date" name="from_date" value="{{ date_range.from_str() }}"
-                    class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    class="input text-sm">
                 <span class="text-neutral-500 text-sm">to</span>
                 <label for="analytics_to_date" class="sr-only">To date</label>
                 <input type="date" id="analytics_to_date" name="to_date" value="{{ date_range.to_str() }}"
-                    class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    class="input text-sm">
                 <button type="submit" class="btn-ghost px-3 py-2 text-sm rounded-lg">
                     Apply
                 </button>

@@ -170,12 +170,12 @@
                 <div>
                     <label for="category-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
                     <input type="text" id="category-name" name="name" required
-                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        class="input w-full">
                 </div>
                 <div>
                     <label for="category-parent" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Parent Category</label>
                     <select id="category-parent" name="parent_id"
-                        class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        class="input w-full">
                         <option value="">None (Root Level)</option>
                     </select>
                 </div>
@@ -186,14 +186,14 @@
                             <input type="color" id="category-color" name="color" value="#6b7280"
                                 class="h-10 w-14 rounded border border-neutral-200 dark:border-neutral-700 cursor-pointer">
                             <input type="text" id="category-color-text" value="#6b7280"
-                                class="flex-1 px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-sm font-mono"
+                                class="input flex-1 text-sm font-mono"
                                 onchange="document.getElementById('category-color').value = this.value">
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Icon</label>
                         <button type="button" id="icon-picker-btn" onclick="window.categoriesPage.toggleIconPicker()"
-                            class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 flex items-center gap-2">
+                            class="input w-full flex items-center gap-2">
                             <svg id="selected-icon" class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#folder"/></svg>
                             <span id="selected-icon-name" class="text-sm">folder</span>
                         </button>
@@ -203,7 +203,7 @@
                 <div id="icon-picker" class="hidden mt-2 border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
                     <div class="p-2 border-b border-neutral-200 dark:border-neutral-700">
                         <input type="text" id="icon-search" placeholder="Search icons..."
-                            class="w-full px-3 py-1.5 text-sm border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                            class="input w-full text-sm"
                             oninput="window.categoriesPage.filterIcons(this.value)">
                     </div>
                     <div class="p-2 max-h-36 overflow-y-auto">

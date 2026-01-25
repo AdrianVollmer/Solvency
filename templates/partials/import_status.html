@@ -45,7 +45,7 @@
                     <div class="flex items-center gap-4">
                         <form action="/import/{{ session.id }}/categories" method="post" class="flex items-center gap-2">
                             <label class="text-sm text-gray-600 dark:text-gray-400">Set all to:</label>
-                            <select name="category_id" class="text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                            <select name="category_id" class="input text-sm">
                                 <option value="">Uncategorized</option>
                                 {% for cat in categories %}
                                 <option value="{{ cat.category.id }}">{{ cat.path }}</option>

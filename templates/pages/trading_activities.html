@@ -48,11 +48,11 @@
                     {% endif %}
                     <label for="from_date" class="sr-only">From date</label>
                     <input type="date" id="from_date" name="from_date" value="{{ date_range.from_str() }}"
-                        class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        class="input text-sm">
                     <span class="text-neutral-500 text-sm">to</span>
                     <label for="to_date" class="sr-only">To date</label>
                     <input type="date" id="to_date" name="to_date" value="{{ date_range.to_str() }}"
-                        class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        class="input text-sm">
                     <button type="submit" class="btn-ghost px-3 py-2 text-sm rounded-lg">
                         Apply
                     </button>
@@ -69,7 +69,7 @@
 
                 <div>
                     <label for="symbol_filter" class="sr-only">Filter by symbol</label>
-                    <select id="symbol_filter" name="symbol" class="px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
+                    <select id="symbol_filter" name="symbol" class="input">
                         <option value="">All Symbols</option>
                         {% for sym in symbols %}
                         <option value="{{ sym }}" {% if filter.matches_symbol(sym) %}selected{% endif %}>
@@ -81,7 +81,7 @@
 
                 <div>
                     <label for="type_filter" class="sr-only">Filter by type</label>
-                    <select id="type_filter" name="activity_type" class="px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500">
+                    <select id="type_filter" name="activity_type" class="input">
                         <option value="">All Types</option>
                         {% for at in activity_types %}
                         <option value="{{ at.as_str() }}" {% if filter.matches_activity_type(at) %}selected{% endif %}>
