@@ -9,29 +9,38 @@
 {% block content %}
 <div class="space-y-6">
     {# Header #}
-    <div class="flex items-center gap-4">
-        <a href="/trading/positions" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-            <span class="icon-sm" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
+    <div>
+        <a href="/trading/positions" class="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors">
+            <span class="icon-xs" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
+            Positions
         </a>
-        <div class="flex-1">
-            <div class="flex items-center gap-3">
-                <h1 class="page-title">{{ symbol }}</h1>
-                {% match symbol_info.quote_type %}
-                {% when Some with (qt) %}
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">{{ qt }}</span>
-                {% when None %}{% endmatch %}
+        <div class="mt-3">
+            <div class="flex items-baseline gap-3">
+                {% match symbol_info.display_name() %}
+                {% when Some with (name) %}
+                <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">{{ name }}</h1>
+                {% when None %}
+                <h1 class="text-2xl font-bold text-neutral-900 dark:text-white font-mono">{{ symbol }}</h1>
+                {% endmatch %}
                 <a href="https://finance.yahoo.com/quote/{{ symbol }}/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" title="View on Yahoo Finance">
                     <span class="icon-xs" aria-hidden="true">{{ icons.get("external-link")|safe }}</span>
                 </a>
             </div>
-            {% match symbol_info.display_name() %}
-            {% when Some with (name) %}
-            <p class="mt-1 text-lg text-neutral-700 dark:text-neutral-300">{{ name }}</p>
-            {% when None %}{% endmatch %}
-            {% match symbol_info.exchange %}
-            {% when Some with (ex) %}
-            <p class="text-sm text-muted">{{ ex }}</p>
-            {% when None %}{% endmatch %}
+            <div class="mt-1 flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+                {% match symbol_info.display_name() %}
+                {% when Some with (_) %}
+                <span class="font-mono">{{ symbol }}</span>
+                {% when None %}{% endmatch %}
+                {% match symbol_info.exchange %}
+                {% when Some with (ex) %}
+                {% match symbol_info.display_name() %}{% when Some with (_) %}<span>·</span>{% when None %}{% endmatch %}
+                <span>{{ ex }}</span>
+                {% when None %}{% endmatch %}
+                {% match symbol_info.quote_type %}
+                {% when Some with (qt) %}
+                <span class="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-700 rounded text-xs font-medium text-neutral-600 dark:text-neutral-300">{{ qt }}</span>
+                {% when None %}{% endmatch %}
+            </div>
         </div>
     </div>
 
