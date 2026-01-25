@@ -18,12 +18,17 @@
                 <span class="icon-xs mr-2" aria-hidden="true">{{ icons.get("file-text")|safe }}</span>
                 API Logs
             </a>
-            {% if total_data_points > 0 %}
+            {% if total_data_points > 0 && !is_refreshing %}
             {% call ui::delete_action_reload(endpoint="/trading/market-data/delete-all", confirm="Are you sure you want to delete ALL market data? This cannot be undone.", label="Delete All") %}{% endcall %}
             {% endif %}
-            {% if symbols_needing_data > 0 %}
+            {% if is_refreshing %}
+            <button type="button" class="btn btn-primary opacity-75 cursor-not-allowed min-w-[10rem]" disabled>
+                <span class="icon-xs mr-2 animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+                Fetching...
+            </button>
+            {% elif symbols_needing_data > 0 %}
             <form action="/trading/market-data/refresh" method="POST">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary min-w-[10rem]">
                     <span class="icon-xs mr-2" aria-hidden="true">{{ icons.get("refresh-cw")|safe }}</span>
                     Fetch Missing Data
                 </button>
@@ -31,6 +36,15 @@
             {% endif %}
         </div>
     </div>
+
+    {# Hidden polling element - triggers page reload when fetch completes #}
+    {% if is_refreshing %}
+    <div id="refresh-poller"
+         hx-get="/trading/market-data/status"
+         hx-trigger="every 1s"
+         hx-swap="outerHTML"
+         class="hidden"></div>
+    {% endif %}
 
     {# Summary Stats #}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -47,12 +61,6 @@
             <p class="text-2xl font-semibold {% if symbols_needing_data > 0 %}text-yellow-600 dark:text-yellow-400{% else %}text-green-600 dark:text-green-400{% endif %}">{{ symbols_needing_data }}</p>
         </div>
     </div>
-
-    {% if refresh_message.is_some() %}
-    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <p class="text-blue-700 dark:text-blue-300">{{ refresh_message.as_ref().unwrap() }}</p>
-    </div>
-    {% endif %}
 
     {# Coverage Table #}
     {% if coverage.is_empty() %}

@@ -11,7 +11,7 @@ use crate::error::AppResult;
 use crate::models::{MarketData, NewApiLog, Settings, SymbolDataCoverage};
 use crate::services::market_data as market_data_service;
 use crate::sort_utils::{SortDirection, Sortable, SortableColumn, TableSort};
-use crate::state::{AppState, JsManifest};
+use crate::state::{AppState, JsManifest, MarketDataRefreshState};
 use crate::VERSION;
 
 /// Sortable columns for the market data coverage table.
@@ -128,6 +128,29 @@ pub async fn index(
     let symbols_needing_data = market_data::get_symbols_needing_data(&conn)?.len();
     let latest_log_id = api_logs::get_latest_log_id(&conn).unwrap_or(0);
 
+    // Get refresh state
+    let (is_refreshing, refresh_message) = {
+        let refresh_state = state.market_data_refresh.lock().unwrap();
+        if refresh_state.is_refreshing {
+            let msg = if let Some(ref symbol) = refresh_state.current_symbol {
+                format!(
+                    "Fetching {} ({}/{})...",
+                    symbol,
+                    refresh_state.processed_symbols + 1,
+                    refresh_state.total_symbols
+                )
+            } else {
+                format!(
+                    "Fetching data ({}/{})...",
+                    refresh_state.processed_symbols, refresh_state.total_symbols
+                )
+            };
+            (true, Some(msg))
+        } else {
+            (false, None)
+        }
+    };
+
     let template = MarketDataTemplate {
         title: "Market Data".into(),
         settings: app_settings,
@@ -138,8 +161,8 @@ pub async fn index(
         coverage,
         total_data_points,
         symbols_needing_data,
-        is_refreshing: false,
-        refresh_message: None,
+        is_refreshing,
+        refresh_message,
         latest_log_id,
         sort,
     };
@@ -150,13 +173,24 @@ pub async fn index(
 #[derive(Template)]
 #[template(path = "partials/market_data_status.html")]
 pub struct MarketDataStatusTemplate {
+    pub icons: crate::filters::Icons,
     pub coverage: Vec<SymbolDataCoverage>,
     pub total_data_points: i64,
     pub symbols_needing_data: usize,
+    pub is_refreshing: bool,
     pub refresh_message: Option<String>,
+    pub progress_percent: u8,
 }
 
 pub async fn refresh(State(state): State<AppState>) -> AppResult<Redirect> {
+    // Check if refresh is already in progress
+    {
+        let refresh_state = state.market_data_refresh.lock().unwrap();
+        if refresh_state.is_refreshing {
+            return Ok(Redirect::to("/trading/market-data"));
+        }
+    }
+
     let conn = state.db.get()?;
 
     // Get symbols that need data
@@ -166,10 +200,27 @@ pub async fn refresh(State(state): State<AppState>) -> AppResult<Redirect> {
         return Ok(Redirect::to("/trading/market-data"));
     }
 
+    // Set initial refresh state
+    {
+        let mut refresh_state = state.market_data_refresh.lock().unwrap();
+        *refresh_state = MarketDataRefreshState {
+            is_refreshing: true,
+            processed_symbols: 0,
+            total_symbols: symbols_to_fetch.len(),
+            current_symbol: symbols_to_fetch.first().map(|(s, _, _)| s.clone()),
+        };
+    }
+
     // Spawn background task for fetching
     let state_clone = state.clone();
     tokio::spawn(async move {
-        for (symbol, start_date, end_date) in symbols_to_fetch {
+        for (i, (symbol, start_date, end_date)) in symbols_to_fetch.iter().enumerate() {
+            // Update current symbol in state
+            {
+                let mut refresh_state = state_clone.market_data_refresh.lock().unwrap();
+                refresh_state.current_symbol = Some(symbol.clone());
+            }
+
             let start_time = std::time::Instant::now();
             let request_params = serde_json::json!({
                 "symbol": &symbol,
@@ -178,9 +229,7 @@ pub async fn refresh(State(state): State<AppState>) -> AppResult<Redirect> {
             })
             .to_string();
 
-            match market_data_service::fetch_historical_quotes(&symbol, &start_date, &end_date)
-                .await
-            {
+            match market_data_service::fetch_historical_quotes(symbol, start_date, end_date).await {
                 Ok(data) => {
                     let duration_ms = start_time.elapsed().as_millis() as i64;
                     if let Ok(conn) = state_clone.db.get() {
@@ -216,17 +265,17 @@ pub async fn refresh(State(state): State<AppState>) -> AppResult<Redirect> {
                         }
 
                         // Also fetch and store symbol metadata if not already cached
-                        if market_data::get_symbol_metadata(&conn, &symbol)
+                        if market_data::get_symbol_metadata(&conn, symbol)
                             .ok()
                             .flatten()
                             .is_none()
                         {
                             if let Ok(Some(meta)) =
-                                market_data_service::fetch_symbol_metadata(&symbol).await
+                                market_data_service::fetch_symbol_metadata(symbol).await
                             {
                                 let _ = market_data::upsert_symbol_metadata(
                                     &conn,
-                                    &symbol,
+                                    symbol,
                                     meta.short_name.as_deref(),
                                     meta.long_name.as_deref(),
                                     Some(&meta.exchange),
@@ -258,8 +307,20 @@ pub async fn refresh(State(state): State<AppState>) -> AppResult<Redirect> {
                 }
             }
 
+            // Update progress after each symbol
+            {
+                let mut refresh_state = state_clone.market_data_refresh.lock().unwrap();
+                refresh_state.processed_symbols = i + 1;
+            }
+
             // Rate limiting between symbols
             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        }
+
+        // Clear refresh state when done
+        {
+            let mut refresh_state = state_clone.market_data_refresh.lock().unwrap();
+            *refresh_state = MarketDataRefreshState::default();
         }
     });
 
@@ -270,6 +331,14 @@ pub async fn refresh_symbol(
     State(state): State<AppState>,
     axum::extract::Path(symbol): axum::extract::Path<String>,
 ) -> AppResult<Redirect> {
+    // Check if refresh is already in progress
+    {
+        let refresh_state = state.market_data_refresh.lock().unwrap();
+        if refresh_state.is_refreshing {
+            return Ok(Redirect::to("/trading/market-data"));
+        }
+    }
+
     let conn = state.db.get()?;
 
     // Get the date range for this symbol
@@ -280,6 +349,17 @@ pub async fn refresh_symbol(
         let start = start_date.clone();
         let end = end_date.clone();
         let sym = symbol.clone();
+
+        // Set refresh state for single symbol
+        {
+            let mut refresh_state = state.market_data_refresh.lock().unwrap();
+            *refresh_state = MarketDataRefreshState {
+                is_refreshing: true,
+                processed_symbols: 0,
+                total_symbols: 1,
+                current_symbol: Some(sym.clone()),
+            };
+        }
 
         // Spawn background task
         let state_clone = state.clone();
@@ -369,27 +449,70 @@ pub async fn refresh_symbol(
                     tracing::error!("Failed to fetch market data for {}: {}", sym, e);
                 }
             }
+
+            // Clear refresh state when done
+            {
+                let mut refresh_state = state_clone.market_data_refresh.lock().unwrap();
+                *refresh_state = MarketDataRefreshState::default();
+            }
         });
     }
 
     Ok(Redirect::to("/trading/market-data"))
 }
 
-pub async fn status(State(state): State<AppState>) -> AppResult<Html<String>> {
+pub async fn status(
+    State(state): State<AppState>,
+) -> AppResult<axum::response::Response<axum::body::Body>> {
+    use axum::response::IntoResponse;
+
     let conn = state.db.get()?;
 
     let coverage = market_data::get_symbol_coverage(&conn)?;
     let total_data_points = market_data::count_market_data(&conn)?;
     let symbols_needing_data = market_data::get_symbols_needing_data(&conn)?.len();
 
+    // Get refresh state
+    let (is_refreshing, refresh_message, progress_percent) = {
+        let refresh_state = state.market_data_refresh.lock().unwrap();
+        if refresh_state.is_refreshing {
+            let msg = if let Some(ref symbol) = refresh_state.current_symbol {
+                format!(
+                    "Fetching {} ({}/{})...",
+                    symbol,
+                    refresh_state.processed_symbols + 1,
+                    refresh_state.total_symbols
+                )
+            } else {
+                format!(
+                    "Fetching data ({}/{})...",
+                    refresh_state.processed_symbols, refresh_state.total_symbols
+                )
+            };
+            (true, Some(msg), refresh_state.progress_percent())
+        } else {
+            (false, None, 0)
+        }
+    };
+
     let template = MarketDataStatusTemplate {
+        icons: crate::filters::Icons,
         coverage,
         total_data_points,
         symbols_needing_data,
-        refresh_message: None,
+        is_refreshing,
+        refresh_message,
+        progress_percent,
     };
 
-    Ok(Html(template.render().unwrap()))
+    let html = template.render().unwrap();
+
+    // If refresh just completed, tell HTMX to refresh the page
+    if !is_refreshing {
+        Ok(([("hx-refresh", "true")], Html(html)).into_response())
+    } else {
+        Ok(Html(html).into_response())
+    }
 }
 
 // Symbol detail page

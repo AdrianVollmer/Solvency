@@ -3,9 +3,9 @@ use axum::Router;
 use moneymapper::config::Config;
 use moneymapper::db::{create_pool, migrations};
 use moneymapper::handlers;
-use moneymapper::state::{AppState, JsManifest};
+use moneymapper::state::{AppState, JsManifest, MarketDataRefreshState};
 use moneymapper::xsrf::{xsrf_middleware, XsrfToken};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
 use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
@@ -43,6 +43,7 @@ async fn main() {
         config: Arc::new(config.clone()),
         manifest,
         xsrf_token: xsrf_token.clone(),
+        market_data_refresh: Arc::new(Mutex::new(MarketDataRefreshState::default())),
     };
 
     let app = Router::new()

@@ -4,7 +4,25 @@ use crate::xsrf::XsrfToken;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+
+/// State for tracking market data refresh operations
+#[derive(Clone, Debug, Default)]
+pub struct MarketDataRefreshState {
+    pub is_refreshing: bool,
+    pub processed_symbols: usize,
+    pub total_symbols: usize,
+    pub current_symbol: Option<String>,
+}
+
+impl MarketDataRefreshState {
+    pub fn progress_percent(&self) -> u8 {
+        if self.total_symbols == 0 {
+            return 0;
+        }
+        ((self.processed_symbols as f64 / self.total_symbols as f64) * 100.0) as u8
+    }
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -12,6 +30,7 @@ pub struct AppState {
     pub config: Arc<Config>,
     pub manifest: JsManifest,
     pub xsrf_token: XsrfToken,
+    pub market_data_refresh: Arc<Mutex<MarketDataRefreshState>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

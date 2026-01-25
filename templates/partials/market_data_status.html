@@ -1,66 +1,8 @@
-{# Summary Stats #}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-        <p class="text-sm text-neutral-500 dark:text-neutral-400">Total Data Points</p>
-        <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ total_data_points }}</p>
-    </div>
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-        <p class="text-sm text-neutral-500 dark:text-neutral-400">Tracked Symbols</p>
-        <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ coverage.len() }}</p>
-    </div>
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-        <p class="text-sm text-neutral-500 dark:text-neutral-400">Symbols Needing Data</p>
-        <p class="text-2xl font-semibold {% if symbols_needing_data > 0 %}text-yellow-600 dark:text-yellow-400{% else %}text-green-600 dark:text-green-400{% endif %}">{{ symbols_needing_data }}</p>
-    </div>
-</div>
-
-{% if refresh_message.is_some() %}
-<div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-    <p class="text-blue-700 dark:text-blue-300">{{ refresh_message.as_ref().unwrap() }}</p>
-</div>
-{% endif %}
-
-{# Coverage Table #}
-{% if !coverage.is_empty() %}
-<div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-        <thead class="bg-neutral-50 dark:bg-neutral-900">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Symbol</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Activity Range</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Data Range</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Data Points</th>
-                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Status</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-            {% for item in coverage %}
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ item.symbol }}</span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ item.first_activity_date }} to {{ item.last_activity_date }}</span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    {% match item.first_data_date %}
-                    {% when Some with (first) %}
-                        <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ first }} to {{ item.last_data_date.as_ref().unwrap() }}</span>
-                    {% when None %}
-                        <span class="text-sm text-neutral-400 dark:text-neutral-500 italic">No data</span>
-                    {% endmatch %}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right">
-                    <span class="text-sm text-neutral-900 dark:text-white">{{ item.data_points }}</span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ item.status_color() }}">
-                        {{ item.coverage_status() }}
-                    </span>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+{# Polling element for refresh status #}
+{% if is_refreshing %}
+<div id="refresh-poller"
+     hx-get="/trading/market-data/status"
+     hx-trigger="every 1s"
+     hx-swap="outerHTML"
+     class="hidden"></div>
 {% endif %}
