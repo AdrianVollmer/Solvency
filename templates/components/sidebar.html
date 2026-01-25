@@ -10,6 +10,11 @@
         <div class="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700 px-2">
             <p class="px-4 mb-2 text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Analytics</p>
 
+            <a href="/balances" class="nav-item {% if title == "Balances" %}nav-item-active{% endif %}">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("wallet")|safe }}</span>
+                <span class="text-sm font-medium">Balances</span>
+            </a>
+
             <a href="/spending" class="nav-item {% if title == "Spending" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("bar-chart")|safe }}</span>
                 <span class="text-sm font-medium">Spending</span>

@@ -1,5 +1,6 @@
 pub mod accounts;
 pub mod api_logs;
+pub mod balances;
 pub mod categories;
 pub mod expenses;
 pub mod import;

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block content %}
+<div class="space-y-6">
+    {% call ui::page_header(title="Balances", subtitle="Account balances overview") %}{% endcall %}
+
+    {% if accounts.is_empty() %}
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+        <p class="text-neutral-500 dark:text-neutral-400">No accounts yet. Create an account to start tracking balances.</p>
+        <div class="mt-4">
+            <a href="/accounts/new" class="btn btn-primary">Add Account</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead class="bg-neutral-50 dark:bg-neutral-900">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Account</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Type</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Balance</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {% for ab in accounts %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-white">{{ ab.account.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">{{ ab.account.account_type.as_str() }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold tabular-nums text-right {{ ab.balance_color }}">{{ ab.balance_formatted }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-neutral-50 dark:bg-neutral-900">
+                    <tr>
+                        <td colspan="2" class="px-6 py-4 text-sm font-semibold text-neutral-900 dark:text-white">Total</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold tabular-nums text-right {{ total_balance_color }}">{{ total_balance_formatted }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

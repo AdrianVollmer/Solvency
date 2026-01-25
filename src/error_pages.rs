@@ -61,9 +61,9 @@ pub async fn error_page_middleware(
 /// Fallback handler for unmatched routes.
 pub async fn fallback_handler() -> Response {
     let mut response = StatusCode::NOT_FOUND.into_response();
-    response
-        .extensions_mut()
-        .insert(ErrorMessage("The page you're looking for doesn't exist.".into()));
+    response.extensions_mut().insert(ErrorMessage(
+        "The page you're looking for doesn't exist.".into(),
+    ));
     response
 }
 
@@ -108,18 +108,9 @@ fn status_info(status: StatusCode) -> (&'static str, &'static str) {
     match status.as_u16() {
         400 => ("Bad Request", "The request could not be understood."),
         403 => ("Forbidden", "You don't have permission to access this."),
-        404 => (
-            "Not Found",
-            "The page you're looking for doesn't exist.",
-        ),
-        405 => (
-            "Method Not Allowed",
-            "This action is not supported.",
-        ),
-        500 => (
-            "Internal Server Error",
-            "Something went wrong on our end.",
-        ),
+        404 => ("Not Found", "The page you're looking for doesn't exist."),
+        405 => ("Method Not Allowed", "This action is not supported."),
+        500 => ("Internal Server Error", "Something went wrong on our end."),
         _ => ("Error", ""),
     }
 }

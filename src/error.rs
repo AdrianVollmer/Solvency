@@ -66,9 +66,7 @@ impl IntoResponse for AppError {
         );
 
         let mut response = (status, Html(html)).into_response();
-        response
-            .extensions_mut()
-            .insert(ErrorMessage(message));
+        response.extensions_mut().insert(ErrorMessage(message));
         response
     }
 }

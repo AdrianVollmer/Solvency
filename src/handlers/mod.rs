@@ -1,6 +1,7 @@
 pub mod accounts;
 pub mod api;
 pub mod api_logs;
+pub mod balances;
 pub mod categories;
 pub mod dashboard;
 pub mod expenses;
@@ -24,6 +25,7 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         // Pages
         .route("/", get(dashboard::index))
+        .route("/balances", get(balances::index))
         .route("/spending", get(spending::index))
         .route("/expenses", get(expenses::index))
         .route("/import", get(import::index))
