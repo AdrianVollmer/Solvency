@@ -14,10 +14,7 @@
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
         {% if expense.has_category() %}
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
-            style="background-color: {{ expense.category_color_or_default() }}15; color: {{ expense.category_color_or_default() }};">
-            {{ expense.category_name_or_default() }}
-        </span>
+        <mm-category-badge color="{{ expense.category_color_or_default() }}" name="{{ expense.category_name_or_default() }}"></mm-category-badge>
         {% else %}
         <span class="text-neutral-400 text-sm">-</span>
         {% endif %}
@@ -25,10 +22,7 @@
     <td class="px-6 py-4">
         <div class="flex flex-wrap gap-1">
             {% for tag in expense.tags %}
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                style="background-color: {{ tag.color }}15; color: {{ tag.color }};">
-                {{ tag.name }}
-            </span>
+            <mm-badge color="{{ tag.color }}">{{ tag.name }}</mm-badge>
             {% endfor %}
         </div>
     </td>

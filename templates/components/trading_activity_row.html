@@ -6,18 +6,7 @@
         <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ activity.symbol }}</span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
-        {% let type_str = activity.activity_type.as_str() %}
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-            {% if type_str == "BUY" || type_str == "ADD_HOLDING" %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300{% endif %}
-            {% if type_str == "SELL" || type_str == "REMOVE_HOLDING" %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300{% endif %}
-            {% if type_str == "DIVIDEND" || type_str == "INTEREST" %}bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300{% endif %}
-            {% if type_str == "DEPOSIT" || type_str == "TRANSFER_IN" %}bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300{% endif %}
-            {% if type_str == "WITHDRAWAL" || type_str == "TRANSFER_OUT" %}bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300{% endif %}
-            {% if type_str == "FEE" || type_str == "TAX" %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300{% endif %}
-            {% if type_str == "SPLIT" %}bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300{% endif %}
-        ">
-            {{ activity.activity_type.label() }}
-        </span>
+        <mm-status-badge type="{{ activity.activity_type.as_str()|lower }}">{{ activity.activity_type.label() }}</mm-status-badge>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
         <span class="text-sm text-neutral-900 dark:text-white tabular-nums">{{ activity.quantity_display() }}</span>

@@ -9,10 +9,13 @@
     </div>
 
     {% if positions.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
-        <p class="text-neutral-500 dark:text-neutral-400">No positions yet. Import or add trading activities to see your positions.</p>
-        <a href="/trading/activities" class="mt-4 inline-block btn btn-primary">Add Activity</a>
-    </div>
+    <mm-empty-state
+        icon="activity"
+        title="No positions yet"
+        description="Import or add trading activities to see your positions"
+        action-url="/trading/activities"
+        action-label="Add Activity">
+    </mm-empty-state>
     {% else %}
 
     <!-- Cash Positions -->

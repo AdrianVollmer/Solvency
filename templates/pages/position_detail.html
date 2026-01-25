@@ -42,38 +42,20 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {% match position %}
         {% when Some with (pos) %}
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Quantity</p>
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ pos.position.quantity_display() }}</p>
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Total Cost</p>
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(pos.position.total_cost_cents, pos.position.currency) }}</p>
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Value</p>
-            {% match pos.current_value_cents %}
-            {% when Some with (cents) %}
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
-            {% when None %}
-            <p class="text-xl font-semibold text-neutral-400">-</p>
-            {% endmatch %}
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Gain/Loss</p>
-            {% match pos.gain_loss_cents %}
-            {% when Some with (cents) %}
-            <div>
-                <p class="text-xl font-semibold {{ pos.gain_loss_color() }}">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
-                {% match pos.gain_loss_percent %}
-                {% when Some with (pct) %}
-                <p class="text-sm {{ pos.gain_loss_color() }}">{{ settings.format_percent(pct) }}</p>
-                {% when None %}{% endmatch %}
-            </div>
-            {% when None %}
-            <p class="text-xl font-semibold text-neutral-400">-</p>
-            {% endmatch %}
-        </div>
+        <mm-stat-card label="Quantity" value="{{ pos.position.quantity_display() }}"></mm-stat-card>
+        <mm-stat-card label="Total Cost" value="{{ settings.format_money_neutral_with_currency(pos.position.total_cost_cents, pos.position.currency) }}"></mm-stat-card>
+        {% match pos.current_value_cents %}
+        {% when Some with (cents) %}
+        <mm-stat-card label="Current Value" value="{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}"></mm-stat-card>
+        {% when None %}
+        <mm-stat-card label="Current Value" value="-"></mm-stat-card>
+        {% endmatch %}
+        {% match pos.gain_loss_cents %}
+        {% when Some with (cents) %}
+        <mm-stat-card label="Gain/Loss" value="{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}" secondary="{% match pos.gain_loss_percent %}{% when Some with (pct) %}{{ settings.format_percent(pct) }}{% when None %}{% endmatch %}"></mm-stat-card>
+        {% when None %}
+        <mm-stat-card label="Gain/Loss" value="-"></mm-stat-card>
+        {% endmatch %}
         {% when None %}
         <div class="col-span-4 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3 text-center">
             <p class="text-neutral-500 dark:text-neutral-400">No position data available for this symbol.</p>
@@ -85,54 +67,33 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {% match position %}
         {% when Some with (pos) %}
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Avg Cost/Share</p>
-            {% match pos.position.average_cost_cents() %}
-            {% when Some with (cents) %}
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
-            {% when None %}
-            <p class="text-xl font-semibold text-neutral-400">-</p>
-            {% endmatch %}
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Price</p>
-            {% match pos.current_price_cents %}
-            {% when Some with (cents) %}
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
-            {% when None %}
-            <p class="text-xl font-semibold text-neutral-400">-</p>
-            {% endmatch %}
-        </div>
+        {% match pos.position.average_cost_cents() %}
+        {% when Some with (cents) %}
+        <mm-stat-card label="Avg Cost/Share" value="{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}"></mm-stat-card>
+        {% when None %}
+        <mm-stat-card label="Avg Cost/Share" value="-"></mm-stat-card>
+        {% endmatch %}
+        {% match pos.current_price_cents %}
+        {% when Some with (cents) %}
+        <mm-stat-card label="Current Price" value="{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}"></mm-stat-card>
+        {% when None %}
+        <mm-stat-card label="Current Price" value="-"></mm-stat-card>
+        {% endmatch %}
         {% when None %}{% endmatch %}
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">XIRR (Annualized)</p>
-            {% match xirr_formatted %}
-            {% when Some with (x) %}
-            <p class="text-xl font-semibold {% if xirr.unwrap_or(0.0) >= 0.0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">{{ x }}</p>
-            {% when None %}
-            <p class="text-xl font-semibold text-neutral-400">-</p>
-            {% endmatch %}
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Realized Gain/Loss</p>
-            <p class="text-xl font-semibold {{ realized_gain_loss_color }}">{{ realized_gain_loss_formatted }}</p>
-        </div>
+        {% match xirr_formatted %}
+        {% when Some with (x) %}
+        <mm-stat-card label="XIRR (Annualized)" value="{{ x }}"></mm-stat-card>
+        {% when None %}
+        <mm-stat-card label="XIRR (Annualized)" value="-"></mm-stat-card>
+        {% endmatch %}
+        <mm-stat-card label="Realized Gain/Loss" value="{{ realized_gain_loss_formatted }}"></mm-stat-card>
     </div>
 
     <!-- Fees, Taxes & Dividends Row -->
     <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Total Fees</p>
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ total_fees_formatted }}</p>
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Total Taxes</p>
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ total_taxes_formatted }}</p>
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Total Dividends</p>
-            <p class="text-xl font-semibold text-green-600 dark:text-green-400">{{ total_dividends_formatted }}</p>
-        </div>
+        <mm-stat-card label="Total Fees" value="{{ total_fees_formatted }}"></mm-stat-card>
+        <mm-stat-card label="Total Taxes" value="{{ total_taxes_formatted }}"></mm-stat-card>
+        <mm-stat-card label="Total Dividends" value="{{ total_dividends_formatted }}" trend="up"></mm-stat-card>
     </div>
 
     <!-- Price Chart -->
