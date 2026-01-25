@@ -486,7 +486,7 @@ pub async fn detail(
     let total_dividends_formatted =
         filters::format_money_neutral(total_dividends_cents, currency, locale);
     let realized_gain_loss_formatted =
-        filters::format_money_neutral(realized_gain_loss_cents, currency, locale);
+        filters::format_money_plain(realized_gain_loss_cents, currency, locale);
 
     let realized_gain_loss_color = if realized_gain_loss_cents > 0 {
         "text-green-600 dark:text-green-400"

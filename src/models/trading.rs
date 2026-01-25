@@ -337,7 +337,7 @@ impl PositionWithMarketData {
 
     pub fn gain_loss_display(&self) -> Option<String> {
         self.gain_loss_cents.map(|cents| {
-            let sign = if cents >= 0 { "" } else { "-" };
+            let sign = if cents > 0 { "+" } else if cents < 0 { "-" } else { "" };
             let dollars = cents.abs() / 100;
             let remainder = cents.abs() % 100;
             format!("{}{}.{:02}", sign, dollars, remainder)

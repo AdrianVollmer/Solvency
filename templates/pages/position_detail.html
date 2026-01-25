@@ -57,14 +57,16 @@
         {% when None %}
         {% call ui::stat_card(label="Current Value", value="-") %}
         {% endmatch %}
-        {% match pos.gain_loss_cents %}
-        {% when Some with (cents) %}
-        {% match pos.gain_loss_percent %}
-        {% when Some with (pct) %}
-        {% call ui::stat_card_secondary(label="Gain/Loss", value=settings.format_money_neutral_with_currency(cents, pos.position.currency), secondary=settings.format_percent(pct)) %}
-        {% when None %}
-        {% call ui::stat_card(label="Gain/Loss", value=settings.format_money_neutral_with_currency(cents, pos.position.currency)) %}
-        {% endmatch %}
+        {% match pos.gain_loss_formatted() %}
+        {% when Some with (formatted) %}
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Gain/Loss</p>
+            <p class="text-xl font-semibold {{ pos.gain_loss_color() }}">{{ formatted }}</p>
+            {% match pos.gain_loss_percent_display() %}
+            {% when Some with (pct) %}
+            <p class="text-sm {{ pos.gain_loss_color() }}">{{ pct }}</p>
+            {% when None %}{% endmatch %}
+        </div>
         {% when None %}
         {% call ui::stat_card(label="Gain/Loss", value="-") %}
         {% endmatch %}
@@ -108,7 +110,10 @@
         {% when None %}
         {% call ui::stat_card(label="XIRR (Annualized)", value="-") %}
         {% endmatch %}
-        {% call ui::stat_card(label="Realized Gain/Loss", value=realized_gain_loss_formatted.as_str()) %}
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Realized Gain/Loss</p>
+            <p class="text-xl font-semibold {{ realized_gain_loss_color }}">{{ realized_gain_loss_formatted }}</p>
+        </div>
     </div>
 
     {# Fees, Taxes & Dividends Row #}

@@ -78,6 +78,12 @@ impl Settings {
         filters::format_money(*cents, currency, &self.locale)
     }
 
+    /// Format a monetary amount (in cents) with a specific currency and color coding.
+    /// Takes value by copy - useful for template match expressions.
+    pub fn format_money_with_currency_val(&self, cents: i64, currency: &str) -> String {
+        filters::format_money(cents, currency, &self.locale)
+    }
+
     /// Format a monetary amount (in cents) as neutral text (no sign, no color).
     /// Useful for prices, fees, and other amounts that shouldn't show +/-.
     pub fn format_money_neutral(&self, cents: &i64) -> String {
@@ -90,9 +96,21 @@ impl Settings {
         filters::format_money_neutral(*cents, currency, &self.locale)
     }
 
+    /// Format a monetary amount (in cents) as plain text with sign (+/-) and specific currency.
+    /// Useful for gains/losses in trading that have their own currency field.
+    pub fn format_money_plain_with_currency(&self, cents: &i64, currency: &str) -> String {
+        filters::format_money_plain(*cents, currency, &self.locale)
+    }
+
     /// Format a percentage value with locale-aware decimal separator.
     /// Shows sign (+/-) and two decimal places.
     pub fn format_percent(&self, value: &f64) -> String {
         filters::format_percent(*value, &self.locale)
+    }
+
+    /// Format a percentage value with locale-aware decimal separator.
+    /// Takes value by copy - useful for template match expressions.
+    pub fn format_percent_val(&self, value: f64) -> String {
+        filters::format_percent(value, &self.locale)
     }
 }
