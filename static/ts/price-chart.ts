@@ -59,6 +59,7 @@ async function loadPriceChart(symbol: string): Promise<void> {
     ]);
 
     const option = {
+      backgroundColor: "transparent",
       tooltip: {
         trigger: "axis",
         formatter: (params: any) => {
