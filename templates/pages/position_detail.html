@@ -43,7 +43,17 @@
         {% call ui::stat_card(label="Total Cost", value=settings.format_money_neutral_with_currency(pos.position.total_cost_cents, pos.position.currency)) %}
         {% match pos.current_value_cents %}
         {% when Some with (cents) %}
+        {% if pos.price_is_approximated %}
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Value</p>
+            <p class="text-xl font-semibold text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
+                {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
+                <span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
+            </p>
+        </div>
+        {% else %}
         {% call ui::stat_card(label="Current Value", value=settings.format_money_neutral_with_currency(cents, pos.position.currency)) %}
+        {% endif %}
         {% when None %}
         {% call ui::stat_card(label="Current Value", value="-") %}
         {% endmatch %}
@@ -77,7 +87,17 @@
         {% endmatch %}
         {% match pos.current_price_cents %}
         {% when Some with (cents) %}
+        {% if pos.price_is_approximated %}
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Price</p>
+            <p class="text-xl font-semibold text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
+                {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
+                <span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
+            </p>
+        </div>
+        {% else %}
         {% call ui::stat_card(label="Current Price", value=settings.format_money_neutral_with_currency(cents, pos.position.currency)) %}
+        {% endif %}
         {% when None %}
         {% call ui::stat_card(label="Current Price", value="-") %}
         {% endmatch %}

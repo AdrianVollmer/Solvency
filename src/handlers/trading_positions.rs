@@ -442,16 +442,23 @@ pub async fn detail(
     let all_positions = trading::get_positions(&conn)?;
     let position_opt = all_positions.into_iter().find(|p| p.symbol == symbol);
 
-    // Enrich with market data if position exists
-    let position =
-        position_opt.map(
-            |pos| match market_data::get_latest_price(&conn, &pos.symbol) {
-                Ok(Some(data)) => {
-                    PositionWithMarketData::with_market_data(pos, data.close_price_cents, data.date)
-                }
-                _ => PositionWithMarketData::from_position(pos),
-            },
-        );
+    // Enrich with market data if position exists (same logic as positions list)
+    let position = position_opt.map(|pos| {
+        // First try to get actual market data
+        if let Ok(Some(data)) = market_data::get_latest_price(&conn, &pos.symbol) {
+            return PositionWithMarketData::with_market_data(
+                pos,
+                data.close_price_cents,
+                data.date,
+            );
+        }
+        // Fall back to last BUY/SELL price as approximation
+        if let Ok(Some((price_cents, date))) = trading::get_last_trade_price(&conn, &pos.symbol) {
+            return PositionWithMarketData::with_approximated_price(pos, price_cents, date);
+        }
+        // No price data available
+        PositionWithMarketData::from_position(pos)
+    });
 
     // Get activities for this symbol
     let activities = trading::get_activities_for_symbol(&conn, &symbol)?;
@@ -729,6 +736,7 @@ pub struct PositionChartResponse {
     pub symbol: String,
     pub data: Vec<PositionChartData>,
     pub activities: Vec<ActivityMarker>,
+    pub is_approximated: bool,
 }
 
 pub async fn position_chart_data(
@@ -741,13 +749,25 @@ pub async fn position_chart_data(
     let mut data_points = market_data::get_prices_for_symbol(&conn, &symbol)?;
     data_points.reverse(); // Now oldest first
 
-    let data: Vec<PositionChartData> = data_points
-        .into_iter()
-        .map(|dp| PositionChartData {
-            date: dp.date,
-            price_cents: dp.close_price_cents,
-        })
-        .collect();
+    let (data, is_approximated): (Vec<PositionChartData>, bool) = if !data_points.is_empty() {
+        // Use actual market data
+        let chart_data = data_points
+            .into_iter()
+            .map(|dp| PositionChartData {
+                date: dp.date,
+                price_cents: dp.close_price_cents,
+            })
+            .collect();
+        (chart_data, false)
+    } else {
+        // No market data available - build step function from trade prices
+        let chart_data = trading::get_all_trade_prices(&conn, &symbol)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(date, price_cents)| PositionChartData { date, price_cents })
+            .collect();
+        (chart_data, true)
+    };
 
     // Get buy/sell activities for markers
     let all_activities = trading::get_activities_for_symbol(&conn, &symbol)?;
@@ -776,5 +796,6 @@ pub async fn position_chart_data(
         symbol,
         data,
         activities,
+        is_approximated,
     }))
 }

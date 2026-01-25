@@ -17,6 +17,7 @@ interface ChartResponse {
   symbol: string;
   data: PriceData[];
   activities: ActivityMarker[];
+  is_approximated: boolean;
 }
 
 let positionChart: any = null;
@@ -88,6 +89,9 @@ async function loadPositionChart(symbol: string): Promise<void> {
       activityMap.set(activity.date, activity);
     }
 
+    // Use amber/yellow color for approximated data, blue for actual market data
+    const lineColor = chartData.is_approximated ? "#d97706" : "#3b82f6";
+
     const option = {
       tooltip: {
         trigger: "axis",
@@ -137,13 +141,14 @@ async function loadPositionChart(symbol: string): Promise<void> {
         {
           name: `${symbol} Price`,
           type: "line",
-          smooth: true,
+          smooth: !chartData.is_approximated,
+          step: chartData.is_approximated ? "end" : false,
           lineStyle: {
             width: 2,
-            color: "#3b82f6",
+            color: lineColor,
           },
           itemStyle: {
-            color: "#3b82f6",
+            color: lineColor,
           },
           areaStyle: {
             opacity: 0.1,

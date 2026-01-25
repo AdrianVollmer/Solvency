@@ -575,6 +575,31 @@ pub fn get_last_trade_price(
     .optional()
 }
 
+/// Get all BUY or SELL prices for a symbol in ascending date order.
+/// Used to build a step function chart when no market data is available.
+/// Returns Vec<(date, price_cents)>
+pub fn get_all_trade_prices(
+    conn: &Connection,
+    symbol: &str,
+) -> rusqlite::Result<Vec<(String, i64)>> {
+    let mut stmt = conn.prepare(
+        "SELECT date, unit_price_cents
+         FROM trading_activities
+         WHERE symbol = ?
+           AND activity_type IN ('BUY', 'SELL')
+           AND unit_price_cents IS NOT NULL
+         ORDER BY date ASC, id ASC",
+    )?;
+
+    let rows = stmt.query_map([symbol], |row| Ok((row.get(0)?, row.get(1)?)))?;
+
+    let mut prices = Vec::new();
+    for row in rows {
+        prices.push(row?);
+    }
+    Ok(prices)
+}
+
 // Import session operations
 
 pub fn create_import_session(conn: &Connection, id: &str) -> AppResult<TradingImportSession> {
