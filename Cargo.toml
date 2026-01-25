@@ -2,7 +2,7 @@
 name = "moneymapper"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.92"
 description = "A web-based expense tracker with a focus on visualizing spending habits"
 license = "MIT"
 
@@ -14,8 +14,7 @@ tower = "0.5"
 tower-http = { version = "0.6", features = ["fs", "compression-gzip", "trace"] }
 
 # Templates
-askama = { version = "0.12", features = ["with-axum"] }
-askama_axum = "0.4"
+askama = "0.15"
 
 # Database
 rusqlite = { version = "0.32", features = ["bundled"] }

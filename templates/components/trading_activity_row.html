@@ -7,7 +7,7 @@
         <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ activity.symbol }}</span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
-        {% call ui::status_badge(badge_type=activity.activity_type.as_str().to_lowercase(), label=activity.activity_type.label()) %}
+        {% call ui::status_badge(badge_type=activity.activity_type.as_str().to_lowercase(), label=activity.activity_type.label()) %}{% endcall %}
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
         <span class="text-sm text-neutral-900 dark:text-white tabular-nums">{{ activity.quantity_display() }}</span>

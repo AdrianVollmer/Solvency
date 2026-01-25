@@ -8,7 +8,7 @@
             <h1 class="page-title">Expenses</h1>
         </div>
         <div class="flex items-center gap-2">
-            {% call ui::delete_action_reload(endpoint="/expenses/delete-all", confirm="Are you sure you want to delete ALL expenses? This cannot be undone.", label="Delete All") %}
+            {% call ui::delete_action_reload(endpoint="/expenses/delete-all", confirm="Are you sure you want to delete ALL expenses? This cannot be undone.", label="Delete All") %}{% endcall %}
             <a href="/expenses/new" class="btn btn-primary inline-flex items-center gap-2">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
                 Add Expense

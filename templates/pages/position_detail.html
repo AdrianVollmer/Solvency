@@ -9,40 +9,31 @@
 {% block content %}
 <div class="space-y-6">
     {# Header #}
-    <div>
-        <a href="/trading/positions" class="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors">
-            <span class="icon-xs" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
-            Positions
-        </a>
-        <div class="mt-3">
-            <div class="flex items-baseline gap-3">
-                {% match symbol_info.display_name() %}
-                {% when Some with (name) %}
-                <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">{{ name }}</h1>
-                {% when None %}
-                <h1 class="text-2xl font-bold text-neutral-900 dark:text-white font-mono">{{ symbol }}</h1>
-                {% endmatch %}
-                <a href="https://finance.yahoo.com/quote/{{ symbol }}/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" title="View on Yahoo Finance">
-                    <span class="icon-xs" aria-hidden="true">{{ icons.get("external-link")|safe }}</span>
-                </a>
-            </div>
-            <div class="mt-1 flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
-                {% match symbol_info.display_name() %}
-                {% when Some with (_) %}
-                <span class="font-mono">{{ symbol }}</span>
-                {% when None %}{% endmatch %}
-                {% match symbol_info.exchange %}
-                {% when Some with (ex) %}
-                {% match symbol_info.display_name() %}{% when Some with (_) %}<span>·</span>{% when None %}{% endmatch %}
-                <span>{{ ex }}</span>
-                {% when None %}{% endmatch %}
-                {% match symbol_info.quote_type %}
-                {% when Some with (qt) %}
-                <span class="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-700 rounded text-xs font-medium text-neutral-600 dark:text-neutral-300">{{ qt }}</span>
-                {% when None %}{% endmatch %}
-            </div>
-        </div>
-    </div>
+    {% let yahoo_url = format!("https://finance.yahoo.com/quote/{}/", self.symbol) %}
+    {% match symbol_info.display_name() %}
+    {% when Some with (name) %}
+    {% call ui::page_header(
+        title=name,
+        back_url="/trading/positions",
+        back_label="Positions",
+        subtitle=symbol.as_str(),
+        subtitle_extra=symbol_info.exchange.as_deref().unwrap_or(""),
+        badge=symbol_info.quote_type.as_deref().unwrap_or(""),
+        external_url=yahoo_url.as_str(),
+        external_title="View on Yahoo Finance"
+    ) %}{% endcall %}
+    {% when None %}
+    {% call ui::page_header(
+        title=symbol.as_str(),
+        back_url="/trading/positions",
+        back_label="Positions",
+        subtitle_extra=symbol_info.exchange.as_deref().unwrap_or(""),
+        badge=symbol_info.quote_type.as_deref().unwrap_or(""),
+        external_url=yahoo_url.as_str(),
+        external_title="View on Yahoo Finance",
+        title_mono=true
+    ) %}{% endcall %}
+    {% endmatch %}
 
     {% match position %}
     {% when Some with (pos) %}
@@ -92,7 +83,7 @@
         </div>
         {% endif %}
         {% when None %}
-        {% call ui::stat_card(label="Current Value", value="-") %}
+        {% call ui::stat_card(label="Current Value", value="-") %}{% endcall %}
         {% endmatch %}
         {% match pos.current_price_cents %}
         {% when Some with (cents) %}
@@ -111,7 +102,7 @@
         </div>
         {% endif %}
         {% when None %}
-        {% call ui::stat_card(label="Current Price", value="-") %}
+        {% call ui::stat_card(label="Current Price", value="-") %}{% endcall %}
         {% endmatch %}
         {% match xirr_formatted %}
         {% when Some with (x) %}
@@ -120,7 +111,7 @@
             <p class="text-xl font-semibold tabular-nums text-neutral-900 dark:text-white">{{ x }}</p>
         </div>
         {% when None %}
-        {% call ui::stat_card(label="XIRR (Annualized)", value="-") %}
+        {% call ui::stat_card(label="XIRR (Annualized)", value="-") %}{% endcall %}
         {% endmatch %}
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Realized Gain/Loss</p>

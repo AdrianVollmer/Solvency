@@ -10,7 +10,7 @@
     </div>
 
     {% if positions.is_empty() %}
-    {% call ui::empty_state_action(icon="trending-up", title="No positions yet", description="Import or add trading activities to see your positions", action_url="/trading/activities", action_label="Add Activity") %}
+    {% call ui::empty_state_action(icon="trending-up", title="No positions yet", description="Import or add trading activities to see your positions", action_url="/trading/activities", action_label="Add Activity") %}{% endcall %}
     {% else %}
 
     {# Cash Positions #}
@@ -23,8 +23,8 @@
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
                     <tr>
-                        {% call table::th(label="Currency", align="left") %}
-                        {% call table::th(label="Balance", align="right") %}
+                        {% call table::th(label="Currency", align="left") %}{% endcall %}
+                        {% call table::th(label="Balance", align="right") %}{% endcall %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -58,13 +58,13 @@
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
                     <tr>
-                        {% call table::th_sort(label="Symbol", url="/trading/positions", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}
-                        {% call table::th_sort(label="Quantity", url="/trading/positions", sort_qs=sort.query_string_for_str("quantity"), indicator=sort.indicator_str("quantity"), align="right", extra="") %}
-                        {% call table::th_sort(label="Price", url="/trading/positions", sort_qs=sort.query_string_for_str("price"), indicator=sort.indicator_str("price"), align="right", extra="") %}
-                        {% call table::th_sort(label="Avg Cost", url="/trading/positions", sort_qs=sort.query_string_for_str("avgcost"), indicator=sort.indicator_str("avgcost"), align="right", extra="") %}
-                        {% call table::th_sort(label="Total Cost", url="/trading/positions", sort_qs=sort.query_string_for_str("totalcost"), indicator=sort.indicator_str("totalcost"), align="right", extra="") %}
-                        {% call table::th_sort(label="Current Value", url="/trading/positions", sort_qs=sort.query_string_for_str("value"), indicator=sort.indicator_str("value"), align="right", extra="") %}
-                        {% call table::th_sort(label="Gain/Loss", url="/trading/positions", sort_qs=sort.query_string_for_str("gainloss"), indicator=sort.indicator_str("gainloss"), align="right", extra="") %}
+                        {% call table::th_sort(label="Symbol", url="/trading/positions", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Quantity", url="/trading/positions", sort_qs=sort.query_string_for_str("quantity"), indicator=sort.indicator_str("quantity"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Price", url="/trading/positions", sort_qs=sort.query_string_for_str("price"), indicator=sort.indicator_str("price"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Avg Cost", url="/trading/positions", sort_qs=sort.query_string_for_str("avgcost"), indicator=sort.indicator_str("avgcost"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Total Cost", url="/trading/positions", sort_qs=sort.query_string_for_str("totalcost"), indicator=sort.indicator_str("totalcost"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Current Value", url="/trading/positions", sort_qs=sort.query_string_for_str("value"), indicator=sort.indicator_str("value"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Gain/Loss", url="/trading/positions", sort_qs=sort.query_string_for_str("gainloss"), indicator=sort.indicator_str("gainloss"), align="right", extra="") %}{% endcall %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">

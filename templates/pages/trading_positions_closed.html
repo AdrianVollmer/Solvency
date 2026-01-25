@@ -27,11 +27,11 @@
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
                     <tr>
-                        {% call table::th_sort(label="Symbol", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}
-                        {% call table::th_sort(label="Total Cost", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("totalcost"), indicator=sort.indicator_str("totalcost"), align="right", extra="") %}
-                        {% call table::th_sort(label="Total Proceeds", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("proceeds"), indicator=sort.indicator_str("proceeds"), align="right", extra="") %}
-                        {% call table::th_sort(label="Realized Gain/Loss", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("gainloss"), indicator=sort.indicator_str("gainloss"), align="right", extra="") %}
-                        {% call table::th_sort(label="Period", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("period"), indicator=sort.indicator_str("period"), align="left", extra="") %}
+                        {% call table::th_sort(label="Symbol", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Total Cost", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("totalcost"), indicator=sort.indicator_str("totalcost"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Total Proceeds", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("proceeds"), indicator=sort.indicator_str("proceeds"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Realized Gain/Loss", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("gainloss"), indicator=sort.indicator_str("gainloss"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Period", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("period"), indicator=sort.indicator_str("period"), align="left", extra="") %}{% endcall %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">

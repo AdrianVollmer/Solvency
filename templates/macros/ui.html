@@ -4,6 +4,18 @@
     Usage:
     {% import "macros/ui.html" as ui %}
 
+    Page header (detail pages with back link, title, optional metadata):
+    {% call ui::page_header(title="Apple Inc.", back_url="/trading/positions", back_label="Positions") %}
+    {% call ui::page_header(
+        title="AAPL",
+        back_url="/trading/positions",
+        back_label="Positions",
+        subtitle="Apple Inc.",
+        badge="ETF",
+        external_url="https://finance.yahoo.com/quote/AAPL/",
+        external_title="View on Yahoo Finance"
+    ) %}
+
     Badge (simple colored badge):
     {% call ui::badge(color="#3b82f6", content="Label") %}
 
@@ -34,6 +46,47 @@
     {% call ui::tag_badge(color="#3b82f6", name="Tag", style="solid") %}
     {% call ui::tag_badge_deletable(color="#3b82f6", name="Tag", style="solid", tag_id="123", endpoint="/tags/123") %}
 #}
+
+{# Page header for detail pages #}
+{# title: Main heading (required) #}
+{# back_url: URL for back link (empty to hide) #}
+{# back_label: Text for back link (empty for icon-only) #}
+{# subtitle: Secondary text below title #}
+{# subtitle_extra: Additional muted text after subtitle #}
+{# badge: Badge text next to title #}
+{# external_url: External link URL #}
+{# external_title: Tooltip for external link #}
+{# title_mono: Add monospace font to title #}
+{% macro page_header(title, back_url="", back_label="", subtitle="", subtitle_extra="", badge="", external_url="", external_title="", title_mono=false) %}
+<div>
+    {% if back_url != "" %}
+    <a href="{{ back_url }}" class="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors">
+        <span class="icon-xs" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
+        {% if back_label != "" %}{{ back_label }}{% endif %}
+    </a>
+    {% endif %}
+    <div class="{% if back_url != "" %}mt-3{% endif %}">
+        <div class="flex items-baseline gap-3">
+            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white{% if title_mono %} font-mono{% endif %}">{{ title }}</h1>
+            {% if badge != "" %}
+            <span class="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-700 rounded text-xs font-medium text-neutral-600 dark:text-neutral-300">{{ badge }}</span>
+            {% endif %}
+            {% if external_url != "" %}
+            <a href="{{ external_url }}" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" {% if external_title != "" %}title="{{ external_title }}"{% endif %}>
+                <span class="icon-xs" aria-hidden="true">{{ icons.get("external-link")|safe }}</span>
+            </a>
+            {% endif %}
+        </div>
+        {% if subtitle != "" || subtitle_extra != "" %}
+        <div class="mt-1 flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+            {% if subtitle != "" %}<span>{{ subtitle }}</span>{% endif %}
+            {% if subtitle != "" && subtitle_extra != "" %}<span>·</span>{% endif %}
+            {% if subtitle_extra != "" %}<span>{{ subtitle_extra }}</span>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
 
 {# Simple colored badge (ghost style with transparent background) #}
 {% macro badge(color, content) %}

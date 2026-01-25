@@ -16,7 +16,7 @@
                 <span class="icon-xs" aria-hidden="true">{{ icons.get("pencil")|safe }}</span>
                 Edit
             </a>
-            {% call ui::delete_trading_activity_action(activity_id=activity.id, confirm="Are you sure you want to delete this activity?", label="Delete") %}
+            {% call ui::delete_trading_activity_action(activity_id=activity.id, confirm="Are you sure you want to delete this activity?", label="Delete") %}{% endcall %}
         </div>
     </div>
 

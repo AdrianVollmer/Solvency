@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
@@ -8,33 +9,17 @@
 {% block content %}
 <div class="space-y-6">
     {# Header #}
-    <div class="flex items-center gap-4">
-        <a href="/trading/market-data" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-            <span class="icon-sm" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
-        </a>
-        <div class="flex-1">
-            <div class="flex items-center gap-3">
-                <h1 class="page-title">{{ symbol }}</h1>
-                {% match symbol_info.quote_type %}
-                {% when Some with (qt) %}
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">{{ qt }}</span>
-                {% when None %}{% endmatch %}
-                <a href="https://finance.yahoo.com/quote/{{ symbol }}/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" title="View on Yahoo Finance">
-                    <span class="icon-xs" aria-hidden="true">{{ icons.get("external-link")|safe }}</span>
-                </a>
-            </div>
-            {% match symbol_info.display_name() %}
-            {% when Some with (name) %}
-            <p class="mt-1 text-lg text-neutral-700 dark:text-neutral-300">{{ name }}</p>
-            {% when None %}{% endmatch %}
-            {% match symbol_info.exchange %}
-            {% when Some with (ex) %}
-            <p class="text-sm text-muted">{{ ex }}</p>
-            {% when None %}
-            <p class="text-sm text-muted">Price history and data coverage</p>
-            {% endmatch %}
-        </div>
-    </div>
+    {% let yahoo_url = format!("https://finance.yahoo.com/quote/{}/", self.symbol) %}
+    {% call ui::page_header(
+        title=symbol.as_str(),
+        back_url="/trading/market-data",
+        subtitle=symbol_info.display_name_str(),
+        subtitle_extra=symbol_info.exchange.as_deref().unwrap_or("Price history and data coverage"),
+        badge=symbol_info.quote_type.as_deref().unwrap_or(""),
+        external_url=yahoo_url.as_str(),
+        external_title="View on Yahoo Finance",
+        title_mono=true
+    ) %}{% endcall %}
 
     {# Stats #}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">

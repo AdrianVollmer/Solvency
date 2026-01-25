@@ -407,6 +407,10 @@ impl SymbolInfo {
     pub fn display_name(&self) -> Option<&String> {
         self.long_name.as_ref().or(self.short_name.as_ref())
     }
+
+    pub fn display_name_str(&self) -> &str {
+        self.display_name().map(|s| s.as_str()).unwrap_or("")
+    }
 }
 
 #[derive(Template)]

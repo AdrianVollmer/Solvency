@@ -19,7 +19,7 @@
                 API Logs
             </a>
             {% if total_data_points > 0 %}
-            {% call ui::delete_action_reload(endpoint="/trading/market-data/delete-all", confirm="Are you sure you want to delete ALL market data? This cannot be undone.", label="Delete All") %}
+            {% call ui::delete_action_reload(endpoint="/trading/market-data/delete-all", confirm="Are you sure you want to delete ALL market data? This cannot be undone.", label="Delete All") %}{% endcall %}
             {% endif %}
             {% if symbols_needing_data > 0 %}
             <form action="/trading/market-data/refresh" method="POST">
@@ -69,12 +69,12 @@
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
                     <tr>
-                        {% call table::th_sort(label="Symbol", url="/trading/market-data", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}
-                        {% call table::th_sort(label="Activity Range", url="/trading/market-data", sort_qs=sort.query_string_for_str("activityrange"), indicator=sort.indicator_str("activityrange"), align="left", extra="") %}
-                        {% call table::th_sort(label="Data Range", url="/trading/market-data", sort_qs=sort.query_string_for_str("datarange"), indicator=sort.indicator_str("datarange"), align="left", extra="") %}
-                        {% call table::th_sort(label="Data Points", url="/trading/market-data", sort_qs=sort.query_string_for_str("datapoints"), indicator=sort.indicator_str("datapoints"), align="right", extra="") %}
-                        {% call table::th_sort(label="Status", url="/trading/market-data", sort_qs=sort.query_string_for_str("status"), indicator=sort.indicator_str("status"), align="center", extra="") %}
-                        {% call table::th(label="Actions", align="right") %}
+                        {% call table::th_sort(label="Symbol", url="/trading/market-data", sort_qs=sort.query_string_for_str("symbol"), indicator=sort.indicator_str("symbol"), align="left", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Activity Range", url="/trading/market-data", sort_qs=sort.query_string_for_str("activityrange"), indicator=sort.indicator_str("activityrange"), align="left", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Data Range", url="/trading/market-data", sort_qs=sort.query_string_for_str("datarange"), indicator=sort.indicator_str("datarange"), align="left", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Data Points", url="/trading/market-data", sort_qs=sort.query_string_for_str("datapoints"), indicator=sort.indicator_str("datapoints"), align="right", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Status", url="/trading/market-data", sort_qs=sort.query_string_for_str("status"), indicator=sort.indicator_str("status"), align="center", extra="") %}{% endcall %}
+                        {% call table::th(label="Actions", align="right") %}{% endcall %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">

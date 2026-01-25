@@ -18,6 +18,6 @@
         {{ category.category.icon }}
     </td>
     <td class="px-6 py-4 text-right">
-        {% call ui::delete_category_button(category_id=category.category.id, confirm="Are you sure you want to delete this category?", label="Delete category") %}
+        {% call ui::delete_category_button(category_id=category.category.id, confirm="Are you sure you want to delete this category?", label="Delete category") %}{% endcall %}
     </td>
 </tr>

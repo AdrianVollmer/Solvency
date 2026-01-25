@@ -22,13 +22,13 @@
                 <span class="text-neutral-500 dark:text-neutral-400">Tag:</span>
                 {% for tag in tags %}
                     {% if tag.id.to_string() == rule.action_value %}
-                        {% call ui::tag_badge_solid(color=tag.color.as_str(), name=tag.name.as_str()) %}
+                        {% call ui::tag_badge_solid(color=tag.color.as_str(), name=tag.name.as_str()) %}{% endcall %}
                     {% endif %}
                 {% endfor %}
             {% endif %}
         </span>
     </td>
     <td class="px-6 py-4 text-right">
-        {% call ui::delete_rule_button(rule_id=rule.id, confirm="Are you sure you want to delete this rule?", label="Delete rule") %}
+        {% call ui::delete_rule_button(rule_id=rule.id, confirm="Are you sure you want to delete this rule?", label="Delete rule") %}{% endcall %}
     </td>
 </tr>
