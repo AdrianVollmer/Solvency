@@ -10,16 +10,28 @@
 <div class="space-y-6">
     {# Header #}
     {% let yahoo_url = format!("https://finance.yahoo.com/quote/{}/", self.symbol) %}
+    {% match symbol_info.display_name() %}
+    {% when Some with (name) %}
+    {% call ui::page_header(
+        title=name,
+        back_url="/trading/market-data",
+        subtitle=symbol.as_str(),
+        subtitle_extra=symbol_info.exchange.as_deref().unwrap_or(""),
+        badge=symbol_info.quote_type.as_deref().unwrap_or(""),
+        external_url=yahoo_url.as_str(),
+        external_title="View on Yahoo Finance"
+    ) %}{% endcall %}
+    {% when None %}
     {% call ui::page_header(
         title=symbol.as_str(),
         back_url="/trading/market-data",
-        subtitle=symbol_info.display_name_str(),
-        subtitle_extra=symbol_info.exchange.as_deref().unwrap_or("Price history and data coverage"),
-        badge=symbol_info.quote_type.as_deref().unwrap_or(""),
+        subtitle_extra="Price history and data coverage",
+        badge="",
         external_url=yahoo_url.as_str(),
         external_title="View on Yahoo Finance",
         title_mono=true
     ) %}{% endcall %}
+    {% endmatch %}
 
     {# Stats #}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
