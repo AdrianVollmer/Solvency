@@ -56,7 +56,7 @@
 
     {# Position: Quantity × Avg Cost = Total Cost (inline) #}
     <p class="text-neutral-600 dark:text-neutral-400 tabular-nums">
-        <span class="font-medium text-neutral-900 dark:text-white">{{ pos.position.quantity_display() }}</span> shares
+        <span class="font-medium text-neutral-900 dark:text-white">{{ pos.position.quantity_display() }}</span> units
         {% match pos.position.average_cost_cents() %}
         {% when Some with (avg_cents) %}
         @ <span class="font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(avg_cents, pos.position.currency) }}</span> avg

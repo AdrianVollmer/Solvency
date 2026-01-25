@@ -86,7 +86,7 @@
                 {% match activity.total_value_cents() %}
                 {% when Some with (cents) %}
                 <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Value</dt>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Amount</dt>
                     <dd class="mt-1 text-gray-900 dark:text-gray-100 font-semibold tabular-nums">{{ settings.format_money_neutral_with_currency(cents, activity.currency) }}</dd>
                 </div>
                 {% when None %}

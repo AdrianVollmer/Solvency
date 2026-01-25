@@ -4,12 +4,12 @@
 {% block content %}
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        {% call ui::page_header(title="Expenses") %}{% endcall %}
+        {% call ui::page_header(title="Transactions") %}{% endcall %}
         <div class="flex items-center gap-2">
             {% call ui::delete_action_reload(endpoint="/expenses/delete-all", confirm="Are you sure you want to delete ALL expenses? This cannot be undone.", label="Delete All") %}{% endcall %}
             <a href="/expenses/new" class="btn btn-primary inline-flex items-center gap-2">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
-                Add Expense
+                Add Transaction
             </a>
         </div>
     </div>
@@ -68,8 +68,8 @@
                 {% endif %}
 
                 <div class="flex-1 min-w-[200px]">
-                    <label for="search" class="sr-only">Search expenses</label>
-                    <input type="text" id="search" name="search" placeholder="Search expenses..." value="{{ filter.search.as_deref().unwrap_or("") }}"
+                    <label for="search" class="sr-only">Search transactions</label>
+                    <input type="text" id="search" name="search" placeholder="Search transactions..." value="{{ filter.search.as_deref().unwrap_or("") }}"
                         class="input w-full">
                 </div>
 

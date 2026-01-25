@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="space-y-6 max-w-2xl mx-auto">
-    {% call ui::page_header(title="Add Expense", back_url="/expenses", back_label="Expenses", subtitle="Record a new expense") %}{% endcall %}
+    {% call ui::page_header(title="Add Transaction", back_url="/expenses", back_label="Transactions", subtitle="Record a new transaction") %}{% endcall %}
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
         <form method="POST" action="/expenses/create" class="space-y-4">
@@ -86,7 +86,7 @@
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary flex-1">
-                    Add Expense
+                    Add Transaction
                 </button>
             </div>
         </form>

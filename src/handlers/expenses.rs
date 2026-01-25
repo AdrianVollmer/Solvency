@@ -322,7 +322,7 @@ pub async fn index(
     let tag_list = tags::list_tags(&conn)?;
 
     let template = ExpensesTemplate {
-        title: "Expenses".into(),
+        title: "Transactions".into(),
         settings: app_settings,
         icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
@@ -423,7 +423,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
     let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
 
     let template = ExpenseNewTemplate {
-        title: "Add Expense".into(),
+        title: "Add Transaction".into(),
         settings: app_settings,
         icons: crate::filters::Icons,
         manifest: state.manifest.clone(),

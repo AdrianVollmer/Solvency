@@ -54,7 +54,7 @@
             <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ coverage.len() }}</p>
         </div>
         <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Symbols Needing Data</p>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">Symbols Without Data</p>
             <p class="text-2xl font-semibold {% if symbols_needing_data > 0 %}text-yellow-600 dark:text-yellow-400{% else %}text-green-600 dark:text-green-400{% endif %}">{{ symbols_needing_data }}</p>
         </div>
     </div>

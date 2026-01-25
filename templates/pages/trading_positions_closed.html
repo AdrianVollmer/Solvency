@@ -24,7 +24,7 @@
                         {% call table::th_sort(label="Total Cost", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("totalcost"), indicator=sort.indicator_str("totalcost"), align="right", extra="") %}{% endcall %}
                         {% call table::th_sort(label="Total Proceeds", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("proceeds"), indicator=sort.indicator_str("proceeds"), align="right", extra="") %}{% endcall %}
                         {% call table::th_sort(label="Realized Gain/Loss", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("gainloss"), indicator=sort.indicator_str("gainloss"), align="right", extra="") %}{% endcall %}
-                        {% call table::th_sort(label="Period", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("period"), indicator=sort.indicator_str("period"), align="left", extra="") %}{% endcall %}
+                        {% call table::th_sort(label="Holding Period", url="/trading/positions/closed", sort_qs=sort.query_string_for_str("period"), indicator=sort.indicator_str("period"), align="left", extra="") %}{% endcall %}
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">

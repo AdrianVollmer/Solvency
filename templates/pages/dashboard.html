@@ -19,7 +19,7 @@
                 <p class="mt-0.5 font-semibold tabular-nums">{{ settings.format_money(total_last_month)|safe }}</p>
             </div>
             <div>
-                <p class="text-neutral-500 dark:text-neutral-400">Total expenses</p>
+                <p class="text-neutral-500 dark:text-neutral-400">Transaction count</p>
                 <p class="mt-0.5 font-semibold tabular-nums">{{ expense_count }}</p>
             </div>
         </div>
@@ -28,7 +28,7 @@
     {# Recent Expenses - simple list, no card wrapper #}
     <section>
         <div class="flex items-center justify-between mb-4">
-            <h2 class="section-title">Recent Expenses</h2>
+            <h2 class="section-title">Recent Transactions</h2>
             <a href="/expenses" class="text-sm text-primary-600 dark:text-primary-400 hover:underline">View all</a>
         </div>
 
@@ -47,8 +47,8 @@
             </a>
             {% else %}
             <div class="p-8 text-center">
-                <p class="text-neutral-500 dark:text-neutral-400">No expenses yet</p>
-                <a href="/expenses" class="mt-2 inline-block text-primary-600 dark:text-primary-400 hover:underline">Add your first expense</a>
+                <p class="text-neutral-500 dark:text-neutral-400">No transactions yet</p>
+                <a href="/expenses" class="mt-2 inline-block text-primary-600 dark:text-primary-400 hover:underline">Add your first transaction</a>
             </div>
             {% endfor %}
         </div>
