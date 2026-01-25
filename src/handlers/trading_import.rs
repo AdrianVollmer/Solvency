@@ -24,6 +24,7 @@ pub struct TradingImportTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
 }
 
 #[derive(Template)]
@@ -33,6 +34,7 @@ pub struct TradingImportFormatTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub activity_types: &'static [TradingActivityType],
 }
 
@@ -43,6 +45,7 @@ pub struct TradingImportWizardTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub session: TradingImportSession,
 }
 
@@ -100,6 +103,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
     };
 
     Ok(Html(template.render().unwrap()))
@@ -115,6 +119,7 @@ pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         activity_types: TradingActivityType::all(),
     };
 
@@ -265,6 +270,7 @@ pub async fn wizard(
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         session,
     };
 

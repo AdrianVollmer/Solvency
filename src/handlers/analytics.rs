@@ -47,6 +47,7 @@ pub struct AnalyticsTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub date_range: DateRange,
     pub presets: &'static [DatePreset],
 }
@@ -66,6 +67,7 @@ pub async fn index(
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         date_range,
         presets: DatePreset::all(),
     };

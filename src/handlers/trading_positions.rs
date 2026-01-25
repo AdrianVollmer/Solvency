@@ -179,6 +179,7 @@ pub struct TradingPositionsTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub positions: Vec<Position>,
     pub cash_positions: Vec<Position>,
     pub security_positions: Vec<PositionWithMarketData>,
@@ -275,6 +276,7 @@ pub async fn index(
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         positions: all_positions,
         cash_positions,
         security_positions,
@@ -300,6 +302,7 @@ pub struct ClosedPositionsTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub positions: Vec<ClosedPosition>,
     pub total_cost: i64,
     pub total_cost_formatted: String,
@@ -353,6 +356,7 @@ pub async fn closed_positions(
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         positions,
         total_cost,
         total_cost_formatted,
@@ -391,6 +395,7 @@ pub struct PositionDetailTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub symbol: String,
     pub symbol_info: SymbolInfo,
     pub position: Option<PositionWithMarketData>,
@@ -489,6 +494,7 @@ pub async fn detail(
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         symbol: symbol.clone(),
         symbol_info,
         position,
@@ -684,7 +690,8 @@ fn calculate_position_totals(activities: &[TradingActivity]) -> (i64, i64, i64, 
     }
 
     // Subtract fees and taxes from realized gain/loss
-    let net_realized_gain_loss_cents = realized_gain_loss_cents - total_fees_cents - total_taxes_cents;
+    let net_realized_gain_loss_cents =
+        realized_gain_loss_cents - total_fees_cents - total_taxes_cents;
 
     (
         total_fees_cents,

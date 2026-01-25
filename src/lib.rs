@@ -8,6 +8,7 @@ pub mod models;
 pub mod services;
 pub mod sort_utils;
 pub mod state;
+pub mod xsrf;
 
 /// Application version from Cargo.toml (single source of truth)
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

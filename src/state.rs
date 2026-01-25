@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::db::DbPool;
+use crate::xsrf::XsrfToken;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
@@ -10,6 +11,7 @@ pub struct AppState {
     pub db: DbPool,
     pub config: Arc<Config>,
     pub manifest: JsManifest,
+    pub xsrf_token: XsrfToken,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

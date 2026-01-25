@@ -3,5 +3,6 @@ middleware, so all requests that are POST, PUT, DELETE, etc are
 discarded unless they have a valid XSRF token.
 
 This means we must endow all forms and HTMX actions with XSRF tokens.
-Ideally, we find a way that all forms automatically receive a hidden
-field with the XSRF token.
+For forms, add a XSRF token in the page's meta data, and have a small piece of
+javascript insert it in all forms as a hidden field after the page loaded. Also
+set up an observer in case forms get loaded dynamically.

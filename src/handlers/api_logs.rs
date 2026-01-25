@@ -16,6 +16,7 @@ pub struct ApiLogsTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub logs: Vec<ApiLog>,
     pub latest_log_id: i64,
 }
@@ -31,6 +32,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         logs,
         latest_log_id,
     };
@@ -45,6 +47,7 @@ pub struct ApiLogDetailTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub log: ApiLog,
 }
 
@@ -59,6 +62,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         log,
     };
 

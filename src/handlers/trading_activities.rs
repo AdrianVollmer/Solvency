@@ -71,6 +71,7 @@ pub struct TradingActivitiesTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub activities: Vec<TradingActivity>,
     pub symbols: Vec<String>,
     pub activity_types: &'static [TradingActivityType],
@@ -112,6 +113,7 @@ pub struct TradingActivityNewTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub symbols: Vec<String>,
     pub activity_types: &'static [TradingActivityType],
 }
@@ -130,6 +132,7 @@ pub struct TradingActivityDetailTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub activity: TradingActivity,
 }
 
@@ -140,6 +143,7 @@ pub struct TradingActivityEditTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub activity: TradingActivity,
     pub symbols: Vec<String>,
     pub activity_types: &'static [TradingActivityType],
@@ -337,6 +341,7 @@ pub async fn index(
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         activities: activity_list,
         symbols,
         activity_types: TradingActivityType::all(),
@@ -411,6 +416,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         activity,
     };
 
@@ -428,6 +434,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         symbols,
         activity_types: TradingActivityType::all(),
     };
@@ -453,6 +460,7 @@ pub async fn edit_form(
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         activity,
         symbols,
         activity_types: TradingActivityType::all(),

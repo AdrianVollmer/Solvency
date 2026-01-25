@@ -18,6 +18,7 @@ pub struct TagsTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub tags: Vec<Tag>,
 }
 
@@ -28,6 +29,7 @@ pub struct TagFormTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
 }
 
 #[derive(Template)]
@@ -60,6 +62,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         tags: tag_list,
     };
 
@@ -75,6 +78,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
     };
 
     Ok(Html(template.render().unwrap()))

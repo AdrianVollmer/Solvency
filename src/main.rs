@@ -1,8 +1,10 @@
+use axum::middleware;
 use axum::Router;
 use moneymapper::config::Config;
 use moneymapper::db::{create_pool, migrations};
 use moneymapper::handlers;
 use moneymapper::state::{AppState, JsManifest};
+use moneymapper::xsrf::{xsrf_middleware, XsrfToken};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower_http::compression::CompressionLayer;
@@ -33,16 +35,23 @@ async fn main() {
     }
 
     let manifest = JsManifest::load();
+    let xsrf_token = XsrfToken::generate();
+    tracing::info!("Generated XSRF token for session");
 
     let state = AppState {
         db,
         config: Arc::new(config.clone()),
         manifest,
+        xsrf_token: xsrf_token.clone(),
     };
 
     let app = Router::new()
         .merge(handlers::routes())
         .nest_service("/static", ServeDir::new(&config.static_path))
+        .layer(middleware::from_fn(move |req, next| {
+            let token = xsrf_token.clone();
+            xsrf_middleware(token, req, next)
+        }))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
         .with_state(state);

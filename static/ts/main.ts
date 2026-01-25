@@ -1,3 +1,56 @@
+// XSRF token handling
+const XSRF_HEADER = "X-XSRF-Token";
+const XSRF_FORM_FIELD = "_xsrf_token";
+
+function getXsrfToken(): string | null {
+  const meta = document.querySelector('meta[name="xsrf-token"]');
+  return meta ? meta.getAttribute("content") : null;
+}
+
+function injectXsrfToken(form: HTMLFormElement): void {
+  const token = getXsrfToken();
+  if (!token) return;
+
+  // Check if already has the field
+  if (form.querySelector(`input[name="${XSRF_FORM_FIELD}"]`)) return;
+
+  const input = document.createElement("input");
+  input.type = "hidden";
+  input.name = XSRF_FORM_FIELD;
+  input.value = token;
+  form.appendChild(input);
+}
+
+function injectXsrfTokenToAllForms(): void {
+  const forms = document.querySelectorAll("form");
+  for (const form of forms) {
+    injectXsrfToken(form as HTMLFormElement);
+  }
+}
+
+function initXsrfObserver(): void {
+  // Watch for dynamically added forms
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node instanceof HTMLFormElement) {
+          injectXsrfToken(node);
+        } else if (node instanceof HTMLElement) {
+          const forms = node.querySelectorAll("form");
+          for (const form of forms) {
+            injectXsrfToken(form as HTMLFormElement);
+          }
+        }
+      }
+    }
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
+
 // Toast notification system
 interface ToastOptions {
   type?: "success" | "error" | "info" | "warning";
@@ -70,9 +123,17 @@ function toggleTheme(): void {
   const newTheme = isDark ? "dark" : "light";
   localStorage.setItem("theme", newTheme);
 
+  const token = getXsrfToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+  if (token) {
+    headers[XSRF_HEADER] = token;
+  }
+
   fetch("/settings/theme", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers,
     body: `theme=${newTheme}`,
   }).catch(() => {});
 }
@@ -106,6 +167,15 @@ function initSidebar(): void {
 }
 
 function initHtmx(): void {
+  // Configure HTMX to include XSRF token in all requests
+  document.body.addEventListener("htmx:configRequest", (event: Event) => {
+    const token = getXsrfToken();
+    if (token) {
+      const detail = (event as CustomEvent).detail;
+      detail.headers[XSRF_HEADER] = token;
+    }
+  });
+
   document.body.addEventListener("htmx:beforeRequest", () => {
     document.body.classList.add("htmx-request");
   });
@@ -124,6 +194,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initSidebar();
   initHtmx();
+
+  // Initialize XSRF protection
+  injectXsrfTokenToAllForms();
+  initXsrfObserver();
 
   const themeToggle = document.getElementById("theme-toggle");
   if (themeToggle) {

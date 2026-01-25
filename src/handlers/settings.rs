@@ -17,6 +17,7 @@ pub struct SettingsTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
 }
 
 #[derive(Template)]
@@ -49,6 +50,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
     };
 
     Ok(Html(template.render().unwrap()))

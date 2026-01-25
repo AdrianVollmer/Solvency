@@ -19,6 +19,7 @@ pub struct RulesTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub rules: Vec<Rule>,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
@@ -31,6 +32,7 @@ pub struct RuleFormTemplate {
     pub settings: Settings,
     pub manifest: JsManifest,
     pub version: &'static str,
+    pub xsrf_token: String,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
 }
@@ -65,6 +67,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         rules: rule_list,
         categories: category_list,
         tags: tag_list,
@@ -84,6 +87,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         settings: app_settings,
         manifest: state.manifest.clone(),
         version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
         categories: category_list,
         tags: tag_list,
     };
