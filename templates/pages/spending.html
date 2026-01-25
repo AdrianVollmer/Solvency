@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
@@ -7,10 +8,7 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div>
-        <h1 class="page-title">Spending</h1>
-        <p class="mt-1 text-muted">Visualize your spending patterns</p>
-    </div>
+    {% call ui::page_header(title="Spending", subtitle="Visualize your spending patterns") %}{% endcall %}
 
     {# Date filters #}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">

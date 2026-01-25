@@ -1,11 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-8">
-    <div>
-        <h1 class="page-title">Dashboard</h1>
-        <p class="mt-1 text-muted">Your spending overview</p>
-    </div>
+    {% call ui::page_header(title="Dashboard", subtitle="Your spending overview") %}{% endcall %}
 
     {# Hero metric - This Month (asymmetric, larger) #}
     <div class="flex flex-col md:flex-row md:items-end gap-6 md:gap-12">

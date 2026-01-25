@@ -1,17 +1,10 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-6">
     {# Header #}
-    <div class="flex items-center gap-4">
-        <a href="/trading/market-data" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-            <span class="icon-sm" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
-        </a>
-        <div>
-            <h1 class="page-title">API Logs</h1>
-            <p class="mt-1 text-muted">View history of Yahoo Finance API calls</p>
-        </div>
-    </div>
+    {% call ui::page_header(title="API Logs", back_url="/trading/market-data", back_label="Market Data", subtitle="View history of Yahoo Finance API calls") %}{% endcall %}
 
     {% if logs.is_empty() %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">

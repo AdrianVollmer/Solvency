@@ -3,10 +3,8 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h1 class="page-title">Trading Activities</h1>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        {% call ui::page_header(title="Trading Activities") %}{% endcall %}
         <div class="flex items-center gap-2">
             {% call ui::delete_action_reload(endpoint="/trading/activities/delete-all", confirm="Are you sure you want to delete ALL activities? This cannot be undone.", label="Delete All") %}{% endcall %}
             <a href="/trading/activities/new" class="btn btn-primary inline-flex items-center gap-2">

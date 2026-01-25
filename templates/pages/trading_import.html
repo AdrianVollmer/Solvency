@@ -1,11 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-6">
-    <div>
-        <h1 class="page-title">Import Trading Activities</h1>
-        <p class="mt-1 text-muted">Upload CSV files to import trading activities</p>
-    </div>
+    {% call ui::page_header(title="Import Trading Activities", subtitle="Upload CSV files to import trading activities") %}{% endcall %}
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl">
         <form action="/trading/import/upload" method="post" enctype="multipart/form-data" class="space-y-4">

@@ -1,11 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-8">
-    <div>
-        <h1 class="page-title">Trading CSV Format</h1>
-        <p class="mt-1 text-muted">Specification for importing trading activities</p>
-    </div>
+    {% call ui::page_header(title="Trading CSV Format", subtitle="Specification for importing trading activities") %}{% endcall %}
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 space-y-6">
         <div>

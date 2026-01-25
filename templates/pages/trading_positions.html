@@ -4,10 +4,7 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div>
-        <h1 class="page-title">Positions</h1>
-        <p class="mt-1 text-muted">Calculated from your trading activities</p>
-    </div>
+    {% call ui::page_header(title="Positions", subtitle="Calculated from your trading activities") %}{% endcall %}
 
     {% if positions.is_empty() %}
     {% call ui::empty_state_action(icon="trending-up", title="No positions yet", description="Import or add trading activities to see your positions", action_url="/trading/activities", action_label="Add Activity") %}{% endcall %}

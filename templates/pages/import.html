@@ -1,11 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-6">
-    <div>
-        <h1 class="page-title">Import</h1>
-        <p class="mt-1 text-muted">Upload CSV files to import data</p>
-    </div>
+    {% call ui::page_header(title="Import", subtitle="Upload CSV files to import data") %}{% endcall %}
 
     {# Tabs #}
     <div class="flex gap-1.5">

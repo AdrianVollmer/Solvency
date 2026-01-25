@@ -67,7 +67,7 @@
     {% endif %}
     <div class="{% if back_url != "" %}mt-3{% endif %}">
         <div class="flex items-baseline gap-3">
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white{% if title_mono %} font-mono{% endif %}">{{ title }}</h1>
+            <h1 class="page-title{% if title_mono %} font-mono{% endif %}">{{ title }}</h1>
             {% if badge != "" %}
             <span class="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-700 rounded text-xs font-medium text-neutral-600 dark:text-neutral-300">{{ badge }}</span>
             {% endif %}

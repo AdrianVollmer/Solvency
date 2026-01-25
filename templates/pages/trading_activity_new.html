@@ -1,16 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-6 max-w-2xl mx-auto">
-    <div class="flex items-center gap-4">
-        <a href="/trading/activities" class="p-2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Back to activities">
-            <span class="icon-sm" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
-        </a>
-        <div>
-            <h1 class="page-title">Add Activity</h1>
-            <p class="mt-1 text-muted">Record a new trading activity</p>
-        </div>
-    </div>
+    {% call ui::page_header(title="Add Activity", back_url="/trading/activities", back_label="Activities", subtitle="Record a new trading activity") %}{% endcall %}
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
         <form method="POST" action="/trading/activities/create" class="space-y-4">

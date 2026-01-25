@@ -1,13 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-6 max-w-3xl">
-    <div class="flex items-center gap-4">
-        <a href="/import" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            <span class="icon-sm" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
-        </a>
-        <h1 class="text-2xl font-bold">CSV Import Format</h1>
-    </div>
+    {% call ui::page_header(title="CSV Import Format", back_url="/import", back_label="Import") %}{% endcall %}
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
         <section>

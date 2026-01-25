@@ -1,18 +1,11 @@
 {% extends "base.html" %}
 {% import "macros/table.html" as table %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-6">
     {# Header #}
-    <div class="flex items-center gap-4">
-        <a href="/trading/positions" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-            <span class="icon-sm" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
-        </a>
-        <div>
-            <h1 class="page-title">Closed Positions</h1>
-            <p class="mt-1 text-muted">Securities that have been fully sold</p>
-        </div>
-    </div>
+    {% call ui::page_header(title="Closed Positions", back_url="/trading/positions", back_label="Positions", subtitle="Securities that have been fully sold") %}{% endcall %}
 
     {% if positions.is_empty() %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">

@@ -8,11 +8,8 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div class="flex justify-between items-start">
-        <div>
-            <h1 class="page-title">Market Data</h1>
-            <p class="mt-1 text-muted">Track and manage market price data for your positions</p>
-        </div>
+    <div class="flex justify-between items-start gap-4">
+        {% call ui::page_header(title="Market Data", subtitle="Track and manage market price data for your positions") %}{% endcall %}
         <div class="flex gap-2">
             <a href="/trading/api-logs" class="btn btn-secondary">
                 <span class="icon-xs mr-2" aria-hidden="true">{{ icons.get("file-text")|safe }}</span>
