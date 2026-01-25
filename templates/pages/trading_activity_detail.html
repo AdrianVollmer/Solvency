@@ -1,24 +1,22 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-6 max-w-4xl mx-auto">
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
             <a href="/trading/activities" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">arrow_back</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
             </a>
             <h1 class="text-2xl font-bold">Activity Details</h1>
         </div>
         <div class="flex gap-2">
             <a href="/trading/activities/{{ activity.id }}/edit"
                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors inline-flex items-center gap-2">
-                <span class="material-symbols-outlined w-4" aria-hidden="true">edit</span>
+                <span class="icon-xs" aria-hidden="true">{{ icons.get("pencil")|safe }}</span>
                 Edit
             </a>
-            <mm-delete-action
-                endpoint="/trading/activities/{{ activity.id }}/delete"
-                confirm="Are you sure you want to delete this activity?"
-                redirect="/trading/activities"></mm-delete-action>
+            {% call ui::delete_trading_activity_action(activity_id=activity.id, confirm="Are you sure you want to delete this activity?", label="Delete") %}
         </div>
     </div>
 

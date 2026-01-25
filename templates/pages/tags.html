@@ -9,16 +9,16 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="/tags/export" class="btn btn-secondary flex items-center gap-2">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">download</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
                 Export
             </a>
             <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">upload</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
                 Import
             </button>
             <input type="file" id="import-file" accept=".json" class="hidden" onchange="importTags(this.files[0])" aria-label="Import tags from JSON file">
             <a href="/tags/new" class="btn btn-primary flex items-center gap-2">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">add</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
                 Add Tag
             </a>
         </div>

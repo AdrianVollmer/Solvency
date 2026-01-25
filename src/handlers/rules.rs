@@ -17,6 +17,7 @@ use crate::VERSION;
 pub struct RulesTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -30,6 +31,7 @@ pub struct RulesTemplate {
 pub struct RuleFormTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -65,6 +67,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = RulesTemplate {
         title: "Rules".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -85,6 +88,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
     let template = RuleFormTemplate {
         title: "Add Rule".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),

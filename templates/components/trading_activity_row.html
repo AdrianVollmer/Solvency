@@ -1,3 +1,4 @@
+{% import "macros/ui.html" as ui %}
 <tr id="activity-{{ activity.id }}"
     onclick="window.location.href='/trading/activities/{{ activity.id }}'"
     class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer row-hover">
@@ -6,7 +7,7 @@
         <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ activity.symbol }}</span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
-        <mm-status-badge type="{{ activity.activity_type.as_str()|lower }}">{{ activity.activity_type.label() }}</mm-status-badge>
+        {% call ui::status_badge(badge_type=activity.activity_type.as_str().to_lowercase(), label=activity.activity_type.label()) %}
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right">
         <span class="text-sm text-neutral-900 dark:text-white tabular-nums">{{ activity.quantity_display() }}</span>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "macros/table.html" as table %}
+{% import "macros/ui.html" as ui %}
 
 {% block head %}
 <script src="/static/js/dist/{{ manifest.get("api-log-polling.js") }}" defer></script>
@@ -14,20 +15,16 @@
         </div>
         <div class="flex gap-2">
             <a href="/trading/api-logs" class="btn btn-secondary">
-                <span class="material-symbols-outlined w-4 mr-2" aria-hidden="true">description</span>
+                <span class="icon-xs mr-2" aria-hidden="true">{{ icons.get("file-text")|safe }}</span>
                 API Logs
             </a>
             {% if total_data_points > 0 %}
-            <mm-delete-action
-                endpoint="/trading/market-data/delete-all"
-                confirm="Are you sure you want to delete ALL market data? This cannot be undone."
-                label="Delete All"
-                reload></mm-delete-action>
+            {% call ui::delete_action_reload(endpoint="/trading/market-data/delete-all", confirm="Are you sure you want to delete ALL market data? This cannot be undone.", label="Delete All") %}
             {% endif %}
             {% if symbols_needing_data > 0 %}
             <form action="/trading/market-data/refresh" method="POST">
                 <button type="submit" class="btn btn-primary">
-                    <span class="material-symbols-outlined w-4 mr-2" aria-hidden="true">refresh</span>
+                    <span class="icon-xs mr-2" aria-hidden="true">{{ icons.get("refresh-cw")|safe }}</span>
                     Fetch Missing Data
                 </button>
             </form>

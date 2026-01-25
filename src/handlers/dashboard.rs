@@ -14,6 +14,7 @@ use crate::VERSION;
 pub struct DashboardTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -74,6 +75,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = DashboardTemplate {
         title: "Dashboard".into(),
         settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),

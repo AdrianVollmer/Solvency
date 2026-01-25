@@ -2,7 +2,7 @@
     <button onclick="document.getElementById('expense-modal').classList.add('hidden')"
         class="absolute top-4 right-4 p-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
         aria-label="Close modal">
-        <span class="material-symbols-outlined w-5" aria-hidden="true">close</span>
+        <span class="icon-sm" aria-hidden="true">{{ icons.get("x")|safe }}</span>
     </button>
 
     <h2 class="section-title mb-6">{% if is_edit %}Edit Expense{% else %}Add Expense{% endif %}</h2>

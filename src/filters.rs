@@ -1,4 +1,6 @@
-//! Money formatting utilities for displaying monetary amounts.
+//! Template filters and helpers for Askama templates.
+//!
+//! ## Money Formatting
 //!
 //! Format: sign + currency symbol + number with thousands separator
 //!
@@ -6,6 +8,50 @@
 //! - Positive amounts (> 0): green
 //! - Negative amounts (< 0): red
 //! - Zero (= 0): default text color (black in light mode, white in dark mode)
+//!
+//! ## Icons
+//!
+//! Icons are rendered via the `Icons` helper struct.
+//! Usage in templates: `{{ icons.get("home")|safe }}`
+
+// Include the generated icons map
+include!(concat!(env!("OUT_DIR"), "/icons.rs"));
+
+/// Helper struct for rendering Lucide icons in templates.
+/// Pass this to templates and call methods on it.
+#[derive(Clone, Default)]
+pub struct Icons;
+
+impl Icons {
+    /// Create a new Icons helper.
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// Get an icon as inline SVG markup.
+    /// Returns the SVG markup for the given icon name, or empty string if not found.
+    pub fn get(&self, name: &str) -> String {
+        ICONS.get(name).copied().unwrap_or("").to_string()
+    }
+
+    /// Get an icon as an SVG symbol element for sprite sheets.
+    /// Returns `<symbol id="name">...</symbol>` markup.
+    pub fn symbol(&self, name: &str) -> String {
+        if let Some(svg) = ICONS.get(name).copied() {
+            // Extract content between <svg> and </svg> tags
+            if let Some(start) = svg.find('>') {
+                if let Some(end) = svg.rfind("</svg>") {
+                    let inner = &svg[start + 1..end];
+                    return format!(
+                        r#"<symbol id="{}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{}</symbol>"#,
+                        name, inner
+                    );
+                }
+            }
+        }
+        String::new()
+    }
+}
 
 /// Format cents as a colored money display with proper locale formatting.
 /// Returns HTML with appropriate Tailwind color classes.

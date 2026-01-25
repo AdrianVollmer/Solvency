@@ -14,6 +14,7 @@ use crate::VERSION;
 pub struct ApiLogsTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -30,6 +31,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = ApiLogsTemplate {
         title: "API Logs".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -45,6 +47,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 pub struct ApiLogDetailTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -60,6 +63,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     let template = ApiLogDetailTemplate {
         title: format!("API Log #{}", id),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),

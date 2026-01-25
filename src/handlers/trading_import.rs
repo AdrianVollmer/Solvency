@@ -22,6 +22,7 @@ const PREVIEW_PAGE_SIZE: i64 = 50;
 pub struct TradingImportTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -32,6 +33,7 @@ pub struct TradingImportTemplate {
 pub struct TradingImportFormatTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -43,6 +45,7 @@ pub struct TradingImportFormatTemplate {
 pub struct TradingImportWizardTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -52,6 +55,7 @@ pub struct TradingImportWizardTemplate {
 #[derive(Template)]
 #[template(path = "partials/trading_import_status.html")]
 pub struct TradingImportStatusTemplate {
+    pub icons: crate::filters::Icons,
     pub session: TradingImportSession,
 }
 
@@ -68,6 +72,7 @@ pub struct TradingImportPreviewTableTemplate {
 #[derive(Template)]
 #[template(path = "partials/trading_import_result.html")]
 pub struct TradingImportResultTemplate {
+    pub icons: crate::filters::Icons,
     pub imported_count: i64,
     pub error_count: i64,
     pub errors: Vec<String>,
@@ -101,6 +106,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = TradingImportTemplate {
         title: "Import Trading Activities".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -117,6 +123,7 @@ pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = TradingImportFormatTemplate {
         title: "Trading CSV Format".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -268,6 +275,7 @@ pub async fn wizard(
     let template = TradingImportWizardTemplate {
         title: "Import Trading Activities".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -284,7 +292,10 @@ pub async fn status(
     let conn = state.db.get()?;
     let session = trading::get_import_session(&conn, &session_id)?;
 
-    let template = TradingImportStatusTemplate { session };
+    let template = TradingImportStatusTemplate {
+        icons: crate::filters::Icons,
+        session,
+    };
     Ok(Html(template.render().unwrap()))
 }
 
@@ -359,7 +370,10 @@ pub async fn confirm(
     let conn = state.db.get()?;
     let session = trading::get_import_session(&conn, &session_id)?;
 
-    let template = TradingImportStatusTemplate { session };
+    let template = TradingImportStatusTemplate {
+        icons: crate::filters::Icons,
+        session,
+    };
     Ok(Html(template.render().unwrap()))
 }
 
@@ -503,6 +517,7 @@ pub async fn result(
     let session = trading::get_import_session(&conn, &session_id)?;
 
     let template = TradingImportResultTemplate {
+        icons: crate::filters::Icons,
         imported_count: session.processed_rows - session.error_count,
         error_count: session.error_count,
         errors: session.errors,

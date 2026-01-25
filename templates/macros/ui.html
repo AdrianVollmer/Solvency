@@ -1,0 +1,309 @@
+{#
+    UI component macros for consistent styling across all templates.
+
+    Usage:
+    {% import "macros/ui.html" as ui %}
+
+    Badge (simple colored badge):
+    {% call ui::badge(color="#3b82f6", content="Label") %}
+
+    Category badge (with color dot):
+    {% call ui::category_badge(color="#3b82f6", name="Food") %}
+
+    Status badge (predefined type styles):
+    {% call ui::status_badge(badge_type="buy", label="Buy") %}
+
+    Delete button (for row deletion with HTMX):
+    {% call ui::delete_button(target="rule-123", endpoint="/rules/123", confirm="Delete?", label="Delete rule") %}
+
+    Delete action with redirect:
+    {% call ui::delete_action_redirect(endpoint="/expenses/123", confirm="Delete?", label="Delete", redirect="/expenses") %}
+
+    Delete action with reload:
+    {% call ui::delete_action_reload(endpoint="/expenses/delete-all", confirm="Delete all?", label="Delete All") %}
+
+    Empty state:
+    {% call ui::empty_state(icon="activity", title="No items") %}
+    {% call ui::empty_state_with_action(icon="activity", title="No items", description="Add some items", action_url="/add", action_label="Add Item") %}
+
+    Stat card:
+    {% call ui::stat_card(label="Total", value="$100") %}
+    {% call ui::stat_card_with_secondary(label="Gain", value="+$50", secondary="10%", trend="up") %}
+
+    Tag badge:
+    {% call ui::tag_badge(color="#3b82f6", name="Tag", style="solid") %}
+    {% call ui::tag_badge_deletable(color="#3b82f6", name="Tag", style="solid", tag_id="123", endpoint="/tags/123") %}
+#}
+
+{# Simple colored badge (ghost style with transparent background) #}
+{% macro badge(color, content) %}
+<span class="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded" style="background-color: {{ color }}14; color: {{ color }};">{{ content }}</span>
+{% endmacro %}
+
+{# Category badge with color dot #}
+{% macro category_badge(color, name) %}
+<span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full" style="background-color: {{ color }}14; color: {{ color }};">
+    <span class="inline-block w-2 h-2 rounded-full" style="background-color: {{ color }};"></span>
+    <span>{{ name }}</span>
+</span>
+{% endmacro %}
+
+{# Status badge with predefined type-based styling #}
+{% macro status_badge(badge_type, label) %}
+{% if badge_type == "buy" || badge_type == "add_holding" || badge_type == "success" %}
+<span class="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">{{ label }}</span>
+{% else if badge_type == "sell" || badge_type == "remove_holding" || badge_type == "error" %}
+<span class="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">{{ label }}</span>
+{% else if badge_type == "dividend" || badge_type == "interest" %}
+<span class="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">{{ label }}</span>
+{% else if badge_type == "deposit" || badge_type == "transfer_in" %}
+<span class="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">{{ label }}</span>
+{% else if badge_type == "withdrawal" || badge_type == "transfer_out" %}
+<span class="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">{{ label }}</span>
+{% else if badge_type == "fee" || badge_type == "tax" || badge_type == "warning" %}
+<span class="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">{{ label }}</span>
+{% else if badge_type == "split" %}
+<span class="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">{{ label }}</span>
+{% else %}
+<span class="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">{{ label }}</span>
+{% endif %}
+{% endmacro %}
+
+{# Tag badge (solid style) #}
+{% macro tag_badge_solid(color, name) %}
+<span class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}; color: white;">{{ name }}</span>
+{% endmacro %}
+
+{# Tag badge (ghost style) #}
+{% macro tag_badge(color, name) %}
+<span class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}14; color: {{ color }};">{{ name }}</span>
+{% endmacro %}
+
+{# Tag badge with delete button (solid style) #}
+{% macro tag_badge_deletable_solid(color, name, tag_id) %}
+<span id="tag-{{ tag_id }}" class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}; color: white;">
+    {{ name }}
+    <button
+        hx-delete="/tags/{{ tag_id }}"
+        hx-target="#tag-{{ tag_id }}"
+        hx-swap="outerHTML"
+        hx-confirm="Are you sure you want to delete this tag?"
+        class="hover:opacity-75">
+        <svg class="w-3 h-3 lucide-icon" viewBox="0 0 24 24"><use href="#x"/></svg>
+    </button>
+</span>
+{% endmacro %}
+
+{# Tag badge with delete button (ghost style) #}
+{% macro tag_badge_deletable(color, name, tag_id) %}
+<span id="tag-{{ tag_id }}" class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}14; color: {{ color }};">
+    {{ name }}
+    <button
+        hx-delete="/tags/{{ tag_id }}"
+        hx-target="#tag-{{ tag_id }}"
+        hx-swap="outerHTML"
+        hx-confirm="Are you sure you want to delete this tag?"
+        class="hover:opacity-75">
+        <svg class="w-3 h-3 lucide-icon" viewBox="0 0 24 24"><use href="#x"/></svg>
+    </button>
+</span>
+{% endmacro %}
+
+{# Delete button for row deletion with HTMX (generic) #}
+{% macro delete_button(target, endpoint, confirm, label) %}
+<button
+    hx-delete="{{ endpoint }}"
+    hx-target="#{{ target }}"
+    hx-swap="outerHTML"
+    hx-confirm="{{ confirm }}"
+    class="p-2 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+    aria-label="{{ label }}">
+    <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
+</button>
+{% endmacro %}
+
+{# Delete button for rules #}
+{% macro delete_rule_button(rule_id, confirm, label) %}
+<button
+    hx-delete="/rules/{{ rule_id }}"
+    hx-target="#rule-{{ rule_id }}"
+    hx-swap="outerHTML"
+    hx-confirm="{{ confirm }}"
+    class="p-2 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+    aria-label="{{ label }}">
+    <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
+</button>
+{% endmacro %}
+
+{# Delete button for categories #}
+{% macro delete_category_button(category_id, confirm, label) %}
+<button
+    hx-delete="/categories/{{ category_id }}"
+    hx-target="#category-{{ category_id }}"
+    hx-swap="outerHTML"
+    hx-confirm="{{ confirm }}"
+    class="p-2 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+    aria-label="{{ label }}">
+    <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
+</button>
+{% endmacro %}
+
+{# Delete action button with redirect #}
+{% macro delete_action_redirect(endpoint, confirm, label, redirect) %}
+<button
+    hx-delete="{{ endpoint }}"
+    hx-confirm="{{ confirm }}"
+    hx-target="body"
+    hx-swap="none"
+    hx-on::after-request="if(event.detail.successful) window.location.href='{{ redirect }}'"
+    class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+    <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
+    {{ label }}
+</button>
+{% endmacro %}
+
+{# Delete expense action with redirect to expenses list #}
+{% macro delete_expense_action(expense_id, confirm, label) %}
+<button
+    hx-delete="/expenses/{{ expense_id }}"
+    hx-confirm="{{ confirm }}"
+    hx-target="body"
+    hx-swap="none"
+    hx-on::after-request="if(event.detail.successful) window.location.href='/expenses'"
+    class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+    <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
+    {{ label }}
+</button>
+{% endmacro %}
+
+{# Delete trading activity action with redirect to activities list #}
+{% macro delete_trading_activity_action(activity_id, confirm, label) %}
+<button
+    hx-delete="/trading/activities/{{ activity_id }}/delete"
+    hx-confirm="{{ confirm }}"
+    hx-target="body"
+    hx-swap="none"
+    hx-on::after-request="if(event.detail.successful) window.location.href='/trading/activities'"
+    class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+    <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
+    {{ label }}
+</button>
+{% endmacro %}
+
+{# Delete action button with reload #}
+{% macro delete_action_reload(endpoint, confirm, label) %}
+<button
+    hx-delete="{{ endpoint }}"
+    hx-confirm="{{ confirm }}"
+    hx-target="body"
+    hx-swap="none"
+    hx-on::after-request="if(event.detail.successful) window.location.reload()"
+    class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+    <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
+    {{ label }}
+</button>
+{% endmacro %}
+
+{# Empty state component (minimal) #}
+{% macro empty_state(icon, title) %}
+<div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+    {% if icon == "activity" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trending-up"/></svg>
+    {% else if icon == "folder" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#folder"/></svg>
+    {% else if icon == "inbox" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#inbox"/></svg>
+    {% else if icon == "file" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#file-text"/></svg>
+    {% else if icon == "search" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#search"/></svg>
+    {% else if icon == "chart" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#chart-bar"/></svg>
+    {% else %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#folder"/></svg>
+    {% endif %}
+    <p class="font-medium text-neutral-900 dark:text-white">{{ title }}</p>
+</div>
+{% endmacro %}
+
+{# Empty state component with description #}
+{% macro empty_state_desc(icon, title, description) %}
+<div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+    {% if icon == "activity" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trending-up"/></svg>
+    {% else if icon == "folder" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#folder"/></svg>
+    {% else if icon == "inbox" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#inbox"/></svg>
+    {% else if icon == "file" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#file-text"/></svg>
+    {% else if icon == "search" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#search"/></svg>
+    {% else if icon == "chart" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#chart-bar"/></svg>
+    {% else %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#folder"/></svg>
+    {% endif %}
+    <p class="font-medium text-neutral-900 dark:text-white">{{ title }}</p>
+    <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{{ description }}</p>
+</div>
+{% endmacro %}
+
+{# Empty state component with action #}
+{% macro empty_state_action(icon, title, description, action_url, action_label) %}
+<div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+    {% if icon == "activity" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trending-up"/></svg>
+    {% else if icon == "folder" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#folder"/></svg>
+    {% else if icon == "inbox" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#inbox"/></svg>
+    {% else if icon == "file" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#file-text"/></svg>
+    {% else if icon == "search" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#search"/></svg>
+    {% else if icon == "chart" %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#chart-bar"/></svg>
+    {% else %}
+    <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#folder"/></svg>
+    {% endif %}
+    <p class="font-medium text-neutral-900 dark:text-white">{{ title }}</p>
+    <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{{ description }}</p>
+    <a href="{{ action_url }}" class="mt-4 inline-block btn btn-primary">{{ action_label }}</a>
+</div>
+{% endmacro %}
+
+{# Stat card (simple) #}
+{% macro stat_card(label, value) %}
+<div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+    <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ label }}</p>
+    <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ value }}</p>
+</div>
+{% endmacro %}
+
+{# Stat card with secondary text (neutral) #}
+{% macro stat_card_secondary(label, value, secondary) %}
+<div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+    <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ label }}</p>
+    <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ value }}</p>
+    <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ secondary }}</p>
+</div>
+{% endmacro %}
+
+{# Stat card with upward trend #}
+{% macro stat_card_trend_up(label, value, secondary) %}
+<div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+    <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ label }}</p>
+    <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ value }}</p>
+    <p class="text-sm text-green-600 dark:text-green-400">{{ secondary }}</p>
+</div>
+{% endmacro %}
+
+{# Stat card with downward trend #}
+{% macro stat_card_trend_down(label, value, secondary) %}
+<div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+    <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ label }}</p>
+    <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ value }}</p>
+    <p class="text-sm text-red-600 dark:text-red-400">{{ secondary }}</p>
+</div>
+{% endmacro %}

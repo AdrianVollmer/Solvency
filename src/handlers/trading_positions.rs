@@ -177,6 +177,7 @@ fn sort_closed_positions(
 pub struct TradingPositionsTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -274,6 +275,7 @@ pub async fn index(
     let template = TradingPositionsTemplate {
         title: "Positions".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -300,6 +302,7 @@ pub async fn index(
 pub struct ClosedPositionsTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -354,6 +357,7 @@ pub async fn closed_positions(
     let template = ClosedPositionsTemplate {
         title: "Closed Positions".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -393,6 +397,7 @@ impl SymbolInfo {
 pub struct PositionDetailTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -492,6 +497,7 @@ pub async fn detail(
     let template = PositionDetailTemplate {
         title: display_name,
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),

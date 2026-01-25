@@ -10,7 +10,7 @@
     {# Header #}
     <div class="flex items-center gap-4">
         <a href="/trading/market-data" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-            <span class="material-symbols-outlined w-5" aria-hidden="true">arrow_back</span>
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("arrow-left")|safe }}</span>
         </a>
         <div class="flex-1">
             <div class="flex items-center gap-3">
@@ -20,7 +20,7 @@
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">{{ qt }}</span>
                 {% when None %}{% endmatch %}
                 <a href="https://finance.yahoo.com/quote/{{ symbol }}/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" title="View on Yahoo Finance">
-                    <span class="material-symbols-outlined w-4" aria-hidden="true">open_in_new</span>
+                    <span class="icon-xs" aria-hidden="true">{{ icons.get("external-link")|safe }}</span>
                 </a>
             </div>
             {% match symbol_info.display_name() %}

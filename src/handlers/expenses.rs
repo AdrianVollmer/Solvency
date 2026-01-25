@@ -8,7 +8,9 @@ use tracing::{debug, info, warn};
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
 use crate::db::queries::{accounts, categories, expenses, settings, tags};
 use crate::error::{AppError, AppResult};
-use crate::models::{Account, AccountType, CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag};
+use crate::models::{
+    Account, AccountType, CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag,
+};
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -62,6 +64,7 @@ impl SortableColumn for ExpenseSortColumn {
 pub struct ExpensesTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -81,6 +84,7 @@ pub struct ExpensesTemplate {
 #[template(path = "partials/expense_table.html")]
 pub struct ExpenseTableTemplate {
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub expenses: Vec<ExpenseWithRelations>,
     pub total_count: i64,
     pub page: i64,
@@ -93,6 +97,7 @@ pub struct ExpenseTableTemplate {
 #[derive(Template)]
 #[template(path = "components/expense_form.html")]
 pub struct ExpenseFormTemplate {
+    pub icons: crate::filters::Icons,
     pub expense: Option<ExpenseWithRelations>,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
@@ -104,6 +109,7 @@ pub struct ExpenseFormTemplate {
 pub struct ExpenseNewTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -116,6 +122,7 @@ pub struct ExpenseNewTemplate {
 #[template(path = "components/expense_row.html")]
 pub struct ExpenseRowTemplate {
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub expense: ExpenseWithRelations,
 }
 
@@ -124,6 +131,7 @@ pub struct ExpenseRowTemplate {
 pub struct ExpenseDetailTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -138,6 +146,7 @@ pub struct ExpenseDetailTemplate {
 pub struct ExpenseEditTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -315,6 +324,7 @@ pub async fn index(
     let template = ExpensesTemplate {
         title: "Expenses".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -363,6 +373,7 @@ pub async fn table_partial(
 
     let template = ExpenseTableTemplate {
         settings: app_settings,
+        icons: crate::filters::Icons,
         expenses: expense_list,
         total_count,
         page,
@@ -390,6 +401,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     let template = ExpenseDetailTemplate {
         title: format!("Transaction #{}", id),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -413,6 +425,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
     let template = ExpenseNewTemplate {
         title: "Add Expense".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -442,6 +455,7 @@ pub async fn edit_form(
     let template = ExpenseEditTemplate {
         title: "Edit Transaction".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),

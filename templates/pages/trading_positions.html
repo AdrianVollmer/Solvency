@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "macros/table.html" as table %}
+{% import "macros/ui.html" as ui %}
 
 {% block content %}
 <div class="space-y-6">
@@ -9,13 +10,7 @@
     </div>
 
     {% if positions.is_empty() %}
-    <mm-empty-state
-        icon="activity"
-        title="No positions yet"
-        description="Import or add trading activities to see your positions"
-        action-url="/trading/activities"
-        action-label="Add Activity">
-    </mm-empty-state>
+    {% call ui::empty_state_action(icon="activity", title="No positions yet", description="Import or add trading activities to see your positions", action_url="/trading/activities", action_label="Add Activity") %}
     {% else %}
 
     {# Cash Positions #}
@@ -87,7 +82,7 @@
                             {% if pos.price_is_approximated %}
                             <span class="text-sm text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
                                 {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
-                                <span class="material-symbols-outlined text-sm" aria-hidden="true">help</span>
+                                <span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
                             </span>
                             {% else %}
                             <span class="text-sm text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</span>
@@ -111,7 +106,7 @@
                             {% if pos.price_is_approximated %}
                             <span class="text-sm font-medium text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
                                 {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
-                                <span class="material-symbols-outlined text-sm" aria-hidden="true">help</span>
+                                <span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
                             </span>
                             {% else %}
                             <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</span>

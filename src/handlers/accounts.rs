@@ -16,6 +16,7 @@ use crate::VERSION;
 pub struct AccountsTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -27,6 +28,7 @@ pub struct AccountsTemplate {
 pub struct AccountFormTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -48,6 +50,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = AccountsTemplate {
         title: "Accounts".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -64,6 +67,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
     let template = AccountFormTemplate {
         title: "Add Account".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -86,6 +90,7 @@ pub async fn edit_form(
     let template = AccountFormTemplate {
         title: "Edit Account".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -134,10 +139,7 @@ pub async fn update(
     Ok(Redirect::to("/accounts"))
 }
 
-pub async fn delete(
-    State(state): State<AppState>,
-    Path(id): Path<i64>,
-) -> AppResult<Html<String>> {
+pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
     accounts::delete_account(&conn, id)?;

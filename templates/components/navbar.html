@@ -2,7 +2,7 @@
     <div class="px-4 h-14 flex items-center justify-between">
         <div class="flex items-center gap-2">
             <button id="sidebar-toggle" class="md:hidden p-2.5 -ml-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">menu</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("menu")|safe }}</span>
             </button>
             <a href="/" class="flex items-center gap-2 py-2">
                 <span class="font-display text-lg font-bold tracking-tight text-neutral-900 dark:text-white">MoneyMapper</span>
@@ -10,8 +10,8 @@
         </div>
 
         <button id="theme-toggle" class="p-2.5 -mr-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400 transition-colors" aria-label="Toggle dark mode">
-            <span class="material-symbols-outlined w-5 hidden dark:block" aria-hidden="true">light_mode</span>
-            <span class="material-symbols-outlined w-5 block dark:hidden" aria-hidden="true">dark_mode</span>
+            <span class="icon-sm hidden dark:block" aria-hidden="true">{{ icons.get("sun")|safe }}</span>
+            <span class="icon-sm block dark:hidden" aria-hidden="true">{{ icons.get("moon")|safe }}</span>
         </button>
     </div>
 </nav>

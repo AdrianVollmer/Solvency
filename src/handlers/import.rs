@@ -22,6 +22,7 @@ const PREVIEW_PAGE_SIZE: i64 = 50;
 pub struct ImportTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -32,6 +33,7 @@ pub struct ImportTemplate {
 pub struct ImportFormatTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -42,6 +44,7 @@ pub struct ImportFormatTemplate {
 pub struct ImportWizardTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -52,6 +55,7 @@ pub struct ImportWizardTemplate {
 #[derive(Template)]
 #[template(path = "partials/import_status.html")]
 pub struct ImportStatusTemplate {
+    pub icons: crate::filters::Icons,
     pub session: ImportSession,
     pub categories: Vec<CategoryWithPath>,
 }
@@ -70,6 +74,7 @@ pub struct ImportPreviewTableTemplate {
 #[derive(Template)]
 #[template(path = "partials/import_result.html")]
 pub struct ImportResultTemplate {
+    pub icons: crate::filters::Icons,
     pub imported_count: i64,
     pub error_count: i64,
     pub errors: Vec<String>,
@@ -108,6 +113,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = ImportTemplate {
         title: "Import".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -124,6 +130,7 @@ pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = ImportFormatTemplate {
         title: "CSV Import Format".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -278,6 +285,7 @@ pub async fn wizard(
     let template = ImportWizardTemplate {
         title: "Import".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -297,6 +305,7 @@ pub async fn status(
     let cats = categories::list_categories_with_path(&conn)?;
 
     let template = ImportStatusTemplate {
+        icons: crate::filters::Icons,
         session,
         categories: cats,
     };
@@ -423,6 +432,7 @@ pub async fn confirm(
     let cats = categories::list_categories_with_path(&conn)?;
 
     let template = ImportStatusTemplate {
+        icons: crate::filters::Icons,
         session,
         categories: cats,
     };
@@ -538,6 +548,7 @@ pub async fn result(
     let session = import::get_session(&conn, &session_id)?;
 
     let template = ImportResultTemplate {
+        icons: crate::filters::Icons,
         imported_count: session.processed_rows - session.error_count,
         error_count: session.error_count,
         errors: session.errors,

@@ -99,6 +99,7 @@ fn sort_coverage(coverage: &mut [SymbolDataCoverage], sort: &TableSort<MarketDat
 pub struct MarketDataTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -130,6 +131,7 @@ pub async fn index(
     let template = MarketDataTemplate {
         title: "Market Data".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -412,6 +414,7 @@ impl SymbolInfo {
 pub struct MarketDataSymbolTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -470,6 +473,7 @@ pub async fn symbol_detail(
     let template = MarketDataSymbolTemplate {
         title: format!("{} - Market Data", display_name),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),

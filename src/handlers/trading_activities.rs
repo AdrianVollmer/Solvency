@@ -69,6 +69,7 @@ impl SortableColumn for ActivitySortColumn {
 pub struct TradingActivitiesTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -88,6 +89,7 @@ pub struct TradingActivitiesTemplate {
 #[template(path = "partials/trading_activity_table.html")]
 pub struct TradingActivityTableTemplate {
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub activities: Vec<TradingActivity>,
     pub total_count: i64,
     pub page: i64,
@@ -111,6 +113,7 @@ pub struct TradingActivityFormTemplate {
 pub struct TradingActivityNewTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -122,6 +125,7 @@ pub struct TradingActivityNewTemplate {
 #[template(path = "components/trading_activity_row.html")]
 pub struct TradingActivityRowTemplate {
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub activity: TradingActivity,
 }
 
@@ -130,6 +134,7 @@ pub struct TradingActivityRowTemplate {
 pub struct TradingActivityDetailTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -141,6 +146,7 @@ pub struct TradingActivityDetailTemplate {
 pub struct TradingActivityEditTemplate {
     pub title: String,
     pub settings: Settings,
+    pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
@@ -341,6 +347,7 @@ pub async fn index(
     let template = TradingActivitiesTemplate {
         title: "Trading Activities".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -393,6 +400,7 @@ pub async fn table_partial(
 
     let template = TradingActivityTableTemplate {
         settings: app_settings,
+        icons: crate::filters::Icons,
         activities: activity_list,
         total_count,
         page,
@@ -416,6 +424,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     let template = TradingActivityDetailTemplate {
         title: format!("{} - {}", activity.symbol, activity.activity_type.label()),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -434,6 +443,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
     let template = TradingActivityNewTemplate {
         title: "Add Activity".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
@@ -460,6 +470,7 @@ pub async fn edit_form(
     let template = TradingActivityEditTemplate {
         title: "Edit Activity".into(),
         settings: app_settings,
+        icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),

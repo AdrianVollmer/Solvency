@@ -51,6 +51,76 @@
 {% endblock %}
 
 {% block content %}
+{# SVG sprite sheet for category icons - used by JavaScript icon picker #}
+<svg class="hidden">
+  {{ icons.symbol("folder")|safe }}
+  {{ icons.symbol("house")|safe }}
+  {{ icons.symbol("car")|safe }}
+  {{ icons.symbol("utensils")|safe }}
+  {{ icons.symbol("shopping-cart")|safe }}
+  {{ icons.symbol("shopping-bag")|safe }}
+  {{ icons.symbol("heart")|safe }}
+  {{ icons.symbol("zap")|safe }}
+  {{ icons.symbol("film")|safe }}
+  {{ icons.symbol("music")|safe }}
+  {{ icons.symbol("gamepad-2")|safe }}
+  {{ icons.symbol("plane")|safe }}
+  {{ icons.symbol("train-front")|safe }}
+  {{ icons.symbol("bus")|safe }}
+  {{ icons.symbol("fuel")|safe }}
+  {{ icons.symbol("parking-meter")|safe }}
+  {{ icons.symbol("gift")|safe }}
+  {{ icons.symbol("coffee")|safe }}
+  {{ icons.symbol("pizza")|safe }}
+  {{ icons.symbol("apple")|safe }}
+  {{ icons.symbol("beer")|safe }}
+  {{ icons.symbol("wine")|safe }}
+  {{ icons.symbol("pill")|safe }}
+  {{ icons.symbol("stethoscope")|safe }}
+  {{ icons.symbol("graduation-cap")|safe }}
+  {{ icons.symbol("book")|safe }}
+  {{ icons.symbol("briefcase")|safe }}
+  {{ icons.symbol("building")|safe }}
+  {{ icons.symbol("landmark")|safe }}
+  {{ icons.symbol("banknote")|safe }}
+  {{ icons.symbol("credit-card")|safe }}
+  {{ icons.symbol("wallet")|safe }}
+  {{ icons.symbol("piggy-bank")|safe }}
+  {{ icons.symbol("receipt")|safe }}
+  {{ icons.symbol("calculator")|safe }}
+  {{ icons.symbol("percent")|safe }}
+  {{ icons.symbol("tag")|safe }}
+  {{ icons.symbol("tags")|safe }}
+  {{ icons.symbol("scissors")|safe }}
+  {{ icons.symbol("shirt")|safe }}
+  {{ icons.symbol("smartphone")|safe }}
+  {{ icons.symbol("tv")|safe }}
+  {{ icons.symbol("monitor")|safe }}
+  {{ icons.symbol("laptop")|safe }}
+  {{ icons.symbol("headphones")|safe }}
+  {{ icons.symbol("camera")|safe }}
+  {{ icons.symbol("wrench")|safe }}
+  {{ icons.symbol("hammer")|safe }}
+  {{ icons.symbol("paintbrush")|safe }}
+  {{ icons.symbol("brush")|safe }}
+  {{ icons.symbol("baby")|safe }}
+  {{ icons.symbol("dog")|safe }}
+  {{ icons.symbol("cat")|safe }}
+  {{ icons.symbol("tree-deciduous")|safe }}
+  {{ icons.symbol("flower")|safe }}
+  {{ icons.symbol("sun")|safe }}
+  {{ icons.symbol("cloud")|safe }}
+  {{ icons.symbol("umbrella")|safe }}
+  {{ icons.symbol("sparkles")|safe }}
+  {{ icons.symbol("star")|safe }}
+  {{ icons.symbol("ellipsis")|safe }}
+  {{ icons.symbol("circle")|safe }}
+  {{ icons.symbol("square")|safe }}
+  {{ icons.symbol("triangle")|safe }}
+  {{ icons.symbol("hexagon")|safe }}
+  {{ icons.symbol("grip-vertical")|safe }}
+  {{ icons.symbol("trash-2")|safe }}
+</svg>
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -59,16 +129,16 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="/categories/export" class="btn btn-secondary flex items-center gap-2">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">download</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
                 Export
             </a>
             <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">upload</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
                 Import
             </button>
             <input type="file" id="import-file" accept=".json" class="hidden" onchange="importCategories(this.files[0])" aria-label="Import categories from JSON file">
             <button onclick="window.categoriesPage.openAddModal()" class="btn btn-primary flex items-center gap-2">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">add</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
                 Add Category
             </button>
         </div>
@@ -79,7 +149,7 @@
             {# Tree is built by JavaScript #}
         </div>
         <div id="empty-state" class="px-6 py-12 text-center text-neutral-500 dark:text-neutral-400 hidden">
-            <span class="material-symbols-outlined w-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" aria-hidden="true">folder</span>
+            <span class="icon-xl mx-auto mb-4 text-neutral-300 dark:text-neutral-600" aria-hidden="true">{{ icons.get("folder")|safe }}</span>
             <p class="font-medium">No categories yet</p>
             <p class="text-sm mt-1">Create one to get started</p>
         </div>
@@ -94,7 +164,7 @@
             <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
                 <h2 id="modal-title" class="section-title">Add Category</h2>
                 <button onclick="window.categoriesPage.closeModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg" aria-label="Close modal">
-                    <span class="material-symbols-outlined w-5" aria-hidden="true">close</span>
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("x")|safe }}</span>
                 </button>
             </div>
             <form id="category-form" class="p-6 space-y-4">
@@ -126,7 +196,7 @@
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Icon</label>
                         <button type="button" id="icon-picker-btn" onclick="window.categoriesPage.toggleIconPicker()"
                             class="w-full px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 flex items-center gap-2">
-                            <span id="selected-icon" class="material-symbols-outlined w-5">folder</span>
+                            <svg id="selected-icon" class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#folder"/></svg>
                             <span id="selected-icon-name" class="text-sm">folder</span>
                         </button>
                         <input type="hidden" id="category-icon" name="icon" value="folder">

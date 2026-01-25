@@ -1,6 +1,6 @@
-<mm-tag
-    color="{{ tag.color }}"
-    style-type="{{ tag.style.as_str() }}"
-    tag-id="{{ tag.id }}"
-    deletable
-    endpoint="/tags/{{ tag.id }}">{{ tag.name }}</mm-tag>
+{% import "macros/ui.html" as ui %}
+{% if tag.style.as_str() == "solid" %}
+{% call ui::tag_badge_deletable_solid(color=tag.color.as_str(), name=tag.name.as_str(), tag_id=tag.id) %}
+{% else %}
+{% call ui::tag_badge_deletable(color=tag.color.as_str(), name=tag.name.as_str(), tag_id=tag.id) %}
+{% endif %}

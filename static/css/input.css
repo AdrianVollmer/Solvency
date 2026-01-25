@@ -43,6 +43,42 @@
 }
 
 @layer components {
+  /* Icons - inline SVG sizing */
+  .icon-xs {
+    @apply inline-flex w-4 h-4;
+  }
+  .icon-xs > svg {
+    @apply w-4 h-4;
+  }
+
+  .icon-sm {
+    @apply inline-flex w-5 h-5;
+  }
+  .icon-sm > svg {
+    @apply w-5 h-5;
+  }
+
+  .icon-md {
+    @apply inline-flex w-6 h-6;
+  }
+  .icon-md > svg {
+    @apply w-6 h-6;
+  }
+
+  .icon-lg {
+    @apply inline-flex w-8 h-8;
+  }
+  .icon-lg > svg {
+    @apply w-8 h-8;
+  }
+
+  .icon-xl {
+    @apply inline-flex w-10 h-10;
+  }
+  .icon-xl > svg {
+    @apply w-10 h-10;
+  }
+
   /* Buttons - refined micro-interactions */
   .btn {
     @apply px-4 py-2.5 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2;

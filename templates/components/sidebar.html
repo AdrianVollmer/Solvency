@@ -2,22 +2,22 @@
     <nav class="flex-1 py-4" aria-label="Main navigation">
         <div class="space-y-0.5 px-2">
             <a href="/" class="nav-item {% if title == "Dashboard" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">home</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("home")|safe }}</span>
                 <span class="text-sm font-medium">Dashboard</span>
             </a>
 
             <a href="/expenses" class="nav-item {% if title == "Expenses" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">receipt_long</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("receipt")|safe }}</span>
                 <span class="text-sm font-medium">Expenses</span>
             </a>
 
             <a href="/analytics" class="nav-item {% if title == "Analytics" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">bar_chart</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("bar-chart")|safe }}</span>
                 <span class="text-sm font-medium">Analytics</span>
             </a>
 
             <a href="/import" class="nav-item {% if title == "Import" || title == "Import Expenses" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">upload</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
                 <span class="text-sm font-medium">Import</span>
             </a>
         </div>
@@ -26,27 +26,27 @@
             <p class="px-4 mb-2 text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Trading</p>
 
             <a href="/trading/activities" class="nav-item {% if title == "Trading Activities" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">trending_up</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("trending-up")|safe }}</span>
                 <span class="text-sm font-medium">Activities</span>
             </a>
 
             <a href="/trading/positions" class="nav-item {% if title == "Positions" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">inventory_2</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("package")|safe }}</span>
                 <span class="text-sm font-medium">Positions</span>
             </a>
 
             <a href="/trading/net-worth" class="nav-item {% if title == "Net Worth" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">payments</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("banknote")|safe }}</span>
                 <span class="text-sm font-medium">Net Worth</span>
             </a>
 
             <a href="/trading/import" class="nav-item {% if title == "Import Trading Activities" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">upload</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
                 <span class="text-sm font-medium">Import</span>
             </a>
 
             <a href="/trading/market-data" class="nav-item {% if title == "Market Data" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">show_chart</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("line-chart")|safe }}</span>
                 <span class="text-sm font-medium">Market Data</span>
             </a>
         </div>
@@ -55,29 +55,29 @@
             <p class="px-4 mb-2 text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Manage</p>
 
             <a href="/accounts" class="nav-item {% if title == "Accounts" || title == "Add Account" || title == "Edit Account" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">credit_card</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("credit-card")|safe }}</span>
                 <span class="text-sm font-medium">Accounts</span>
             </a>
 
             <a href="/categories" class="nav-item {% if title == "Categories" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">folder</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("folder")|safe }}</span>
                 <span class="text-sm font-medium">Categories</span>
             </a>
 
             <a href="/tags" class="nav-item {% if title == "Tags" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">sell</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("tag")|safe }}</span>
                 <span class="text-sm font-medium">Tags</span>
             </a>
 
             <a href="/rules" class="nav-item {% if title == "Rules" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">checklist</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("list-checks")|safe }}</span>
                 <span class="text-sm font-medium">Rules</span>
             </a>
         </div>
 
         <div class="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700 px-2">
             <a href="/settings" class="nav-item {% if title == "Settings" %}nav-item-active{% endif %}">
-                <span class="material-symbols-outlined w-5" aria-hidden="true">settings</span>
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("settings")|safe }}</span>
                 <span class="text-sm font-medium">Settings</span>
             </a>
         </div>

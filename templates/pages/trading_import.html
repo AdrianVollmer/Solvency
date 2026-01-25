@@ -10,7 +10,7 @@
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl">
         <form action="/trading/import/upload" method="post" enctype="multipart/form-data" class="space-y-4">
             <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-8 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors" id="drop-zone">
-                <span class="material-symbols-outlined w-12 mx-auto text-neutral-400 mb-4" aria-hidden="true">cloud_upload</span>
+                <span class="icon-xl mx-auto text-neutral-400 mb-4" aria-hidden="true">{{ icons.get("upload-cloud")|safe }}</span>
                 <p class="text-neutral-600 dark:text-neutral-400 mb-3">Drag and drop your CSV files here, or</p>
                 <label class="cursor-pointer inline-block">
                     <span class="btn btn-primary">

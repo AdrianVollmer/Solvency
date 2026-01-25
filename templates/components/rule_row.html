@@ -1,3 +1,4 @@
+{% import "macros/ui.html" as ui %}
 <tr id="rule-{{ rule.id }}" class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 row-hover">
     <td class="px-6 py-4">
         <span class="font-medium">{{ rule.name }}</span>
@@ -21,19 +22,13 @@
                 <span class="text-neutral-500 dark:text-neutral-400">Tag:</span>
                 {% for tag in tags %}
                     {% if tag.id.to_string() == rule.action_value %}
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs" style="background-color: {{ tag.color }}; color: white;">
-                            {{ tag.name }}
-                        </span>
+                        {% call ui::tag_badge_solid(color=tag.color.as_str(), name=tag.name.as_str()) %}
                     {% endif %}
                 {% endfor %}
             {% endif %}
         </span>
     </td>
     <td class="px-6 py-4 text-right">
-        <mm-delete-button
-            target="rule-{{ rule.id }}"
-            endpoint="/rules/{{ rule.id }}"
-            confirm="Are you sure you want to delete this rule?"
-            label="Delete rule"></mm-delete-button>
+        {% call ui::delete_rule_button(rule_id=rule.id, confirm="Are you sure you want to delete this rule?", label="Delete rule") %}
     </td>
 </tr>

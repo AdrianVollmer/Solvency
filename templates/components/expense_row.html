@@ -1,3 +1,4 @@
+{% import "macros/ui.html" as ui %}
 <tr id="expense-{{ expense.id }}"
     onclick="window.location.href='/expenses/{{ expense.id }}'"
     class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer row-hover">
@@ -14,7 +15,7 @@
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
         {% if expense.has_category() %}
-        <mm-category-badge color="{{ expense.category_color_or_default() }}" name="{{ expense.category_name_or_default() }}"></mm-category-badge>
+        {% call ui::category_badge(color=expense.category_color_or_default(), name=expense.category_name_or_default()) %}
         {% else %}
         <span class="text-neutral-400 text-sm">-</span>
         {% endif %}
@@ -22,7 +23,7 @@
     <td class="px-6 py-4">
         <div class="flex flex-wrap gap-1">
             {% for tag in expense.tags %}
-            <mm-badge color="{{ tag.color }}">{{ tag.name }}</mm-badge>
+            {% call ui::badge(color=tag.color.as_str(), content=tag.name.as_str()) %}
             {% endfor %}
         </div>
     </td>
