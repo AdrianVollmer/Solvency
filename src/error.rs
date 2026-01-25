@@ -2,6 +2,8 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use thiserror::Error;
 
+use crate::error_pages::ErrorMessage;
+
 #[derive(Error, Debug)]
 pub enum AppError {
     #[error("Database error: {0}")]
@@ -63,7 +65,11 @@ impl IntoResponse for AppError {
             html_escape(&message)
         );
 
-        (status, Html(html)).into_response()
+        let mut response = (status, Html(html)).into_response();
+        response
+            .extensions_mut()
+            .insert(ErrorMessage(message));
+        response
     }
 }
 

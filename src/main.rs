@@ -2,6 +2,7 @@ use axum::middleware;
 use axum::Router;
 use moneymapper::config::Config;
 use moneymapper::db::{create_pool, migrations};
+use moneymapper::error_pages::{error_page_middleware, fallback_handler};
 use moneymapper::handlers;
 use moneymapper::state::{AppState, JsManifest, MarketDataRefreshState};
 use moneymapper::xsrf::{xsrf_middleware, XsrfToken};
@@ -48,11 +49,16 @@ async fn main() {
 
     let app = Router::new()
         .merge(handlers::routes())
+        .fallback(fallback_handler)
         .nest_service("/static", ServeDir::new(&config.static_path))
         .layer(middleware::from_fn(move |req, next| {
             let token = xsrf_token.clone();
             xsrf_middleware(token, req, next)
         }))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            error_page_middleware,
+        ))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
         .with_state(state);
