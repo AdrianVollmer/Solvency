@@ -26,6 +26,17 @@
     {% block head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
+    {# Global SVG sprite sheet for icons used by macros and JavaScript #}
+    <svg class="hidden" aria-hidden="true">
+        {{ icons.symbol("trash-2")|safe }}
+        {{ icons.symbol("x")|safe }}
+        {{ icons.symbol("folder")|safe }}
+        {{ icons.symbol("trending-up")|safe }}
+        {{ icons.symbol("inbox")|safe }}
+        {{ icons.symbol("file-text")|safe }}
+        {{ icons.symbol("search")|safe }}
+        {{ icons.symbol("chart-bar")|safe }}
+    </svg>
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-lg">Skip to content</a>
     {% include "components/navbar.html" %}
 
