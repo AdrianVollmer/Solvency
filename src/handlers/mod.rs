@@ -190,6 +190,8 @@ pub fn routes() -> Router<AppState> {
         // Settings
         .route("/settings/update", post(settings::update))
         .route("/settings/theme", post(settings::toggle_theme))
+        .route("/settings/export-database", get(settings::export_database))
+        .route("/settings/import-database", post(settings::import_database))
         // API (JSON for charts)
         .route(
             "/api/analytics/spending-by-category",
