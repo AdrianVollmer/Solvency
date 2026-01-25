@@ -84,3 +84,5 @@ If you are an LLM:
 - If you make changes to the UI, check with playwright for obvious
   visual problems, like elements running into each other. You can use
   `uv venv && uv pip install playwright` to install dependencies.
+- Avoid inline SVG for icons. Let's use the Lucide library, which we
+  vendor.

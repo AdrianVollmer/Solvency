@@ -285,13 +285,69 @@ class DeleteButtonElement extends BaseComponent {
         hx-confirm="${confirmMsg}"
         class="p-2 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
         aria-label="${label}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-        </svg>
+        <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
       </button>
     `;
 
     // Re-process HTMX attributes on the new button
+    const htmx = (window as unknown as { htmx?: { process: (el: Element) => void } }).htmx;
+    if (htmx) {
+      htmx.process(this);
+    }
+  }
+}
+
+// ============================================================================
+// mm-delete-action - Labeled delete button for detail pages and batch actions
+// ============================================================================
+
+/**
+ * A labeled delete action button with icon for detail pages and batch operations.
+ * Handles redirect or reload after successful deletion.
+ *
+ * @attr endpoint - The DELETE endpoint URL
+ * @attr confirm - Confirmation message
+ * @attr label - Button text (default: "Delete")
+ * @attr redirect - URL to redirect to after success (optional)
+ * @attr reload - If present, reload page after success instead of redirect
+ *
+ * @example
+ * <mm-delete-action endpoint="/expenses/123" confirm="Delete this?" label="Delete" redirect="/expenses"></mm-delete-action>
+ * <mm-delete-action endpoint="/expenses/delete-all" confirm="Delete all?" label="Delete All" reload></mm-delete-action>
+ */
+class DeleteActionElement extends BaseComponent {
+  static override get observedAttributes(): string[] {
+    return ["endpoint", "confirm", "label", "redirect", "reload"];
+  }
+
+  protected render(): void {
+    const endpoint = this.getAttr("endpoint");
+    const confirmMsg = this.getAttr("confirm", "Are you sure?");
+    const label = this.getAttr("label", "Delete");
+    const redirect = this.getAttr("redirect");
+    const shouldReload = this.getBoolAttr("reload");
+
+    let afterRequest = "";
+    if (redirect) {
+      afterRequest = `if(event.detail.successful) window.location.href='${redirect}'`;
+    } else if (shouldReload) {
+      afterRequest = "if(event.detail.successful) window.location.reload()";
+    }
+
+    this.innerHTML = `
+      <button
+        hx-delete="${endpoint}"
+        hx-confirm="${confirmMsg}"
+        hx-target="body"
+        hx-swap="none"
+        ${afterRequest ? `hx-on::after-request="${afterRequest}"` : ""}
+        class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+        <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#trash-2"/></svg>
+        ${label}
+      </button>
+    `;
+
+    // Re-process HTMX attributes
     const htmx = (window as unknown as { htmx?: { process: (el: Element) => void } }).htmx;
     if (htmx) {
       htmx.process(this);
@@ -482,9 +538,7 @@ class TagElement extends BadgeComponent {
           hx-swap="outerHTML"
           hx-confirm="Are you sure you want to delete this tag?"
           class="hover:opacity-75">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+          <svg class="w-3 h-3 lucide-icon" viewBox="0 0 24 24"><use href="#x"/></svg>
         </button>
       `;
       // Re-process HTMX attributes
@@ -526,12 +580,12 @@ class EmptyStateElement extends BaseComponent {
   }
 
   private static readonly icons: Record<string, string> = {
-    folder: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>`,
-    inbox: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>`,
-    file: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>`,
-    search: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>`,
-    chart: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>`,
-    activity: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>`,
+    folder: "folder",
+    inbox: "inbox",
+    file: "file-text",
+    search: "search",
+    chart: "chart-bar",
+    activity: "trending-up",
   };
 
   protected render(): void {
@@ -541,7 +595,7 @@ class EmptyStateElement extends BaseComponent {
     const actionUrl = this.getAttr("action-url");
     const actionLabel = this.getAttr("action-label");
 
-    const iconPath = EmptyStateElement.icons[iconType] ?? EmptyStateElement.icons.folder;
+    const iconName = EmptyStateElement.icons[iconType] ?? EmptyStateElement.icons.folder;
 
     let actionHtml = "";
     if (actionUrl && actionLabel) {
@@ -559,9 +613,7 @@ class EmptyStateElement extends BaseComponent {
 
     this.className = "block bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center";
     this.innerHTML = `
-      <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        ${iconPath}
-      </svg>
+      <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#${iconName}"/></svg>
       <p class="font-medium text-neutral-900 dark:text-white">${title}</p>
       ${descriptionHtml}
       ${actionHtml}
@@ -625,6 +677,7 @@ function registerComponents(): void {
   customElements.define("mm-badge", BadgeElement);
   customElements.define("mm-status-badge", StatusBadgeElement);
   customElements.define("mm-delete-button", DeleteButtonElement);
+  customElements.define("mm-delete-action", DeleteActionElement);
   customElements.define("mm-money", MoneyElement);
   customElements.define("mm-color-dot", ColorDotElement);
   customElements.define("mm-category-badge", CategoryBadgeElement);

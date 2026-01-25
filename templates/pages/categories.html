@@ -59,22 +59,16 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="/categories/export" class="btn btn-secondary flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                </svg>
+                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#download"/></svg>
                 Export
             </a>
             <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                </svg>
+                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#upload"/></svg>
                 Import
             </button>
             <input type="file" id="import-file" accept=".json" class="hidden" onchange="importCategories(this.files[0])" aria-label="Import categories from JSON file">
             <button onclick="window.categoriesPage.openAddModal()" class="btn btn-primary flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
+                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#plus"/></svg>
                 Add Category
             </button>
         </div>
@@ -85,9 +79,7 @@
             {# Tree is built by JavaScript #}
         </div>
         <div id="empty-state" class="px-6 py-12 text-center text-neutral-500 dark:text-neutral-400 hidden">
-            <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-            </svg>
+            <svg class="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#folder"/></svg>
             <p class="font-medium">No categories yet</p>
             <p class="text-sm mt-1">Create one to get started</p>
         </div>
@@ -102,9 +94,7 @@
             <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
                 <h2 id="modal-title" class="section-title">Add Category</h2>
                 <button onclick="window.categoriesPage.closeModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg" aria-label="Close modal">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                    <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#x"/></svg>
                 </button>
             </div>
             <form id="category-form" class="p-6 space-y-4">
