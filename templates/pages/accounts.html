@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="page-title">Accounts</h1>
+            <p class="mt-1 text-muted">Manage your financial accounts</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/accounts/export" class="btn btn-secondary flex items-center gap-2">
+                <span class="material-symbols-outlined w-5" aria-hidden="true">download</span>
+                Export
+            </a>
+            <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
+                <span class="material-symbols-outlined w-5" aria-hidden="true">upload</span>
+                Import
+            </button>
+            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importAccounts(this.files[0])" aria-label="Import accounts from JSON file">
+            <a href="/accounts/new" class="btn btn-primary flex items-center gap-2">
+                <span class="material-symbols-outlined w-5" aria-hidden="true">add</span>
+                Add Account
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        <h2 class="section-title mb-4">All Accounts</h2>
+        {% if accounts.is_empty() %}
+        <p class="text-neutral-500 dark:text-neutral-400">No accounts yet. Click "Add Account" to create one.</p>
+        {% else %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for account in accounts %}
+            <a href="/accounts/{{ account.id }}/edit" class="block group">
+                <div class="bg-neutral-50 dark:bg-neutral-900 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-3">
+                            {% if account.account_type.as_str() == "Cash" %}
+                            <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                <span class="material-symbols-outlined w-5 text-green-600 dark:text-green-400" aria-hidden="true">wallet</span>
+                            </div>
+                            {% else %}
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                <span class="material-symbols-outlined w-5 text-blue-600 dark:text-blue-400" aria-hidden="true">trending_up</span>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h3 class="font-medium text-neutral-900 dark:text-neutral-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">{{ account.name }}</h3>
+                                <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ account.account_type }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">ID: {{ account.id }}</p>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function importAccounts(file) {
+    if (!file) return;
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        const response = await fetch('/accounts/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        alert(result.message);
+        if (result.imported > 0) {
+            location.reload();
+        }
+    } catch (e) {
+        alert('Import failed: ' + e.message);
+    }
+    document.getElementById('import-file').value = '';
+}
+</script>
+{% endblock %}

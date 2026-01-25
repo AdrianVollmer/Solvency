@@ -6,9 +6,9 @@ use serde::Deserialize;
 use tracing::{debug, info, warn};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
-use crate::db::queries::{categories, expenses, settings, tags};
+use crate::db::queries::{accounts, categories, expenses, settings, tags};
 use crate::error::{AppError, AppResult};
-use crate::models::{CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag};
+use crate::models::{Account, AccountType, CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag};
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -109,6 +109,7 @@ pub struct ExpenseNewTemplate {
     pub xsrf_token: String,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
+    pub accounts: Vec<Account>,
 }
 
 #[derive(Template)]
@@ -129,6 +130,7 @@ pub struct ExpenseDetailTemplate {
     pub expense: ExpenseWithRelations,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
+    pub accounts: Vec<Account>,
 }
 
 #[derive(Template)]
@@ -142,6 +144,7 @@ pub struct ExpenseEditTemplate {
     pub expense: ExpenseWithRelations,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
+    pub accounts: Vec<Account>,
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
@@ -243,6 +246,7 @@ pub struct ExpenseFormData {
     pub currency: String,
     pub description: String,
     pub category_id: Option<i64>,
+    pub account_id: Option<i64>,
     pub notes: Option<String>,
     #[serde(default)]
     pub tag_ids: Vec<i64>,
@@ -261,6 +265,7 @@ impl ExpenseFormData {
             currency: self.currency.clone(),
             description: self.description.clone(),
             category_id: self.category_id,
+            account_id: self.account_id,
             notes: self.notes.clone(),
             tag_ids: self.tag_ids.clone(),
             // Extended fields are not editable via the simple form
@@ -380,6 +385,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
+    let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
 
     let template = ExpenseDetailTemplate {
         title: format!("Transaction #{}", id),
@@ -390,6 +396,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
         expense,
         categories: cats,
         tags: tag_list,
+        accounts: cash_accounts,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -401,6 +408,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
     let app_settings = settings::get_settings(&conn)?;
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
+    let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
 
     let template = ExpenseNewTemplate {
         title: "Add Expense".into(),
@@ -410,6 +418,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         xsrf_token: state.xsrf_token.value().to_string(),
         categories: cats,
         tags: tag_list,
+        accounts: cash_accounts,
     };
 
     Ok(Html(template.render().unwrap()))
@@ -428,6 +437,7 @@ pub async fn edit_form(
 
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
+    let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
 
     let template = ExpenseEditTemplate {
         title: "Edit Transaction".into(),
@@ -438,6 +448,7 @@ pub async fn edit_form(
         expense,
         categories: cats,
         tags: tag_list,
+        accounts: cash_accounts,
     };
 
     Ok(Html(template.render().unwrap()))

@@ -22,12 +22,13 @@ pub fn list_expenses(
 ) -> rusqlite::Result<Vec<ExpenseWithRelations>> {
     let mut sql = String::from(
         "SELECT e.id, e.date, e.amount_cents, e.currency, e.description,
-                e.category_id, e.notes, e.created_at, e.updated_at,
+                e.category_id, e.account_id, e.notes, e.created_at, e.updated_at,
                 e.value_date, e.payer, e.payee, e.reference, e.transaction_type,
                 e.counterparty_iban, e.creditor_id, e.mandate_reference, e.customer_reference,
-                c.name as category_name, c.color as category_color
+                c.name as category_name, c.color as category_color, a.name as account_name
          FROM expenses e
          LEFT JOIN categories c ON e.category_id = c.id
+         LEFT JOIN accounts a ON e.account_id = a.id
          WHERE 1=1",
     );
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
@@ -78,21 +79,23 @@ pub fn list_expenses(
                 currency: row.get(3)?,
                 description: row.get(4)?,
                 category_id: row.get(5)?,
-                notes: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-                value_date: row.get(9)?,
-                payer: row.get(10)?,
-                payee: row.get(11)?,
-                reference: row.get(12)?,
-                transaction_type: row.get(13)?,
-                counterparty_iban: row.get(14)?,
-                creditor_id: row.get(15)?,
-                mandate_reference: row.get(16)?,
-                customer_reference: row.get(17)?,
+                account_id: row.get(6)?,
+                notes: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+                value_date: row.get(10)?,
+                payer: row.get(11)?,
+                payee: row.get(12)?,
+                reference: row.get(13)?,
+                transaction_type: row.get(14)?,
+                counterparty_iban: row.get(15)?,
+                creditor_id: row.get(16)?,
+                mandate_reference: row.get(17)?,
+                customer_reference: row.get(18)?,
             },
-            category_name: row.get(18)?,
-            category_color: row.get(19)?,
+            category_name: row.get(19)?,
+            category_color: row.get(20)?,
+            account_name: row.get(21)?,
             tags: Vec::new(),
         })
     })?;
@@ -144,12 +147,13 @@ pub fn get_expense(conn: &Connection, id: i64) -> rusqlite::Result<Option<Expens
     let expense = conn
         .query_row(
             "SELECT e.id, e.date, e.amount_cents, e.currency, e.description,
-                    e.category_id, e.notes, e.created_at, e.updated_at,
+                    e.category_id, e.account_id, e.notes, e.created_at, e.updated_at,
                     e.value_date, e.payer, e.payee, e.reference, e.transaction_type,
                     e.counterparty_iban, e.creditor_id, e.mandate_reference, e.customer_reference,
-                    c.name, c.color
+                    c.name, c.color, a.name
              FROM expenses e
              LEFT JOIN categories c ON e.category_id = c.id
+             LEFT JOIN accounts a ON e.account_id = a.id
              WHERE e.id = ?",
             [id],
             |row| {
@@ -161,21 +165,23 @@ pub fn get_expense(conn: &Connection, id: i64) -> rusqlite::Result<Option<Expens
                         currency: row.get(3)?,
                         description: row.get(4)?,
                         category_id: row.get(5)?,
-                        notes: row.get(6)?,
-                        created_at: row.get(7)?,
-                        updated_at: row.get(8)?,
-                        value_date: row.get(9)?,
-                        payer: row.get(10)?,
-                        payee: row.get(11)?,
-                        reference: row.get(12)?,
-                        transaction_type: row.get(13)?,
-                        counterparty_iban: row.get(14)?,
-                        creditor_id: row.get(15)?,
-                        mandate_reference: row.get(16)?,
-                        customer_reference: row.get(17)?,
+                        account_id: row.get(6)?,
+                        notes: row.get(7)?,
+                        created_at: row.get(8)?,
+                        updated_at: row.get(9)?,
+                        value_date: row.get(10)?,
+                        payer: row.get(11)?,
+                        payee: row.get(12)?,
+                        reference: row.get(13)?,
+                        transaction_type: row.get(14)?,
+                        counterparty_iban: row.get(15)?,
+                        creditor_id: row.get(16)?,
+                        mandate_reference: row.get(17)?,
+                        customer_reference: row.get(18)?,
                     },
-                    category_name: row.get(18)?,
-                    category_color: row.get(19)?,
+                    category_name: row.get(19)?,
+                    category_color: row.get(20)?,
+                    account_name: row.get(21)?,
                     tags: Vec::new(),
                 })
             },
@@ -192,16 +198,17 @@ pub fn get_expense(conn: &Connection, id: i64) -> rusqlite::Result<Option<Expens
 
 pub fn create_expense(conn: &Connection, expense: &NewExpense) -> rusqlite::Result<i64> {
     conn.execute(
-        "INSERT INTO expenses (date, amount_cents, currency, description, category_id, notes,
+        "INSERT INTO expenses (date, amount_cents, currency, description, category_id, account_id, notes,
          value_date, payer, payee, reference, transaction_type, counterparty_iban,
          creditor_id, mandate_reference, customer_reference)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         params![
             expense.date,
             expense.amount_cents,
             expense.currency,
             expense.description,
             expense.category_id,
+            expense.account_id,
             expense.notes,
             expense.value_date,
             expense.payer,
@@ -235,7 +242,7 @@ pub fn create_expense(conn: &Connection, expense: &NewExpense) -> rusqlite::Resu
 pub fn update_expense(conn: &Connection, id: i64, expense: &NewExpense) -> rusqlite::Result<()> {
     conn.execute(
         "UPDATE expenses SET date = ?, amount_cents = ?, currency = ?,
-         description = ?, category_id = ?, notes = ?,
+         description = ?, category_id = ?, account_id = ?, notes = ?,
          value_date = ?, payer = ?, payee = ?, reference = ?, transaction_type = ?,
          counterparty_iban = ?, creditor_id = ?, mandate_reference = ?, customer_reference = ?,
          updated_at = datetime('now')
@@ -246,6 +253,7 @@ pub fn update_expense(conn: &Connection, id: i64, expense: &NewExpense) -> rusql
             expense.currency,
             expense.description,
             expense.category_id,
+            expense.account_id,
             expense.notes,
             expense.value_date,
             expense.payer,

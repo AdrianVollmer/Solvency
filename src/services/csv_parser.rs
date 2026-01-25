@@ -9,6 +9,7 @@ pub struct ParsedExpense {
     pub currency: String,
     pub description: String,
     pub category: Option<String>,
+    pub account_id: Option<i64>,
     pub tags: Vec<String>,
     pub notes: Option<String>,
     pub value_date: Option<String>,
@@ -69,6 +70,7 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
     // Optional columns
     let currency_col = find_column(&headers, "currency");
     let category_col = find_column(&headers, "category");
+    let account_id_col = find_column(&headers, "account_id");
     let tags_col = find_column(&headers, "tags");
     let notes_col = find_column(&headers, "notes");
     let value_date_col = find_column(&headers, "value_date");
@@ -128,6 +130,12 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
 
+        let account_id = account_id_col
+            .and_then(|col| record.get(col))
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .and_then(|s| s.parse::<i64>().ok());
+
         let tags: Vec<String> = tags_col
             .and_then(|col| record.get(col))
             .map(|s| {
@@ -155,6 +163,7 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
             currency,
             description,
             category,
+            account_id,
             tags,
             notes,
             value_date,

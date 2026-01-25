@@ -9,7 +9,7 @@
         {# Parsing Progress #}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
-                <svg class="w-16 h-16 mx-auto text-primary-600 animate-spin lucide-icon mb-4"><use href="#loader-2"></use></svg>
+                <span class="material-symbols-outlined w-16 mx-auto text-primary-600 animate-spin mb-4" aria-hidden="true">progress_activity</span>
                 <h2 class="text-xl font-semibold mb-2">Parsing CSV files...</h2>
                 <p class="text-gray-600 dark:text-gray-400 mb-6">Please wait while we process your files.</p>
 
@@ -61,7 +61,7 @@
 
             <div id="preview-table" hx-get="/import/{{ session.id }}/rows" hx-trigger="load" hx-swap="innerHTML">
                 <div class="p-8 text-center text-gray-500">
-                    <svg class="w-8 h-8 mx-auto animate-spin lucide-icon"><use href="#loader-2"></use></svg>
+                    <span class="material-symbols-outlined w-8 mx-auto animate-spin" aria-hidden="true">progress_activity</span>
                     <p class="mt-2">Loading preview...</p>
                 </div>
             </div>
@@ -94,7 +94,7 @@
         {# Importing Progress #}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
-                <svg class="w-16 h-16 mx-auto text-primary-600 animate-spin lucide-icon mb-4"><use href="#loader-2"></use></svg>
+                <span class="material-symbols-outlined w-16 mx-auto text-primary-600 animate-spin mb-4" aria-hidden="true">progress_activity</span>
                 <h2 class="text-xl font-semibold mb-2">Importing expenses...</h2>
                 <p class="text-gray-600 dark:text-gray-400 mb-6">Please wait while we save your expenses.</p>
 
@@ -121,7 +121,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
                 <div class="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
-                    <svg class="w-8 h-8 text-green-600 dark:text-green-400 lucide-icon"><use href="#check"></use></svg>
+                    <span class="material-symbols-outlined w-8 text-green-600 dark:text-green-400" aria-hidden="true">check</span>
                 </div>
                 <h2 class="text-xl font-semibold mb-2">Import Complete!</h2>
                 {% let success_count = session.processed_rows - session.error_count %}
@@ -159,7 +159,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
                 <div class="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
-                    <svg class="w-8 h-8 text-red-600 dark:text-red-400 lucide-icon"><use href="#x"></use></svg>
+                    <span class="material-symbols-outlined w-8 text-red-600 dark:text-red-400" aria-hidden="true">close</span>
                 </div>
                 <h2 class="text-xl font-semibold mb-2">Import Failed</h2>
                 <p class="text-gray-600 dark:text-gray-400 mb-6">

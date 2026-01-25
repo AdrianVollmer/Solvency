@@ -5,14 +5,14 @@
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
             <a href="/expenses" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300">
-                <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#arrow-left"/></svg>
+                <span class="material-symbols-outlined w-5" aria-hidden="true">arrow_back</span>
             </a>
             <h1 class="text-2xl font-bold">Transaction Details</h1>
         </div>
         <div class="flex gap-2">
             <a href="/expenses/{{ expense.id }}/edit"
                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors inline-flex items-center gap-2">
-                <svg class="w-4 h-4 lucide-icon text-gray-700 dark:text-gray-300" viewBox="0 0 24 24"><use href="#pencil"/></svg>
+                <span class="material-symbols-outlined w-4" aria-hidden="true">edit</span>
                 Edit
             </a>
             <mm-delete-action

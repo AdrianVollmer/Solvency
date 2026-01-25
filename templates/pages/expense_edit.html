@@ -4,7 +4,7 @@
 <div class="space-y-6 max-w-2xl mx-auto">
     <div class="flex items-center gap-4">
         <a href="/expenses/{{ expense.id }}" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300">
-            <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#arrow-left"/></svg>
+            <span class="material-symbols-outlined w-5" aria-hidden="true">arrow_back</span>
         </a>
         <h1 class="text-2xl font-bold">Edit Transaction</h1>
     </div>
@@ -49,6 +49,20 @@
                     </select>
                 </div>
             </div>
+
+            {% if !accounts.is_empty() %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account (optional)</label>
+                <select name="account_id" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
+                    <option value="">No Account</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}" {% if expense.matches_account(account.id) %}selected{% endif %}>
+                        {{ account.name }} (ID: {{ account.id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>

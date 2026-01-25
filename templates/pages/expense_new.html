@@ -4,9 +4,7 @@
 <div class="space-y-6 max-w-2xl mx-auto">
     <div class="flex items-center gap-4">
         <a href="/expenses" class="p-2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Back to expenses">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
+            <span class="material-symbols-outlined w-5" aria-hidden="true">arrow_back</span>
         </a>
         <div>
             <h1 class="page-title">Add Expense</h1>
@@ -52,6 +50,18 @@
                     </select>
                 </div>
             </div>
+
+            {% if !accounts.is_empty() %}
+            <div>
+                <label for="new-account" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Account (optional)</label>
+                <select id="new-account" name="account_id" class="input w-full">
+                    <option value="">No Account</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}">{{ account.name }} (ID: {{ account.id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
 
             <div>
                 <label for="new-description" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description</label>

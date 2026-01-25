@@ -247,6 +247,7 @@ pub struct TradingActivityFormData {
     pub unit_price: Option<String>,
     pub currency: String,
     pub fee: Option<String>,
+    pub account_id: Option<i64>,
     pub notes: Option<String>,
 }
 
@@ -298,6 +299,7 @@ impl TradingActivityFormData {
             unit_price_cents,
             currency: self.currency.clone(),
             fee_cents,
+            account_id: self.account_id,
             notes: self.notes.clone().filter(|s| !s.is_empty()),
         })
     }

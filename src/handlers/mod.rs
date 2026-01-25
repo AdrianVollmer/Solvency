@@ -1,3 +1,4 @@
+pub mod accounts;
 pub mod analytics;
 pub mod api;
 pub mod api_logs;
@@ -43,6 +44,15 @@ pub fn routes() -> Router<AppState> {
         .route("/categories/import", post(categories::import))
         .route("/categories/:id", put(categories::update))
         .route("/categories/:id", delete(categories::delete))
+        // Account management
+        .route("/accounts", get(accounts::index))
+        .route("/accounts/new", get(accounts::new_form))
+        .route("/accounts/create", post(accounts::create))
+        .route("/accounts/export", get(accounts::export))
+        .route("/accounts/import", post(accounts::import))
+        .route("/accounts/:id/edit", get(accounts::edit_form))
+        .route("/accounts/:id/update", post(accounts::update))
+        .route("/accounts/:id", delete(accounts::delete))
         // Tag management
         .route("/tags", get(tags::index))
         .route("/tags/new", get(tags::new_form))

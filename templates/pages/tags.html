@@ -9,22 +9,16 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="/tags/export" class="btn btn-secondary flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                </svg>
+                <span class="material-symbols-outlined w-5" aria-hidden="true">download</span>
                 Export
             </a>
             <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                </svg>
+                <span class="material-symbols-outlined w-5" aria-hidden="true">upload</span>
                 Import
             </button>
             <input type="file" id="import-file" accept=".json" class="hidden" onchange="importTags(this.files[0])" aria-label="Import tags from JSON file">
             <a href="/tags/new" class="btn btn-primary flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
+                <span class="material-symbols-outlined w-5" aria-hidden="true">add</span>
                 Add Tag
             </a>
         </div>

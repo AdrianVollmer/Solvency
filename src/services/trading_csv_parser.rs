@@ -11,6 +11,7 @@ pub struct ParsedTradingActivity {
     pub unit_price: Option<String>,
     pub currency: String,
     pub fee: Option<String>,
+    pub account_id: Option<i64>,
     pub row_number: usize,
 }
 
@@ -69,6 +70,7 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
         .or_else(|| find_column(&headers, "price"));
     let currency_col = find_column(&headers, "currency");
     let fee_col = find_column(&headers, "fee");
+    let account_id_col = find_column(&headers, "account_id");
 
     let date_col =
         date_col.ok_or_else(|| AppError::CsvParse("No date column found in CSV".into()))?;
@@ -167,6 +169,12 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
             .filter(|s| !s.is_empty())
             .unwrap_or_else(|| "USD".to_string());
 
+        let account_id = account_id_col
+            .and_then(|col| record.get(col))
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .and_then(|s| s.parse::<i64>().ok());
+
         activities.push(ParsedTradingActivity {
             date,
             symbol,
@@ -175,6 +183,7 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
             unit_price,
             currency,
             fee,
+            account_id,
             row_number,
         });
     }

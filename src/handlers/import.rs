@@ -490,6 +490,7 @@ async fn import_rows_background(state: AppState, session_id: String) {
             currency: row.data.currency.clone(),
             description: row.data.description.clone(),
             category_id: row.category_id,
+            account_id: row.data.account_id,
             notes: row.data.notes.clone(),
             tag_ids,
             value_date: row.data.value_date.clone(),

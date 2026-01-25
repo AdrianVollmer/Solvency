@@ -31,7 +31,7 @@ pub fn list_activities(
 ) -> rusqlite::Result<Vec<TradingActivity>> {
     let mut sql = String::from(
         "SELECT id, date, symbol, quantity, activity_type, unit_price_cents,
-                currency, fee_cents, notes, created_at, updated_at
+                currency, fee_cents, account_id, notes, created_at, updated_at
          FROM trading_activities
          WHERE 1=1",
     );
@@ -84,9 +84,10 @@ pub fn list_activities(
                 unit_price_cents: row.get(5)?,
                 currency: row.get(6)?,
                 fee_cents: row.get(7)?,
-                notes: row.get(8)?,
-                created_at: row.get(9)?,
-                updated_at: row.get(10)?,
+                account_id: row.get(8)?,
+                notes: row.get(9)?,
+                created_at: row.get(10)?,
+                updated_at: row.get(11)?,
             })
         })?
         .filter_map(|a| a.ok())
@@ -126,7 +127,7 @@ pub fn count_activities(
 pub fn get_activity(conn: &Connection, id: i64) -> rusqlite::Result<Option<TradingActivity>> {
     conn.query_row(
         "SELECT id, date, symbol, quantity, activity_type, unit_price_cents,
-                currency, fee_cents, notes, created_at, updated_at
+                currency, fee_cents, account_id, notes, created_at, updated_at
          FROM trading_activities WHERE id = ?",
         [id],
         |row| {
@@ -142,9 +143,10 @@ pub fn get_activity(conn: &Connection, id: i64) -> rusqlite::Result<Option<Tradi
                 unit_price_cents: row.get(5)?,
                 currency: row.get(6)?,
                 fee_cents: row.get(7)?,
-                notes: row.get(8)?,
-                created_at: row.get(9)?,
-                updated_at: row.get(10)?,
+                account_id: row.get(8)?,
+                notes: row.get(9)?,
+                created_at: row.get(10)?,
+                updated_at: row.get(11)?,
             })
         },
     )
@@ -153,8 +155,8 @@ pub fn get_activity(conn: &Connection, id: i64) -> rusqlite::Result<Option<Tradi
 
 pub fn create_activity(conn: &Connection, activity: &NewTradingActivity) -> rusqlite::Result<i64> {
     conn.execute(
-        "INSERT INTO trading_activities (date, symbol, quantity, activity_type, unit_price_cents, currency, fee_cents, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO trading_activities (date, symbol, quantity, activity_type, unit_price_cents, currency, fee_cents, account_id, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         params![
             activity.date,
             activity.symbol,
@@ -163,6 +165,7 @@ pub fn create_activity(conn: &Connection, activity: &NewTradingActivity) -> rusq
             activity.unit_price_cents,
             activity.currency,
             activity.fee_cents,
+            activity.account_id,
             activity.notes,
         ],
     )?;
@@ -183,7 +186,7 @@ pub fn update_activity(
 ) -> rusqlite::Result<()> {
     conn.execute(
         "UPDATE trading_activities SET date = ?, symbol = ?, quantity = ?, activity_type = ?,
-         unit_price_cents = ?, currency = ?, fee_cents = ?, notes = ?, updated_at = datetime('now')
+         unit_price_cents = ?, currency = ?, fee_cents = ?, account_id = ?, notes = ?, updated_at = datetime('now')
          WHERE id = ?",
         params![
             activity.date,
@@ -193,6 +196,7 @@ pub fn update_activity(
             activity.unit_price_cents,
             activity.currency,
             activity.fee_cents,
+            activity.account_id,
             activity.notes,
             id,
         ],
@@ -519,7 +523,7 @@ pub fn get_activities_for_symbol(
 ) -> rusqlite::Result<Vec<TradingActivity>> {
     let mut stmt = conn.prepare(
         "SELECT id, date, symbol, quantity, activity_type, unit_price_cents,
-                currency, fee_cents, notes, created_at, updated_at
+                currency, fee_cents, account_id, notes, created_at, updated_at
          FROM trading_activities
          WHERE symbol = ?
          ORDER BY date ASC, id ASC",
@@ -539,9 +543,10 @@ pub fn get_activities_for_symbol(
                 unit_price_cents: row.get(5)?,
                 currency: row.get(6)?,
                 fee_cents: row.get(7)?,
-                notes: row.get(8)?,
-                created_at: row.get(9)?,
-                updated_at: row.get(10)?,
+                account_id: row.get(8)?,
+                notes: row.get(9)?,
+                created_at: row.get(10)?,
+                updated_at: row.get(11)?,
             })
         })?
         .filter_map(|a| a.ok())
@@ -715,6 +720,7 @@ pub fn get_import_rows_paginated(
                     unit_price: None,
                     currency: "USD".to_string(),
                     fee: None,
+                    account_id: None,
                     row_number: 0,
                 });
 
@@ -764,6 +770,7 @@ pub fn get_pending_import_rows(
                     unit_price: None,
                     currency: "USD".to_string(),
                     fee: None,
+                    account_id: None,
                     row_number: 0,
                 });
 

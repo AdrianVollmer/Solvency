@@ -10,9 +10,7 @@
     {# Header #}
     <div class="flex items-center gap-4">
         <a href="/trading/market-data" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
+            <span class="material-symbols-outlined w-5" aria-hidden="true">arrow_back</span>
         </a>
         <div class="flex-1">
             <div class="flex items-center gap-3">
@@ -22,9 +20,7 @@
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">{{ qt }}</span>
                 {% when None %}{% endmatch %}
                 <a href="https://finance.yahoo.com/quote/{{ symbol }}/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" title="View on Yahoo Finance">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                    </svg>
+                    <span class="material-symbols-outlined w-4" aria-hidden="true">open_in_new</span>
                 </a>
             </div>
             {% match symbol_info.display_name() %}

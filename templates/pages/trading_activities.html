@@ -13,9 +13,7 @@
                 label="Delete All"
                 reload></mm-delete-action>
             <a href="/trading/activities/new" class="btn btn-primary inline-flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
+                <span class="material-symbols-outlined w-5" aria-hidden="true">add</span>
                 Add Activity
             </a>
         </div>
@@ -29,16 +27,12 @@
                 <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
                     class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
                     aria-label="Previous period">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
+                    <span class="material-symbols-outlined w-4" aria-hidden="true">chevron_left</span>
                 </a>
                 <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}from_date={{ date_range.next().from_str() }}&to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
                     class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
                     aria-label="Next period">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
+                    <span class="material-symbols-outlined w-4" aria-hidden="true">chevron_right</span>
                 </a>
 
                 <div class="flex flex-wrap gap-1.5 ml-2">

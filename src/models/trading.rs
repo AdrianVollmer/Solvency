@@ -140,6 +140,7 @@ pub struct TradingActivity {
     pub unit_price_cents: Option<i64>,
     pub currency: String,
     pub fee_cents: i64,
+    pub account_id: Option<i64>,
     pub notes: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -214,6 +215,7 @@ pub struct NewTradingActivity {
     pub unit_price_cents: Option<i64>,
     pub currency: String,
     pub fee_cents: i64,
+    pub account_id: Option<i64>,
     pub notes: Option<String>,
 }
 

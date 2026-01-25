@@ -465,6 +465,7 @@ async fn import_rows_background(state: AppState, session_id: String) {
             unit_price_cents,
             currency: row.data.currency.clone(),
             fee_cents,
+            account_id: row.data.account_id,
             notes: None,
         };
 

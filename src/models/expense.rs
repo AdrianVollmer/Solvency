@@ -10,6 +10,7 @@ pub struct Expense {
     pub currency: String,
     pub description: String,
     pub category_id: Option<i64>,
+    pub account_id: Option<i64>,
     pub notes: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -67,6 +68,7 @@ pub struct ExpenseWithRelations {
     pub expense: Expense,
     pub category_name: Option<String>,
     pub category_color: Option<String>,
+    pub account_name: Option<String>,
     pub tags: Vec<Tag>,
 }
 
@@ -114,6 +116,10 @@ impl ExpenseWithRelations {
         self.category_id == Some(*id)
     }
 
+    pub fn matches_account(&self, id: &i64) -> bool {
+        self.account_id == Some(*id)
+    }
+
     pub fn has_tag(&self, id: &i64) -> bool {
         self.tags.iter().any(|t| t.id == *id)
     }
@@ -126,6 +132,7 @@ pub struct NewExpense {
     pub currency: String,
     pub description: String,
     pub category_id: Option<i64>,
+    pub account_id: Option<i64>,
     pub notes: Option<String>,
     #[serde(default)]
     pub tag_ids: Vec<i64>,
