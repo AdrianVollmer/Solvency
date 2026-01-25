@@ -18,7 +18,7 @@
     </mm-empty-state>
     {% else %}
 
-    <!-- Cash Positions -->
+    {# Cash Positions #}
     {% if !cash_positions.is_empty() %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
@@ -49,7 +49,7 @@
     </div>
     {% endif %}
 
-    <!-- Security Positions -->
+    {# Security Positions #}
     {% if !security_positions.is_empty() %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">

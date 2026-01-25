@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Header -->
+    {# Header #}
     <div class="flex items-center gap-4">
         <a href="/trading/market-data" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    <!-- Stats -->
+    {# Stats #}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Latest Price</p>
@@ -71,7 +71,7 @@
         </div>
     </div>
 
-    <!-- Price Chart -->
+    {# Price Chart #}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
         <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Price History</h2>
         {% if data_points.is_empty() %}
@@ -88,7 +88,7 @@
         {% endif %}
     </div>
 
-    <!-- Missing Data Ranges -->
+    {# Missing Data Ranges #}
     {% if !missing_ranges.is_empty() %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
@@ -129,7 +129,7 @@
     </div>
     {% endif %}
 
-    <!-- Coverage Details -->
+    {# Coverage Details #}
     {% match coverage %}
     {% when Some with (cov) %}
     <div class="bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">

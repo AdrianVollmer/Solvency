@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Header -->
+    {# Header #}
     <div class="flex items-center gap-4">
         <a href="/trading/positions" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    {# Stats Cards #}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {% match position %}
         {% when Some with (pos) %}
@@ -63,7 +63,7 @@
         {% endmatch %}
     </div>
 
-    <!-- Additional Stats Row -->
+    {# Additional Stats Row #}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {% match position %}
         {% when Some with (pos) %}
@@ -89,14 +89,14 @@
         <mm-stat-card label="Realized Gain/Loss" value="{{ realized_gain_loss_formatted }}"></mm-stat-card>
     </div>
 
-    <!-- Fees, Taxes & Dividends Row -->
+    {# Fees, Taxes & Dividends Row #}
     <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
         <mm-stat-card label="Total Fees" value="{{ total_fees_formatted }}"></mm-stat-card>
         <mm-stat-card label="Total Taxes" value="{{ total_taxes_formatted }}"></mm-stat-card>
         <mm-stat-card label="Total Dividends" value="{{ total_dividends_formatted }}" trend="up"></mm-stat-card>
     </div>
 
-    <!-- Price Chart -->
+    {# Price Chart #}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
         <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Price History</h2>
         <div id="position-chart" class="h-80" data-symbol="{{ symbol }}" role="img" aria-label="Price chart for {{ symbol }} with buy/sell markers"></div>
@@ -106,7 +106,7 @@
         </p>
     </div>
 
-    <!-- Recent Activities -->
+    {# Recent Activities #}
     {% if !activities.is_empty() %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">

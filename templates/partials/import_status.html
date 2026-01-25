@@ -6,7 +6,7 @@
      {% endif %}>
 {% match session.status %}
     {% when crate::models::ImportStatus::Parsing %}
-        <!-- Parsing Progress -->
+        {# Parsing Progress #}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
                 <svg class="w-16 h-16 mx-auto text-primary-600 animate-spin lucide-icon mb-4"><use href="#loader-2"></use></svg>
@@ -29,7 +29,7 @@
         </div>
 
     {% when crate::models::ImportStatus::Preview %}
-        <!-- Preview Table -->
+        {# Preview Table #}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between flex-wrap gap-4">
@@ -91,7 +91,7 @@
         {% endif %}
 
     {% when crate::models::ImportStatus::Importing %}
-        <!-- Importing Progress -->
+        {# Importing Progress #}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
                 <svg class="w-16 h-16 mx-auto text-primary-600 animate-spin lucide-icon mb-4"><use href="#loader-2"></use></svg>
@@ -117,7 +117,7 @@
         </div>
 
     {% when crate::models::ImportStatus::Completed %}
-        <!-- Import Complete -->
+        {# Import Complete #}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
                 <div class="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
@@ -155,7 +155,7 @@
         {% endif %}
 
     {% when crate::models::ImportStatus::Failed %}
-        <!-- Import Failed -->
+        {# Import Failed #}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
                 <div class="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">

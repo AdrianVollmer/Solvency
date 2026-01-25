@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    <!-- Main Info Card -->
+    {# Main Info Card #}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div class="p-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-start justify-between">
@@ -50,7 +50,7 @@
         </div>
 
         <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Left Column -->
+            {# Left Column #}
             <div class="space-y-4">
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
@@ -95,7 +95,7 @@
                 {% endif %}
             </div>
 
-            <!-- Right Column -->
+            {# Right Column #}
             <div class="space-y-4">
                 {% match expense.payer %}
                 {% when Some with (p) %}
@@ -136,7 +136,7 @@
         </div>
     </div>
 
-    <!-- Reference/Purpose Section -->
+    {# Reference/Purpose Section #}
     {% match expense.reference %}
     {% when Some with (ref) %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -146,7 +146,7 @@
     {% when None %}
     {% endmatch %}
 
-    <!-- SEPA Details Section -->
+    {# SEPA Details Section #}
     {% if expense.creditor_id.is_some() || expense.mandate_reference.is_some() || expense.customer_reference.is_some() %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">SEPA Details</h3>
@@ -181,7 +181,7 @@
     </div>
     {% endif %}
 
-    <!-- Metadata Section -->
+    {# Metadata Section #}
     <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-6">
         <span>Created: {{ expense.created_at }}</span>
         <span>Updated: {{ expense.updated_at }}</span>

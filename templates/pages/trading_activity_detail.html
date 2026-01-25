@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    <!-- Main Info Card -->
+    {# Main Info Card #}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div class="p-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-start justify-between">
@@ -60,7 +60,7 @@
         </div>
 
         <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Left Column -->
+            {# Left Column #}
             <div class="space-y-4">
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
@@ -85,7 +85,7 @@
                 {% endif %}
             </div>
 
-            <!-- Right Column -->
+            {# Right Column #}
             <div class="space-y-4">
                 {% match activity.unit_price_cents %}
                 {% when Some with (cents) %}
@@ -120,7 +120,7 @@
         </div>
     </div>
 
-    <!-- Notes Section -->
+    {# Notes Section #}
     {% match activity.notes %}
     {% when Some with (notes) %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -130,7 +130,7 @@
     {% when None %}
     {% endmatch %}
 
-    <!-- Metadata Section -->
+    {# Metadata Section #}
     <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-6">
         <span>Created: {{ activity.created_at }}</span>
         <span>Updated: {{ activity.updated_at }}</span>

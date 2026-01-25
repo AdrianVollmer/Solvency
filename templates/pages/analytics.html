@@ -12,7 +12,7 @@
         <p class="mt-1 text-muted">Visualize your spending patterns</p>
     </div>
 
-    <!-- Date filters -->
+    {# Date filters #}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
         <div class="flex flex-wrap items-center gap-2">
             <a href="/analytics?from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
@@ -57,7 +57,7 @@
         <input type="hidden" id="to_date" value="{{ date_range.to_str() }}">
     </div>
 
-    <!-- Charts -->
+    {# Charts #}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
             <h2 class="section-title mb-4">Spending by Category</h2>

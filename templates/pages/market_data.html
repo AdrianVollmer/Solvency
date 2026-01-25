@@ -45,7 +45,7 @@
         </div>
     </div>
 
-    <!-- Summary Stats -->
+    {# Summary Stats #}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Total Data Points</p>
@@ -67,7 +67,7 @@
     </div>
     {% endif %}
 
-    <!-- Coverage Table -->
+    {# Coverage Table #}
     {% if coverage.is_empty() %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
         <p class="text-neutral-500 dark:text-neutral-400">No positions to track. Add trading activities to see market data coverage.</p>
@@ -149,7 +149,7 @@
     </div>
     {% endif %}
 
-    <!-- Help Text -->
+    {# Help Text #}
     <div class="bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
         <h3 class="text-sm font-medium text-neutral-900 dark:text-white mb-2">About Market Data</h3>
         <ul class="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 list-disc list-inside">

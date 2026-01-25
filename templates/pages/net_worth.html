@@ -22,7 +22,7 @@
     </div>
     {% else %}
 
-    <!-- Hero Net Worth Display -->
+    {# Hero Net Worth Display #}
     <div class="py-8 md:py-12">
         <p class="text-xs uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500 font-medium mb-3">Current Net Worth</p>
         <div class="net-worth-hero {% if current_net_worth_cents >= 0 %}net-worth-positive{% else %}net-worth-negative{% endif %}">
@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <!-- Chart -->
+    {# Chart #}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="p-4">
             <div id="net-worth-chart" style="height: 500px;" data-currency="{{ settings.currency }}" data-locale="{{ settings.locale }}"></div>
@@ -49,7 +49,7 @@
         </div>
     </div>
 
-    <!-- Top Expenses (shown when shift+dragging on chart) -->
+    {# Top Expenses (shown when shift+dragging on chart) #}
     <div id="top-expenses-container" class="hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
             <div>
@@ -78,7 +78,7 @@
         </div>
     </div>
 
-    <!-- Stats -->
+    {# Stats #}
     <div class="flex flex-wrap gap-x-8 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
         <span>High <span class="font-medium text-neutral-900 dark:text-white tabular-nums">{{ highest_net_worth_formatted }}</span></span>
         <span>Low <span class="font-medium text-neutral-900 dark:text-white tabular-nums">{{ lowest_net_worth_formatted }}</span></span>
