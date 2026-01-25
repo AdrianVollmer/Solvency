@@ -405,6 +405,7 @@ pub struct PositionDetailTemplate {
     pub symbol_info: SymbolInfo,
     pub position: Option<PositionWithMarketData>,
     pub activities: Vec<TradingActivity>,
+    pub total_activity_count: usize,
     pub xirr: Option<f64>,
     pub xirr_formatted: Option<String>,
     pub latest_price: Option<MarketData>,
@@ -461,18 +462,29 @@ pub async fn detail(
     });
 
     // Get activities for this symbol
-    let activities = trading::get_activities_for_symbol(&conn, &symbol)?;
+    let all_activities = trading::get_activities_for_symbol(&conn, &symbol)?;
+    let total_activity_count = all_activities.len();
 
     // Get latest price
     let latest_price = market_data::get_latest_price(&conn, &symbol)?;
 
     // Calculate XIRR
-    let xirr = calculate_position_xirr(&activities, &position, &latest_price);
+    let xirr = calculate_position_xirr(&all_activities, &position, &latest_price);
     let xirr_formatted = xirr.map(|x| filters::format_percent(x * 100.0, &app_settings.locale));
 
     // Calculate total fees, taxes, dividends, and realized gain/loss
     let (total_fees_cents, total_taxes_cents, total_dividends_cents, realized_gain_loss_cents) =
-        calculate_position_totals(&activities);
+        calculate_position_totals(&all_activities);
+
+    // Keep only last 10 activities for display (most recent, since sorted by date ASC)
+    let activities: Vec<TradingActivity> = all_activities
+        .into_iter()
+        .rev()
+        .take(10)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
 
     let currency = position
         .as_ref()
@@ -512,6 +524,7 @@ pub async fn detail(
         symbol_info,
         position,
         activities,
+        total_activity_count,
         xirr,
         xirr_formatted,
         latest_price,
