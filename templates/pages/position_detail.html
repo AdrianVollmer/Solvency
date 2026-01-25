@@ -49,13 +49,13 @@
     {# Hero: Unrealized Gain/Loss #}
     <div class="py-4">
         <p class="text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500">Unrealized Gain/Loss</p>
-        {% match pos.gain_loss_formatted() %}
-        {% when Some with (formatted) %}
+        {% match pos.gain_loss_cents %}
+        {% when Some with (cents) %}
         <div class="flex items-baseline gap-3">
-            <span class="text-4xl font-bold tabular-nums {{ pos.gain_loss_color() }}">{{ formatted }}</span>
-            {% match pos.gain_loss_percent_display() %}
+            <span class="text-4xl font-bold tabular-nums {{ pos.gain_loss_color() }}">{{ settings.format_money_plain_with_currency(cents, pos.position.currency) }}</span>
+            {% match pos.gain_loss_percent %}
             {% when Some with (pct) %}
-            <span class="text-lg {{ pos.gain_loss_color() }}">{{ pct }}</span>
+            <span class="text-lg {{ pos.gain_loss_color() }}">{{ settings.format_percent(pct) }}</span>
             {% when None %}{% endmatch %}
         </div>
         {% when None %}

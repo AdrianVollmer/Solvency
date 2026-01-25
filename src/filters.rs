@@ -80,11 +80,11 @@ pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String 
     format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
 }
 
-/// Format a percentage value with locale-aware decimal separator.
+/// Format a percentage value with locale-aware decimal and thousands separators.
 /// Shows sign (+/-) and two decimal places.
-/// Example: 12.345 -> "+12.35%" (en-US) or "+12,35%" (de-DE)
+/// Example: 1234.56 -> "+1,234.56%" (en-US) or "+1.234,56%" (de-DE)
 pub fn format_percent(value: f64, locale: &str) -> String {
-    let (_, decimal_sep) = locale_separators(locale);
+    let (thousands_sep, decimal_sep) = locale_separators(locale);
     let sign = if value > 0.0 {
         "+"
     } else if value < 0.0 {
@@ -95,11 +95,12 @@ pub fn format_percent(value: f64, locale: &str) -> String {
     let abs_value = value.abs();
     let whole = abs_value.trunc() as i64;
     let fractional = ((abs_value.fract() * 100.0).round() as i64).abs();
+    let whole_str = format_with_thousands(whole, thousands_sep);
 
     format!(
         "{}{}{}{}%",
         sign,
-        whole,
+        whole_str,
         decimal_sep,
         format_args!("{:02}", fractional)
     )
@@ -297,5 +298,17 @@ mod tests {
     fn test_percent_de_locale() {
         let result = format_percent(12.34, "de-DE");
         assert_eq!(result, "+12,34%");
+    }
+
+    #[test]
+    fn test_percent_thousands_separator_en() {
+        let result = format_percent(1234.56, "en-US");
+        assert_eq!(result, "+1,234.56%");
+    }
+
+    #[test]
+    fn test_percent_thousands_separator_de() {
+        let result = format_percent(1234.56, "de-DE");
+        assert_eq!(result, "+1.234,56%");
     }
 }
