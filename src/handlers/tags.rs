@@ -37,6 +37,7 @@ pub struct TagFormTemplate {
 #[derive(Template)]
 #[template(path = "components/tag_badge.html")]
 pub struct TagBadgeTemplate {
+    pub icons: crate::filters::Icons,
     pub tag: Tag,
 }
 

@@ -27,6 +27,7 @@ pub struct CategoriesTemplate {
 #[derive(Template)]
 #[template(path = "components/category_row.html")]
 pub struct CategoryRowTemplate {
+    pub icons: crate::filters::Icons,
     pub category: CategoryWithPath,
 }
 
@@ -77,6 +78,7 @@ pub async fn create(
         .ok_or_else(|| AppError::Internal("Failed to retrieve created category".into()))?;
 
     let template = CategoryRowTemplate {
+        icons: crate::filters::Icons,
         category: CategoryWithPath {
             category: cat,
             path: new_category.name,
@@ -111,6 +113,7 @@ pub async fn update(
         .ok_or_else(|| AppError::NotFound(format!("Category {} not found", id)))?;
 
     let template = CategoryRowTemplate {
+        icons: crate::filters::Icons,
         category: CategoryWithPath {
             category: cat,
             path: new_category.name,

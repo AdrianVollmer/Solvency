@@ -42,6 +42,7 @@ pub struct RuleFormTemplate {
 #[derive(Template)]
 #[template(path = "components/rule_row.html")]
 pub struct RuleRowTemplate {
+    pub icons: crate::filters::Icons,
     pub rule: Rule,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
@@ -146,6 +147,7 @@ pub async fn update(
     let tag_list = tags::list_tags(&conn)?;
 
     let template = RuleRowTemplate {
+        icons: crate::filters::Icons,
         rule,
         categories: category_list,
         tags: tag_list,
