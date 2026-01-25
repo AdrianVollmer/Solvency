@@ -62,12 +62,12 @@ async function importRules(file) {
             body: JSON.stringify(data)
         });
         const result = await response.json();
-        alert(result.message);
+        showToast(result.message, { type: result.imported > 0 ? 'success' : 'info' });
         if (result.imported > 0) {
             location.reload();
         }
     } catch (e) {
-        alert('Import failed: ' + e.message);
+        showToast('Import failed: ' + e.message, { type: 'error' });
     }
     document.getElementById('import-file').value = '';
 }
