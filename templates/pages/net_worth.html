@@ -23,16 +23,26 @@
     {% else %}
 
     {# Hero Net Worth Display #}
-    <div class="py-8 md:py-12">
-        <p class="text-xs uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500 font-medium mb-3">Current Net Worth</p>
-        <div class="net-worth-hero {% if current_net_worth_cents >= 0 %}net-worth-positive{% else %}net-worth-negative{% endif %}">
-            {{ current_net_worth_formatted }}
+    <div class="flex flex-col md:flex-row md:items-end gap-6 md:gap-12">
+        <div>
+            <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Current Net Worth</p>
+            <p class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums {% if current_net_worth_cents >= 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                {{ current_net_worth_formatted }}
+            </p>
         </div>
-        <div class="mt-4 flex items-baseline gap-3">
-            <span class="text-sm {% if change_cents >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-500 dark:text-red-400{% endif %} font-medium tabular-nums">
-                {% if change_cents >= 0 %}+{% endif %}{{ change_formatted }}
-            </span>
-            <span class="text-xs text-neutral-400 dark:text-neutral-500">since {{ start_date }}</span>
+        <div class="flex gap-8 text-sm">
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Change</p>
+                <p class="mt-0.5 font-semibold tabular-nums {% if change_cents >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-500 dark:text-red-400{% endif %}">{{ change_formatted }}</p>
+            </div>
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">High</p>
+                <p class="mt-0.5 font-semibold tabular-nums">{{ highest_net_worth_formatted }}</p>
+            </div>
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Low</p>
+                <p class="mt-0.5 font-semibold tabular-nums">{{ lowest_net_worth_formatted }}</p>
+            </div>
         </div>
     </div>
 
@@ -74,13 +84,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
-
-    {# Stats #}
-    <div class="flex flex-wrap gap-x-8 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
-        <span>High <span class="font-medium text-neutral-900 dark:text-white tabular-nums">{{ highest_net_worth_formatted }}</span></span>
-        <span>Low <span class="font-medium text-neutral-900 dark:text-white tabular-nums">{{ lowest_net_worth_formatted }}</span></span>
-        <span>{{ total_days }} days tracked</span>
     </div>
 
     {% endif %}
