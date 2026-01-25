@@ -1,5 +1,4 @@
 pub mod accounts;
-pub mod analytics;
 pub mod api;
 pub mod api_logs;
 pub mod categories;
@@ -10,6 +9,7 @@ pub mod market_data;
 pub mod net_worth;
 pub mod rules;
 pub mod settings;
+pub mod spending;
 pub mod tags;
 pub mod trading_activities;
 pub mod trading_import;
@@ -24,7 +24,7 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         // Pages
         .route("/", get(dashboard::index))
-        .route("/analytics", get(analytics::index))
+        .route("/spending", get(spending::index))
         .route("/expenses", get(expenses::index))
         .route("/import", get(import::index))
         .route("/settings", get(settings::index))

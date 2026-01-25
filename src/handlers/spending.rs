@@ -12,13 +12,13 @@ use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
 #[derive(Debug, Default, Deserialize)]
-pub struct AnalyticsFilterParams {
+pub struct SpendingFilterParams {
     pub from_date: Option<String>,
     pub to_date: Option<String>,
     pub preset: Option<String>,
 }
 
-impl AnalyticsFilterParams {
+impl SpendingFilterParams {
     pub fn resolve_date_range(&self) -> DateRange {
         if let Some(preset_str) = &self.preset {
             preset_str
@@ -41,8 +41,8 @@ impl AnalyticsFilterParams {
 }
 
 #[derive(Template)]
-#[template(path = "pages/analytics.html")]
-pub struct AnalyticsTemplate {
+#[template(path = "pages/spending.html")]
+pub struct SpendingTemplate {
     pub title: String,
     pub settings: Settings,
     pub icons: crate::filters::Icons,
@@ -55,7 +55,7 @@ pub struct AnalyticsTemplate {
 
 pub async fn index(
     State(state): State<AppState>,
-    Query(params): Query<AnalyticsFilterParams>,
+    Query(params): Query<SpendingFilterParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
@@ -63,8 +63,8 @@ pub async fn index(
 
     let date_range = params.resolve_date_range();
 
-    let template = AnalyticsTemplate {
-        title: "Analytics".into(),
+    let template = SpendingTemplate {
+        title: "Spending".into(),
         settings: app_settings,
         icons: crate::filters::Icons,
         manifest: state.manifest.clone(),

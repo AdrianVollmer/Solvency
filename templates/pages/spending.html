@@ -8,19 +8,19 @@
 {% block content %}
 <div class="space-y-6">
     <div>
-        <h1 class="page-title">Analytics</h1>
+        <h1 class="page-title">Spending</h1>
         <p class="mt-1 text-muted">Visualize your spending patterns</p>
     </div>
 
     {# Date filters #}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
         <div class="flex flex-wrap items-center gap-2">
-            <a href="/analytics?from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
+            <a href="/spending?from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
                 class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
                 aria-label="Previous period">
                 <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-left")|safe }}</span>
             </a>
-            <a href="/analytics?from_date={{ date_range.next().from_str() }}&to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
+            <a href="/spending?from_date={{ date_range.next().from_str() }}&to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
                 class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
                 aria-label="Next period">
                 <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-right")|safe }}</span>
@@ -28,14 +28,14 @@
 
             <div class="flex flex-wrap gap-1.5 ml-2">
                 {% for preset in presets %}
-                <a href="/analytics?preset={{ preset.as_str() }}"
+                <a href="/spending?preset={{ preset.as_str() }}"
                     class="chip {% if date_range.is_preset(preset) %}chip-active{% else %}chip-inactive{% endif %}">
                     {{ preset.label() }}
                 </a>
                 {% endfor %}
             </div>
 
-            <form action="/analytics" method="get" class="flex items-center gap-2 ml-auto">
+            <form action="/spending" method="get" class="flex items-center gap-2 ml-auto">
                 <label for="analytics_from_date" class="sr-only">From date</label>
                 <input type="date" id="analytics_from_date" name="from_date" value="{{ date_range.from_str() }}"
                     class="px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent">

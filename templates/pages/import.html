@@ -3,13 +3,24 @@
 {% block content %}
 <div class="space-y-6">
     <div>
-        <h1 class="page-title">Import Expenses</h1>
-        <p class="mt-1 text-muted">Upload CSV files to import transactions</p>
+        <h1 class="page-title">Import</h1>
+        <p class="mt-1 text-muted">Upload CSV files to import data</p>
     </div>
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl">
+    {# Tabs #}
+    <div class="flex gap-1.5">
+        <button id="tab-expenses" class="chip chip-active" onclick="switchTab('expenses')">
+            Expenses
+        </button>
+        <button id="tab-activities" class="chip chip-inactive" onclick="switchTab('activities')">
+            Trading Activities
+        </button>
+    </div>
+
+    {# Expenses import form #}
+    <div id="panel-expenses" class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl">
         <form action="/import/upload" method="post" enctype="multipart/form-data" class="space-y-4">
-            <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-8 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors" id="drop-zone">
+            <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-8 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors drop-zone" data-target="expenses">
                 <span class="icon-xl mx-auto text-neutral-400 mb-4" aria-hidden="true">{{ icons.get("upload-cloud")|safe }}</span>
                 <p class="text-neutral-600 dark:text-neutral-400 mb-3">Drag and drop your CSV files here, or</p>
                 <label class="cursor-pointer inline-block">
@@ -18,10 +29,35 @@
                     </span>
                     <input type="file" name="files" accept=".csv" class="hidden" multiple required aria-label="Select CSV files to upload">
                 </label>
-                <p id="file-count" class="text-sm text-primary-600 dark:text-primary-400 font-medium mt-3 hidden"></p>
+                <p class="file-count text-sm text-primary-600 dark:text-primary-400 font-medium mt-3 hidden"></p>
                 <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-4">
                     Supported format: CSV with columns for date, amount, and description.
                     <a href="/import/format" class="text-primary-600 dark:text-primary-400 hover:underline">View format specification</a>
+                </p>
+            </div>
+
+            <button type="submit" class="w-full btn btn-primary py-3">
+                Upload and Preview
+            </button>
+        </form>
+    </div>
+
+    {# Trading activities import form #}
+    <div id="panel-activities" class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl hidden">
+        <form action="/trading/import/upload" method="post" enctype="multipart/form-data" class="space-y-4">
+            <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-8 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors drop-zone" data-target="activities">
+                <span class="icon-xl mx-auto text-neutral-400 mb-4" aria-hidden="true">{{ icons.get("upload-cloud")|safe }}</span>
+                <p class="text-neutral-600 dark:text-neutral-400 mb-3">Drag and drop your CSV files here, or</p>
+                <label class="cursor-pointer inline-block">
+                    <span class="btn btn-primary">
+                        Browse Files
+                    </span>
+                    <input type="file" name="files" accept=".csv" class="hidden" multiple required aria-label="Select CSV files to upload">
+                </label>
+                <p class="file-count text-sm text-primary-600 dark:text-primary-400 font-medium mt-3 hidden"></p>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-4">
+                    Supported format: CSV with columns for date, symbol, quantity, and type.
+                    <a href="/trading/import/format" class="text-primary-600 dark:text-primary-400 hover:underline">View format specification</a>
                 </p>
             </div>
 
@@ -35,53 +71,73 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = dropZone.querySelector('input[type="file"]');
-    const fileCount = document.getElementById('file-count');
-
-    function updateFileCount() {
-        const count = fileInput.files.length;
-        if (count > 0) {
-            fileCount.textContent = count === 1
-                ? '1 file selected'
-                : count + ' files selected';
-            fileCount.classList.remove('hidden');
+function switchTab(tab) {
+    const tabs = ['expenses', 'activities'];
+    for (const t of tabs) {
+        const tabEl = document.getElementById('tab-' + t);
+        const panelEl = document.getElementById('panel-' + t);
+        if (t === tab) {
+            tabEl.classList.remove('chip-inactive');
+            tabEl.classList.add('chip-active');
+            panelEl.classList.remove('hidden');
         } else {
-            fileCount.classList.add('hidden');
+            tabEl.classList.remove('chip-active');
+            tabEl.classList.add('chip-inactive');
+            panelEl.classList.add('hidden');
         }
     }
+}
 
-    fileInput.addEventListener('change', updateFileCount);
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZones = document.querySelectorAll('.drop-zone');
 
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-    });
+    for (const dropZone of dropZones) {
+        const fileInput = dropZone.querySelector('input[type="file"]');
+        const fileCount = dropZone.querySelector('.file-count');
 
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/10');
-        });
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/10');
-        });
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
-        if (files.length) {
-            fileInput.files = files;
-            updateFileCount();
+        function updateFileCount() {
+            const count = fileInput.files.length;
+            if (count > 0) {
+                fileCount.textContent = count === 1
+                    ? '1 file selected'
+                    : count + ' files selected';
+                fileCount.classList.remove('hidden');
+            } else {
+                fileCount.classList.add('hidden');
+            }
         }
-    });
+
+        fileInput.addEventListener('change', updateFileCount);
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/10');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/10');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                fileInput.files = files;
+                updateFileCount();
+            }
+        });
+    }
 });
 </script>
 {% endblock %}
