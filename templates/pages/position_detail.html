@@ -35,93 +35,103 @@
         </div>
     </div>
 
-    {# Stats Cards #}
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {% match position %}
-        {% when Some with (pos) %}
-        {% call ui::stat_card(label="Quantity", value=pos.position.quantity_display()) %}
-        {% call ui::stat_card(label="Total Cost", value=settings.format_money_neutral_with_currency(pos.position.total_cost_cents, pos.position.currency)) %}
+    {% match position %}
+    {% when Some with (pos) %}
+    {# Hero: Unrealized Gain/Loss #}
+    <div class="py-4">
+        <p class="text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500">Unrealized Gain/Loss</p>
+        {% match pos.gain_loss_formatted() %}
+        {% when Some with (formatted) %}
+        <div class="flex items-baseline gap-3">
+            <span class="text-4xl font-bold tabular-nums {{ pos.gain_loss_color() }}">{{ formatted }}</span>
+            {% match pos.gain_loss_percent_display() %}
+            {% when Some with (pct) %}
+            <span class="text-lg {{ pos.gain_loss_color() }}">{{ pct }}</span>
+            {% when None %}{% endmatch %}
+        </div>
+        {% when None %}
+        <span class="text-4xl font-bold tabular-nums text-neutral-400">-</span>
+        {% endmatch %}
+    </div>
+
+    {# Position: Quantity × Avg Cost = Total Cost (inline) #}
+    <p class="text-neutral-600 dark:text-neutral-400 tabular-nums">
+        <span class="font-medium text-neutral-900 dark:text-white">{{ pos.position.quantity_display() }}</span> shares
+        {% match pos.position.average_cost_cents() %}
+        {% when Some with (avg_cents) %}
+        @ <span class="font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(avg_cents, pos.position.currency) }}</span> avg
+        {% when None %}{% endmatch %}
+        = <span class="font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(pos.position.total_cost_cents, pos.position.currency) }}</span> cost basis
+    </p>
+
+    {# Primary Stats: Current Value, Current Price, XIRR #}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
         {% match pos.current_value_cents %}
         {% when Some with (cents) %}
         {% if pos.price_is_approximated %}
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Value</p>
-            <p class="text-xl font-semibold text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
+            <p class="text-xl font-semibold tabular-nums text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
                 {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
                 <span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
             </p>
         </div>
         {% else %}
-        {% call ui::stat_card(label="Current Value", value=settings.format_money_neutral_with_currency(cents, pos.position.currency)) %}
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Value</p>
+            <p class="text-xl font-semibold tabular-nums text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
+        </div>
         {% endif %}
         {% when None %}
         {% call ui::stat_card(label="Current Value", value="-") %}
-        {% endmatch %}
-        {% match pos.gain_loss_formatted() %}
-        {% when Some with (formatted) %}
-        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">Gain/Loss</p>
-            <p class="text-xl font-semibold {{ pos.gain_loss_color() }}">{{ formatted }}</p>
-            {% match pos.gain_loss_percent_display() %}
-            {% when Some with (pct) %}
-            <p class="text-sm {{ pos.gain_loss_color() }}">{{ pct }}</p>
-            {% when None %}{% endmatch %}
-        </div>
-        {% when None %}
-        {% call ui::stat_card(label="Gain/Loss", value="-") %}
-        {% endmatch %}
-        {% when None %}
-        <div class="col-span-4 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3 text-center">
-            <p class="text-neutral-500 dark:text-neutral-400">No position data available for this symbol.</p>
-        </div>
-        {% endmatch %}
-    </div>
-
-    {# Additional Stats Row #}
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {% match position %}
-        {% when Some with (pos) %}
-        {% match pos.position.average_cost_cents() %}
-        {% when Some with (cents) %}
-        {% call ui::stat_card(label="Avg Cost/Share", value=settings.format_money_neutral_with_currency(cents, pos.position.currency)) %}
-        {% when None %}
-        {% call ui::stat_card(label="Avg Cost/Share", value="-") %}
         {% endmatch %}
         {% match pos.current_price_cents %}
         {% when Some with (cents) %}
         {% if pos.price_is_approximated %}
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Price</p>
-            <p class="text-xl font-semibold text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
+            <p class="text-xl font-semibold tabular-nums text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
                 {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
                 <span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
             </p>
         </div>
         {% else %}
-        {% call ui::stat_card(label="Current Price", value=settings.format_money_neutral_with_currency(cents, pos.position.currency)) %}
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Price</p>
+            <p class="text-xl font-semibold tabular-nums text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
+        </div>
         {% endif %}
         {% when None %}
         {% call ui::stat_card(label="Current Price", value="-") %}
         {% endmatch %}
-        {% when None %}{% endmatch %}
         {% match xirr_formatted %}
         {% when Some with (x) %}
-        {% call ui::stat_card(label="XIRR (Annualized)", value=x.as_str()) %}
+        <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">XIRR (Annualized)</p>
+            <p class="text-xl font-semibold tabular-nums text-neutral-900 dark:text-white">{{ x }}</p>
+        </div>
         {% when None %}
         {% call ui::stat_card(label="XIRR (Annualized)", value="-") %}
         {% endmatch %}
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Realized Gain/Loss</p>
-            <p class="text-xl font-semibold {{ realized_gain_loss_color }}">{{ realized_gain_loss_formatted }}</p>
+            <p class="text-xl font-semibold tabular-nums {{ realized_gain_loss_color }}">{{ realized_gain_loss_formatted }}</p>
         </div>
     </div>
 
-    {# Fees, Taxes & Dividends Row #}
-    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
-        {% call ui::stat_card(label="Total Fees", value=total_fees_formatted.as_str()) %}
-        {% call ui::stat_card(label="Total Taxes", value=total_taxes_formatted.as_str()) %}
-        {% call ui::stat_card_trend_up(label="Total Dividends", value=total_dividends_formatted.as_str(), secondary="") %}
+    {# Supporting Details: Fees, Taxes, Dividends (inline) #}
+    <p class="mt-4 text-sm text-neutral-500 dark:text-neutral-400 tabular-nums">
+        Fees: <span class="text-neutral-700 dark:text-neutral-300">{{ total_fees_formatted }}</span>
+        <span class="mx-2">·</span>
+        Taxes: <span class="text-neutral-700 dark:text-neutral-300">{{ total_taxes_formatted }}</span>
+        <span class="mx-2">·</span>
+        Dividends: <span class="text-neutral-700 dark:text-neutral-300">{{ total_dividends_formatted }}</span>
+    </p>
+    {% when None %}
+    <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3 text-center">
+        <p class="text-neutral-500 dark:text-neutral-400">No position data available for this symbol.</p>
     </div>
+    {% endmatch %}
 
     {# Price Chart #}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
