@@ -6,6 +6,8 @@ use axum::Form;
 use serde::Deserialize;
 use std::fs;
 
+use tracing::warn;
+
 use crate::db::queries::settings;
 use crate::error::{AppError, AppResult};
 use crate::models::Settings;
@@ -271,4 +273,28 @@ pub async fn import_database(
     };
 
     Ok(Html(template.render().unwrap()))
+}
+
+pub async fn clear_database(State(state): State<AppState>) -> AppResult<Html<String>> {
+    warn!("Clearing entire database");
+    let conn = state.db.get()?;
+
+    let mut stmt = conn.prepare(
+        "SELECT name FROM sqlite_master
+         WHERE type='table'
+         AND name NOT LIKE 'sqlite_%'
+         AND name != '_migrations'
+         ORDER BY name",
+    )?;
+
+    let tables: Vec<String> = stmt
+        .query_map([], |row| row.get(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    for table in &tables {
+        conn.execute(&format!("DELETE FROM \"{}\"", table), [])?;
+    }
+
+    Ok(Html(String::new()))
 }
