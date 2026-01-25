@@ -1,0 +1,29 @@
+# Build artifacts
+target/
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Development files
+.env
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Test files
+tests/
+
+# Python cache
+__pycache__/
+*.pyc
