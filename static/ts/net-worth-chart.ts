@@ -177,6 +177,7 @@ async function loadNetWorthChart(): Promise<void> {
     const showSymbols = data.labels.length <= 100;
 
     const option = {
+      backgroundColor: "transparent",
       tooltip: {
         trigger: "axis",
         formatter: (params: any) => {
