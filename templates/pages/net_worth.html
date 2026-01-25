@@ -24,7 +24,7 @@
     <div class="flex flex-col md:flex-row md:items-end gap-6 md:gap-12">
         <div>
             <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Current Net Worth</p>
-            <p class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums {% if current_net_worth_cents >= 0 %}text-accent-600 dark:text-accent-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+            <p class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums {% if current_net_worth_cents < 0 %}text-red-600 dark:text-red-400{% endif %}">
                 {{ current_net_worth_formatted }}
             </p>
         </div>
