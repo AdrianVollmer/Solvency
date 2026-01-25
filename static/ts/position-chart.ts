@@ -93,6 +93,7 @@ async function loadPositionChart(symbol: string): Promise<void> {
     const lineColor = chartData.is_approximated ? "#d97706" : "#3b82f6";
 
     const option = {
+      backgroundColor: "transparent",
       tooltip: {
         trigger: "axis",
         formatter: (params: any) => {
