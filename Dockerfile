@@ -1,5 +1,5 @@
 # Build stage for Rust binary
-FROM rust:1.83-slim-bookworm AS rust-builder
+FROM rust:1.92-slim-bookworm AS rust-builder
 
 WORKDIR /build
 
