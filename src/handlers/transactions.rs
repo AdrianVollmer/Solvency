@@ -8,7 +8,7 @@ use tracing::{debug, info, warn};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
 use crate::db::queries::{accounts, categories, settings, tags, transactions};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{
     Account, AccountType, CategoryWithPath, NewTransaction, Settings, Tag, TransactionWithRelations,
 };
@@ -341,7 +341,7 @@ pub async fn index(
         sort,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn table_partial(
@@ -384,7 +384,7 @@ pub async fn table_partial(
         sort,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
@@ -412,7 +412,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
         accounts: cash_accounts,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -435,7 +435,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         accounts: cash_accounts,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn edit_form(
@@ -466,7 +466,7 @@ pub async fn edit_form(
         accounts: cash_accounts,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn create(

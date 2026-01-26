@@ -9,7 +9,7 @@ use std::fs;
 use tracing::warn;
 
 use crate::db::queries::settings;
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::Settings;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -64,7 +64,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         database_size,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 fn get_database_size(path: &std::path::Path) -> String {
@@ -110,7 +110,7 @@ pub async fn update(
         message: "Settings saved successfully".into(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn toggle_theme(
@@ -272,7 +272,7 @@ pub async fn import_database(
         message: "Database imported successfully. Please refresh the page.".into(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn clear_database(State(state): State<AppState>) -> AppResult<Html<String>> {

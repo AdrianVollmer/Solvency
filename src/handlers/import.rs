@@ -7,7 +7,7 @@ use tracing::{debug, info, warn};
 use uuid::Uuid;
 
 use crate::db::queries::{categories, import, settings, tags, transactions};
-use crate::error::{html_escape, AppError, AppResult};
+use crate::error::{html_escape, AppError, AppResult, RenderHtml};
 use crate::models::{CategoryWithPath, ImportSession, ImportStatus, NewTransaction, Settings};
 use crate::services::csv_parser::parse_csv;
 use crate::state::{AppState, JsManifest};
@@ -119,7 +119,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         xsrf_token: state.xsrf_token.value().to_string(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -136,7 +136,7 @@ pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
         xsrf_token: state.xsrf_token.value().to_string(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn upload(
@@ -294,7 +294,7 @@ pub async fn wizard(
         categories: cats,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn status(
@@ -310,7 +310,7 @@ pub async fn status(
         session,
         categories: cats,
     };
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn status_json(
@@ -352,7 +352,7 @@ pub async fn rows(
         total_count,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn update_row_category(
@@ -437,7 +437,7 @@ pub async fn confirm(
         session,
         categories: cats,
     };
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 async fn import_rows_background(state: AppState, session_id: String) {
@@ -555,7 +555,7 @@ pub async fn result(
         errors: session.errors,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn cancel(

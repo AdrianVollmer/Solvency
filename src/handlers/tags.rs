@@ -6,7 +6,7 @@ use axum::Form;
 use serde::{Deserialize, Serialize};
 
 use crate::db::queries::{settings, tags};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{NewTag, Settings, Tag, TagStyle};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -70,7 +70,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         tags: tag_list,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -86,7 +86,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         xsrf_token: state.xsrf_token.value().to_string(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn search(

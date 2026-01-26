@@ -4,7 +4,7 @@ use axum::response::Html;
 use tracing::debug;
 
 use crate::db::queries::{settings, transactions};
-use crate::error::AppResult;
+use crate::error::{AppResult, RenderHtml};
 use crate::models::{Settings, TransactionWithRelations};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -86,5 +86,5 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         transaction_count,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }

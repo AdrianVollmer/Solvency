@@ -4,7 +4,7 @@ use axum::response::{Html, Json};
 use serde::{Deserialize, Serialize};
 
 use crate::db::queries::{api_logs, settings};
-use crate::error::AppResult;
+use crate::error::{AppResult, RenderHtml};
 use crate::models::{ApiLog, Settings};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -39,7 +39,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         latest_log_id,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 #[derive(Template)]
@@ -70,7 +70,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
         log,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 #[derive(Deserialize)]

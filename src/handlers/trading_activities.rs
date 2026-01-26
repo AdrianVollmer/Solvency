@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
 use crate::db::queries::{accounts, settings, trading};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{NewTradingActivity, Settings, TradingActivity, TradingActivityType};
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
@@ -364,7 +364,7 @@ pub async fn index(
         sort,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn table_partial(
@@ -411,7 +411,7 @@ pub async fn table_partial(
         sort,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
@@ -432,7 +432,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
         activity,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -452,7 +452,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         activity_types: TradingActivityType::all(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn edit_form(
@@ -480,7 +480,7 @@ pub async fn edit_form(
         activity_types: TradingActivityType::all(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn create(

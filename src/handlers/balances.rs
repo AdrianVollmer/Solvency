@@ -3,7 +3,7 @@ use axum::extract::State;
 use axum::response::Html;
 
 use crate::db::queries::{accounts, balances, market_data, settings, trading};
-use crate::error::AppResult;
+use crate::error::{AppResult, RenderHtml};
 use crate::filters;
 use crate::models::account::{Account, AccountType};
 use crate::models::trading::PositionWithMarketData;
@@ -116,5 +116,5 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         total_balance_cents,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }

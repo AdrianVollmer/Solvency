@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::db::queries::{categories, rules, settings, tags};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{CategoryWithPath, NewRule, Rule, RuleActionType, Settings, Tag};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -77,7 +77,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         tags: tag_list,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -97,7 +97,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         tags: tag_list,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn create(
@@ -153,7 +153,7 @@ pub async fn update(
         tags: tag_list,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {

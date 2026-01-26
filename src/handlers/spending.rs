@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::date_utils::{DatePreset, DateRange};
 use crate::db::queries::settings;
-use crate::error::AppResult;
+use crate::error::{AppResult, RenderHtml};
 use crate::models::Settings;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -74,5 +74,5 @@ pub async fn index(
         presets: DatePreset::all(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }

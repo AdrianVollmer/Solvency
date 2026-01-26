@@ -1,3 +1,4 @@
+use askama::Template;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use thiserror::Error;
@@ -80,3 +81,15 @@ pub fn html_escape(s: &str) -> String {
 }
 
 pub type AppResult<T> = Result<T, AppError>;
+
+pub trait RenderHtml {
+    fn render_html(self) -> AppResult<Html<String>>;
+}
+
+impl<T: Template> RenderHtml for T {
+    fn render_html(self) -> AppResult<Html<String>> {
+        self.render()
+            .map(Html)
+            .map_err(|e| AppError::Internal(format!("Template error: {}", e)))
+    }
+}

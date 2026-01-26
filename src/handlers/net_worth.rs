@@ -5,7 +5,7 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 
 use crate::db::queries::{settings, transactions};
-use crate::error::AppResult;
+use crate::error::{AppResult, RenderHtml};
 use crate::filters;
 use crate::models::net_worth::NetWorthDataPoint;
 use crate::models::Settings;
@@ -101,7 +101,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         change_cents,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 /// Chart data response

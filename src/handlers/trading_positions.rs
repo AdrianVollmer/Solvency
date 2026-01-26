@@ -6,7 +6,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::db::queries::{market_data, settings, trading};
-use crate::error::AppResult;
+use crate::error::{AppResult, RenderHtml};
 use crate::filters;
 use crate::models::trading::{
     ClosedPosition, PositionWithMarketData, TradingActivity, TradingActivityType,
@@ -292,7 +292,7 @@ pub async fn index(
         sort,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 // Closed positions page
@@ -372,7 +372,7 @@ pub async fn closed_positions(
         sort,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 // Position detail page
@@ -543,7 +543,7 @@ pub async fn detail(
         realized_gain_loss_color,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 /// Calculate XIRR for a position based on its activities

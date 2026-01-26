@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::db::queries::{settings, trading};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{
     NewTradingActivity, Settings, TradingActivityType, TradingImportSession, TradingImportStatus,
 };
@@ -112,7 +112,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         xsrf_token: state.xsrf_token.value().to_string(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -130,7 +130,7 @@ pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
         activity_types: TradingActivityType::all(),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn upload(
@@ -282,7 +282,7 @@ pub async fn wizard(
         session,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn status(
@@ -296,7 +296,7 @@ pub async fn status(
         icons: crate::filters::Icons,
         session,
     };
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn status_json(
@@ -336,7 +336,7 @@ pub async fn rows(
         total_count,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn confirm(
@@ -374,7 +374,7 @@ pub async fn confirm(
         icons: crate::filters::Icons,
         session,
     };
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 async fn import_rows_background(state: AppState, session_id: String) {
@@ -523,7 +523,7 @@ pub async fn result(
         errors: session.errors,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn cancel(

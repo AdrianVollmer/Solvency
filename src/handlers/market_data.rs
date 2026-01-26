@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use chrono::Datelike;
 
 use crate::db::queries::{api_logs, market_data, settings};
-use crate::error::AppResult;
+use crate::error::{AppResult, RenderHtml};
 use crate::models::{MarketData, NewApiLog, Settings, SymbolDataCoverage};
 use crate::services::market_data as market_data_service;
 use crate::sort_utils::{SortDirection, Sortable, SortableColumn, TableSort};
@@ -167,7 +167,7 @@ pub async fn index(
         sort,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 #[derive(Template)]
@@ -505,13 +505,13 @@ pub async fn status(
         progress_percent,
     };
 
-    let html = template.render().unwrap();
+    let html = template.render_html()?;
 
     // If refresh just completed, tell HTMX to refresh the page
     if !is_refreshing {
-        Ok(([("hx-refresh", "true")], Html(html)).into_response())
+        Ok(([("hx-refresh", "true")], html).into_response())
     } else {
-        Ok(Html(html).into_response())
+        Ok(html.into_response())
     }
 }
 
@@ -613,7 +613,7 @@ pub async fn symbol_detail(
         missing_ranges,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 /// Minimum number of consecutive missing weekdays to count as a significant gap

@@ -6,7 +6,7 @@ use axum::Form;
 use serde::{Deserialize, Serialize};
 
 use crate::db::queries::{accounts, settings};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{Account, AccountType, NewAccount, Settings};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -57,7 +57,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         accounts: account_list,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -74,7 +74,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         account: None,
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn edit_form(
@@ -97,7 +97,7 @@ pub async fn edit_form(
         account: Some(account),
     };
 
-    Ok(Html(template.render().unwrap()))
+    template.render_html()
 }
 
 pub async fn create(
