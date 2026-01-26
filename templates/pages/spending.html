@@ -13,12 +13,14 @@
     {# Date filters #}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
         <div class="flex flex-wrap items-center gap-2">
-            <a href="/spending?from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
+            <a href="/spending"
+                data-nav="from_date={{ date_range.prev().from_str() }}&amp;to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&amp;preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
                 class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
                 aria-label="Previous period">
                 <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-left")|safe }}</span>
             </a>
-            <a href="/spending?from_date={{ date_range.next().from_str() }}&to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
+            <a href="/spending"
+                data-nav="from_date={{ date_range.next().from_str() }}&amp;to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&amp;preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
                 class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
                 aria-label="Next period">
                 <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-right")|safe }}</span>
@@ -26,7 +28,7 @@
 
             <div class="flex flex-wrap gap-1.5 ml-2">
                 {% for preset in presets %}
-                <a href="/spending?preset={{ preset.as_str() }}"
+                <a href="/spending" data-nav="preset={{ preset.as_str() }}"
                     class="chip {% if date_range.is_preset(preset) %}chip-active{% else %}chip-inactive{% endif %}">
                     {{ preset.label() }}
                 </a>
@@ -34,6 +36,7 @@
             </div>
 
             <form action="/spending" method="get" class="flex items-center gap-2 ml-auto">
+                <input type="hidden" name="tab" value="{{ active_tab }}">
                 <label for="analytics_from_date" class="sr-only">From date</label>
                 <input type="date" id="analytics_from_date" name="from_date" value="{{ date_range.from_str() }}"
                     class="input text-sm">
@@ -53,7 +56,7 @@
 
     {# Chart tabs #}
     <div class="flex flex-wrap gap-2">
-        <a href="/spending?{% if date_range.preset.is_some() %}preset={{ date_range.preset.unwrap().as_str() }}{% else %}from_date={{ date_range.from_str() }}&amp;to_date={{ date_range.to_str() }}{% endif %}&amp;tab=category"
+        <a href="/spending" data-nav="tab=category"
             class="tab {% if active_tab == "category" %}tab-active{% else %}tab-inactive{% endif %}">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <path d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -62,7 +65,7 @@
             </svg>
             By Category
         </a>
-        <a href="/spending?{% if date_range.preset.is_some() %}preset={{ date_range.preset.unwrap().as_str() }}{% else %}from_date={{ date_range.from_str() }}&amp;to_date={{ date_range.to_str() }}{% endif %}&amp;tab=time"
+        <a href="/spending" data-nav="tab=time"
             class="tab {% if active_tab == "time" %}tab-active{% else %}tab-inactive{% endif %}">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <polyline points="1,12 5,7 9,9 15,3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -70,7 +73,7 @@
             </svg>
             Over Time
         </a>
-        <a href="/spending?{% if date_range.preset.is_some() %}preset={{ date_range.preset.unwrap().as_str() }}{% else %}from_date={{ date_range.from_str() }}&amp;to_date={{ date_range.to_str() }}{% endif %}&amp;tab=monthly"
+        <a href="/spending" data-nav="tab=monthly"
             class="tab {% if active_tab == "monthly" %}tab-active{% else %}tab-inactive{% endif %}">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect x="1" y="8" width="3.5" height="7" rx="0.75" fill="currentColor" opacity="0.5"/>

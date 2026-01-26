@@ -378,6 +378,34 @@ function handleResize(): void {
   if (activeChart) activeChart.resize();
 }
 
+// Rewrite [data-nav] links so every href carries the full current state.
+// Each link declares only the params it *changes*; this function merges
+// those overrides with the current URL, resolving preset/date conflicts.
+function updateNavLinks(): void {
+  const current = new URLSearchParams(window.location.search);
+  const links = document.querySelectorAll<HTMLAnchorElement>("[data-nav]");
+
+  for (const link of links) {
+    const overrides = new URLSearchParams(link.dataset.nav || "");
+    const merged = new URLSearchParams(current);
+
+    // Preset and explicit dates are mutually exclusive
+    if (overrides.has("preset")) {
+      merged.delete("from_date");
+      merged.delete("to_date");
+    }
+    if (overrides.has("from_date") || overrides.has("to_date")) {
+      merged.delete("preset");
+    }
+
+    for (const [key, value] of overrides) {
+      merged.set(key, value);
+    }
+
+    link.href = `/spending?${merged.toString()}`;
+  }
+}
+
 // Category filter dropdown logic
 function setupCategoryFilter(): void {
   const btn = document.getElementById("category-filter-btn");
@@ -441,6 +469,7 @@ function setupCategoryFilter(): void {
 
 document.addEventListener("DOMContentLoaded", () => {
   if (document.querySelector("[data-active-tab]")) {
+    updateNavLinks();
     updateCharts();
     setupCategoryFilter();
     window.addEventListener("resize", handleResize);
