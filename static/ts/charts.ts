@@ -511,8 +511,8 @@ function setupCategoryFilter(): void {
 document.addEventListener("DOMContentLoaded", () => {
   if (document.querySelector("[data-active-tab]")) {
     updateNavLinks();
-    updateCharts();
     setupCategoryFilter();
+    updateCharts();
     window.addEventListener("resize", handleResize);
   }
 });
