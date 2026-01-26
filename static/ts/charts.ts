@@ -446,12 +446,55 @@ function setupCategoryFilter(): void {
     selectNoneBtn.addEventListener("click", () => setAllCheckboxes(false));
   }
 
-  // On checkbox change: update label + re-fetch chart
-  dropdown.addEventListener("change", () => {
+  // Restore checkbox state from URL
+  const initialIds = new URLSearchParams(window.location.search).get("categories");
+  if (initialIds) {
+    const idSet = new Set(initialIds.split(","));
+    const boxes = dropdown.querySelectorAll<HTMLInputElement>(".category-checkbox");
+    for (const cb of boxes) {
+      cb.checked = idSet.has(cb.value);
+    }
+  }
+
+  // On checkbox change: update label, sync URL, re-fetch chart
+  function syncCategoryState(): void {
     const selected = getSelectedCategoryIds();
+
+    // Update button label
     if (selected.length === 0) {
-      label.textContent = "All categories";
+      label!.textContent = "All categories";
     } else if (selected.length === 1) {
+      const checked = dropdown!.querySelector<HTMLInputElement>(
+        ".category-checkbox:checked"
+      );
+      const name = checked
+        ?.closest("label")
+        ?.querySelector("span:last-child")?.textContent?.trim();
+      label!.textContent = name || "1 selected";
+    } else {
+      label!.textContent = `${selected.length} selected`;
+    }
+
+    // Push to URL so navigation links and reloads preserve the selection
+    const url = new URL(window.location.href);
+    if (selected.length > 0) {
+      url.searchParams.set("categories", selected.join(","));
+    } else {
+      url.searchParams.delete("categories");
+    }
+    history.replaceState(null, "", url.toString());
+
+    updateNavLinks();
+    updateMonthlyChart(getFilterParams());
+  }
+
+  dropdown.addEventListener("change", syncCategoryState);
+
+  // If we restored checkboxes from URL, update the label (but don't re-fetch,
+  // updateCharts() handles the initial load)
+  if (initialIds) {
+    const selected = getSelectedCategoryIds();
+    if (selected.length === 1) {
       const checked = dropdown.querySelector<HTMLInputElement>(
         ".category-checkbox:checked"
       );
@@ -459,12 +502,10 @@ function setupCategoryFilter(): void {
         ?.closest("label")
         ?.querySelector("span:last-child")?.textContent?.trim();
       label.textContent = name || "1 selected";
-    } else {
+    } else if (selected.length > 1) {
       label.textContent = `${selected.length} selected`;
     }
-
-    updateMonthlyChart(getFilterParams());
-  });
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
