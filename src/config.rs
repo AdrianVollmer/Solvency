@@ -20,8 +20,14 @@ impl Config {
                 .ok()
                 .and_then(|p| p.parse().ok())
                 .unwrap_or(7070),
-            database_path: env::var("DATABASE_PATH")
-                .map(PathBuf::from)
+            database_path: env::var("DATABASE_URL")
+                .map(|v| {
+                    PathBuf::from(
+                        v.strip_prefix("sqlite://")
+                            .or_else(|| v.strip_prefix("sqlite:"))
+                            .unwrap_or(&v),
+                    )
+                })
                 .unwrap_or_else(|_| PathBuf::from("data/moneymapper.db")),
             migrations_path: env::var("MIGRATIONS_PATH")
                 .map(PathBuf::from)

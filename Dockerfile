@@ -57,7 +57,7 @@ COPY migrations ./migrations
 COPY scripts/seed-db.py /build/seed-db.py
 
 # Initialize database (run app briefly to apply migrations) and seed it
-ENV DATABASE_PATH=/build/demo.db
+ENV DATABASE_URL=sqlite:///build/demo.db
 ENV HOST=127.0.0.1
 ENV PORT=9999
 RUN timeout 5 /build/moneymapper || true
@@ -94,7 +94,7 @@ RUN if [ "$DEMO" = "true" ]; then \
     fi
 
 # Set environment defaults
-ENV DATABASE_PATH=/app/data/moneymapper.db
+ENV DATABASE_URL=sqlite:///app/data/moneymapper.db
 ENV PORT=7070
 ENV HOST=0.0.0.0
 ENV RUST_LOG=info
