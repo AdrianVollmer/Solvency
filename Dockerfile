@@ -1,28 +1,4 @@
-# Build stage for Rust binary
-FROM rust:1.92-slim-bookworm AS rust-builder
-
-WORKDIR /build
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy manifests first for caching
-COPY Cargo.toml Cargo.lock ./
-
-# Create dummy src to build dependencies
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release
-RUN rm -rf src
-
-# Copy actual source and rebuild
-COPY src ./src
-COPY migrations ./migrations
-COPY templates ./templates
-RUN touch src/main.rs && cargo build --release
-
-# Build stage for frontend assets
+# Build stage for frontend assets (runs first so rust-builder can use lucide icons)
 FROM node:22-slim AS frontend-builder
 
 WORKDIR /build
@@ -39,6 +15,36 @@ COPY tailwind.config.js ./
 # Build CSS and JS
 RUN npm run build:css && npm run build:ts
 
+# Build stage for Rust binary
+FROM rust:1.92-slim-bookworm AS rust-builder
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy manifests first for caching
+COPY Cargo.toml Cargo.lock ./
+COPY build.rs ./
+
+# Create dummy src to build dependencies (build.rs needs the icons dir
+# to exist but an empty dir is fine for the dependency-caching step)
+RUN mkdir -p src node_modules/lucide-static/icons \
+    && echo "fn main() {}" > src/main.rs
+RUN cargo build --release
+RUN rm -rf src
+
+# Copy Lucide icons from frontend-builder so build.rs can generate icons.rs
+COPY --from=frontend-builder /build/node_modules/lucide-static/icons ./node_modules/lucide-static/icons
+
+# Copy actual source and rebuild
+COPY src ./src
+COPY migrations ./migrations
+COPY templates ./templates
+RUN touch src/main.rs && cargo build --release
+
 # Build stage for demo database
 FROM python:3.12-slim AS demo-builder
 
@@ -47,10 +53,11 @@ WORKDIR /build
 # Copy binary and assets needed to initialize DB
 COPY --from=rust-builder /build/target/release/moneymapper /build/moneymapper
 COPY --from=frontend-builder /build/static /build/static
+COPY migrations ./migrations
 COPY scripts/seed-db.py /build/seed-db.py
 
 # Initialize database (run app briefly to apply migrations) and seed it
-ENV DATABASE_URL=sqlite:///build/demo.db
+ENV DATABASE_PATH=/build/demo.db
 ENV HOST=127.0.0.1
 ENV PORT=9999
 RUN timeout 5 /build/moneymapper || true
@@ -87,7 +94,7 @@ RUN if [ "$DEMO" = "true" ]; then \
     fi
 
 # Set environment defaults
-ENV DATABASE_URL=sqlite:///app/data/moneymapper.db
+ENV DATABASE_PATH=/app/data/moneymapper.db
 ENV PORT=7070
 ENV HOST=0.0.0.0
 ENV RUST_LOG=info
