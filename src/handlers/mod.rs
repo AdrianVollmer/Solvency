@@ -231,6 +231,7 @@ pub fn routes() -> Router<AppState> {
             "/api/analytics/monthly-by-category",
             get(api::monthly_by_category),
         )
+        .route("/api/analytics/flow-sankey", get(api::flow_sankey))
         // Health check
         .route("/health", get(health))
 }

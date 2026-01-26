@@ -19,6 +19,11 @@ interface MonthlySummary {
   average_cents: number;
 }
 
+interface SankeyData {
+  nodes: { name: string; color?: string; depth: number }[];
+  links: { source: string; target: string; value: number }[];
+}
+
 interface MonthlyByCategoryResponse {
   months: string[];
   series: {
@@ -53,7 +58,10 @@ function getTheme(): string | undefined {
   return isDarkMode() ? "dark" : undefined;
 }
 
-async function fetchData<T>(endpoint: string, params: URLSearchParams): Promise<T> {
+async function fetchData<T>(
+  endpoint: string,
+  params: URLSearchParams,
+): Promise<T> {
   const response = await fetch(`${endpoint}?${params.toString()}`);
   if (!response.ok) throw new Error("Failed to fetch data");
   return response.json();
@@ -82,7 +90,7 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
 
   const data = await fetchData<CategoryTreeNode[]>(
     "/api/analytics/spending-by-category-tree",
-    params
+    params,
   );
 
   if (data.length === 0) {
@@ -167,7 +175,7 @@ async function updateTimeChart(params: URLSearchParams): Promise<void> {
 
   const data = await fetchData<TimeSeriesData[]>(
     "/api/analytics/spending-over-time",
-    params
+    params,
   );
 
   if (data.length === 0) {
@@ -231,7 +239,7 @@ async function updateTimeChart(params: URLSearchParams): Promise<void> {
 
 function getSelectedCategoryIds(): string[] {
   const checkboxes = document.querySelectorAll<HTMLInputElement>(
-    ".category-checkbox:checked"
+    ".category-checkbox:checked",
   );
   const ids: string[] = [];
   for (const cb of checkboxes) {
@@ -253,7 +261,7 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
 
     const data = await fetchData<MonthlyByCategoryResponse>(
       "/api/analytics/monthly-by-category",
-      catParams
+      catParams,
     );
 
     if (data.series.length === 0) {
@@ -316,7 +324,7 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
     // Aggregate mode: single bar series
     const data = await fetchData<MonthlySummary[]>(
       "/api/analytics/monthly-summary",
-      params
+      params,
     );
 
     if (data.length === 0) {
@@ -379,10 +387,82 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
   }
 }
 
+async function updateFlowChart(params: URLSearchParams): Promise<void> {
+  const container = document.getElementById("flow-chart");
+  if (!container) return;
+
+  const data = await fetchData<SankeyData>(
+    "/api/analytics/flow-sankey",
+    params,
+  );
+
+  if (data.nodes.length === 0) {
+    showEmptyState(container);
+    return;
+  }
+
+  if (activeChart) {
+    activeChart.dispose();
+  }
+
+  activeChart = echarts.init(container, getTheme(), { renderer: "canvas" });
+
+  const dark = isDarkMode();
+
+  const option = {
+    backgroundColor: "transparent",
+    tooltip: {
+      trigger: "item",
+      formatter: (params: any) => {
+        if (params.dataType === "edge") {
+          return `${params.data.source} → ${params.data.target}: ${formatCurrency(params.data.value * 100)}`;
+        }
+        return `<strong>${params.name}</strong>`;
+      },
+    },
+    series: [
+      {
+        type: "sankey",
+        top: 20,
+        bottom: 20,
+        left: 20,
+        right: 240,
+        emphasis: {
+          focus: "adjacency",
+        },
+        nodeAlign: "justify",
+        nodeGap: 12,
+        nodeWidth: 20,
+        layoutIterations: 0,
+        sort: null,
+        data: data.nodes.map((n) => ({
+          name: n.name,
+          depth: n.depth,
+          itemStyle: n.color ? { color: n.color } : {},
+        })),
+        links: data.links,
+        lineStyle: {
+          color: "gradient",
+          opacity: 0.4,
+        },
+        label: {
+          color: dark ? "#e5e5e5" : "#262626",
+          fontSize: 12,
+        },
+      },
+    ],
+  };
+
+  activeChart.setOption(option);
+  activeChart.resize();
+}
+
 function getFilterParams(): URLSearchParams {
   const params = new URLSearchParams();
-  const fromDate = (document.getElementById("from_date") as HTMLInputElement)?.value;
-  const toDate = (document.getElementById("to_date") as HTMLInputElement)?.value;
+  const fromDate = (document.getElementById("from_date") as HTMLInputElement)
+    ?.value;
+  const toDate = (document.getElementById("to_date") as HTMLInputElement)
+    ?.value;
 
   if (fromDate) params.set("from_date", fromDate);
   if (toDate) params.set("to_date", toDate);
@@ -403,6 +483,8 @@ async function updateCharts(): Promise<void> {
       await updateTimeChart(params);
     } else if (activeTab === "monthly") {
       await updateMonthlyChart(params);
+    } else if (activeTab === "flow") {
+      await updateFlowChart(params);
     }
   } catch (error) {
     console.error("Failed to update chart:", error);
@@ -467,7 +549,8 @@ function setupCategoryFilter(): void {
   const selectNoneBtn = document.getElementById("category-select-none");
 
   function setAllCheckboxes(checked: boolean): void {
-    const boxes = dropdown!.querySelectorAll<HTMLInputElement>(".category-checkbox");
+    const boxes =
+      dropdown!.querySelectorAll<HTMLInputElement>(".category-checkbox");
     for (const cb of boxes) {
       cb.checked = checked;
     }
@@ -482,10 +565,13 @@ function setupCategoryFilter(): void {
   }
 
   // Restore checkbox state from URL
-  const initialIds = new URLSearchParams(window.location.search).get("categories");
+  const initialIds = new URLSearchParams(window.location.search).get(
+    "categories",
+  );
   if (initialIds) {
     const idSet = new Set(initialIds.split(","));
-    const boxes = dropdown.querySelectorAll<HTMLInputElement>(".category-checkbox");
+    const boxes =
+      dropdown.querySelectorAll<HTMLInputElement>(".category-checkbox");
     for (const cb of boxes) {
       cb.checked = idSet.has(cb.value);
     }
@@ -500,11 +586,12 @@ function setupCategoryFilter(): void {
       label!.textContent = "All categories";
     } else if (selected.length === 1) {
       const checked = dropdown!.querySelector<HTMLInputElement>(
-        ".category-checkbox:checked"
+        ".category-checkbox:checked",
       );
       const name = checked
         ?.closest("label")
-        ?.querySelector("span:last-child")?.textContent?.trim();
+        ?.querySelector("span:last-child")
+        ?.textContent?.trim();
       label!.textContent = name || "1 selected";
     } else {
       label!.textContent = `${selected.length} selected`;
@@ -531,11 +618,12 @@ function setupCategoryFilter(): void {
     const selected = getSelectedCategoryIds();
     if (selected.length === 1) {
       const checked = dropdown.querySelector<HTMLInputElement>(
-        ".category-checkbox:checked"
+        ".category-checkbox:checked",
       );
       const name = checked
         ?.closest("label")
-        ?.querySelector("span:last-child")?.textContent?.trim();
+        ?.querySelector("span:last-child")
+        ?.textContent?.trim();
       label.textContent = name || "1 selected";
     } else if (selected.length > 1) {
       label.textContent = `${selected.length} selected`;

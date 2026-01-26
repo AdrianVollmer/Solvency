@@ -70,6 +70,7 @@ pub async fn index(
     let active_tab = match params.tab.as_deref() {
         Some("time") => "time".to_string(),
         Some("monthly") => "monthly".to_string(),
+        Some("flow") => "flow".to_string(),
         _ => "category".to_string(),
     };
 
