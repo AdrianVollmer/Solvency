@@ -1,4 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <circle cx="50" cy="50" r="45" fill="#22c55e"/>
-  <path d="M50 20c-1.5 0-2.7 1.2-2.7 2.7v4.1c-8.5 1.2-15 8.5-15 17.2 0 9.6 7.8 17.3 17.3 17.3 7.2 0 13.1 5.9 13.1 13.1s-5.9 13.1-13.1 13.1c-5.8 0-10.8-3.8-12.5-9.1-.5-1.4-2-2.2-3.4-1.7-1.4.5-2.2 2-1.7 3.4 2.4 7.4 9.3 12.8 17.6 12.8 10 0 18.5-8.2 18.5-18.5s-8.2-18.5-18.5-18.5c-6.6 0-12-5.4-12-12s5.4-12 12-12c5.3 0 9.9 3.5 11.5 8.3.5 1.4 2 2.2 3.4 1.7 1.4-.5 2.2-2 1.7-3.4-2.2-6.8-8.6-11.6-16.2-11.9v-4c0-1.5-1.2-2.6-2.7-2.6z" fill="white"/>
+  <defs>
+    <filter id="s">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <g filter="url(#s)">
+    <g transform="rotate(-90 50 50)" fill="none">
+      <!-- Inner ring: r=22, stroke-width=12 (spans radius 16-28) -->
+      <circle cx="50" cy="50" r="22" stroke="#10b981" stroke-width="12"
+        stroke-dasharray="36.9 101.3" stroke-dashoffset="0"/>
+      <circle cx="50" cy="50" r="22" stroke="#8b5cf6" stroke-width="12"
+        stroke-dasharray="33.0 105.2" stroke-dashoffset="-38.4"/>
+      <circle cx="50" cy="50" r="22" stroke="#ef4444" stroke-width="12"
+        stroke-dasharray="27.6 110.6" stroke-dashoffset="-73.0"/>
+      <circle cx="50" cy="50" r="22" stroke="#3b82f6" stroke-width="12"
+        stroke-dasharray="21.5 116.7" stroke-dashoffset="-102.1"/>
+      <circle cx="50" cy="50" r="22" stroke="#ec4899" stroke-width="12"
+        stroke-dasharray="11.5 126.7" stroke-dashoffset="-125.1"/>
+      <!-- Outer ring: r=36, stroke-width=12 (spans radius 30-42) -->
+      <circle cx="50" cy="50" r="36" stroke="#10b981" stroke-width="12"
+        stroke-dasharray="30.2 196.0" stroke-dashoffset="0"/>
+      <circle cx="50" cy="50" r="36" stroke="#34d399" stroke-width="12"
+        stroke-dasharray="28.9 197.3" stroke-dashoffset="-31.4"/>
+      <circle cx="50" cy="50" r="36" stroke="#8b5cf6" stroke-width="12"
+        stroke-dasharray="27.6 198.6" stroke-dashoffset="-62.8"/>
+      <circle cx="50" cy="50" r="36" stroke="#a78bfa" stroke-width="12"
+        stroke-dasharray="25.8 200.4" stroke-dashoffset="-91.7"/>
+      <circle cx="50" cy="50" r="36" stroke="#ef4444" stroke-width="12"
+        stroke-dasharray="23.9 202.3" stroke-dashoffset="-120.0"/>
+      <circle cx="50" cy="50" r="36" stroke="#f87171" stroke-width="12"
+        stroke-dasharray="19.5 206.7" stroke-dashoffset="-145.1"/>
+      <circle cx="50" cy="50" r="36" stroke="#3b82f6" stroke-width="12"
+        stroke-dasharray="18.8 207.4" stroke-dashoffset="-167.1"/>
+      <circle cx="50" cy="50" r="36" stroke="#60a5fa" stroke-width="12"
+        stroke-dasharray="15.1 211.1" stroke-dashoffset="-187.2"/>
+      <circle cx="50" cy="50" r="36" stroke="#ec4899" stroke-width="12"
+        stroke-dasharray="18.8 207.4" stroke-dashoffset="-204.8"/>
+    </g>
+    <circle cx="50" cy="50" r="14" fill="white"/>
+  </g>
 </svg>
