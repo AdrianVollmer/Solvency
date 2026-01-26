@@ -223,6 +223,14 @@ pub fn routes() -> Router<AppState> {
             get(api::spending_over_time),
         )
         .route("/api/analytics/monthly-summary", get(api::monthly_summary))
+        .route(
+            "/api/analytics/spending-by-category-tree",
+            get(api::spending_by_category_tree),
+        )
+        .route(
+            "/api/analytics/monthly-by-category",
+            get(api::monthly_by_category),
+        )
         // Health check
         .route("/health", get(health))
 }

@@ -5,8 +5,9 @@ use chrono::NaiveDate;
 use serde::Deserialize;
 
 use crate::date_utils::{DatePreset, DateRange};
-use crate::db::queries::settings;
+use crate::db::queries::{categories, settings};
 use crate::error::{AppResult, RenderHtml};
+use crate::models::category::CategoryWithPath;
 use crate::models::Settings;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -16,6 +17,7 @@ pub struct SpendingFilterParams {
     pub from_date: Option<String>,
     pub to_date: Option<String>,
     pub preset: Option<String>,
+    pub tab: Option<String>,
 }
 
 impl SpendingFilterParams {
@@ -51,6 +53,8 @@ pub struct SpendingTemplate {
     pub xsrf_token: String,
     pub date_range: DateRange,
     pub presets: &'static [DatePreset],
+    pub active_tab: String,
+    pub categories: Vec<CategoryWithPath>,
 }
 
 pub async fn index(
@@ -63,6 +67,14 @@ pub async fn index(
 
     let date_range = params.resolve_date_range();
 
+    let active_tab = match params.tab.as_deref() {
+        Some("time") => "time".to_string(),
+        Some("monthly") => "monthly".to_string(),
+        _ => "category".to_string(),
+    };
+
+    let cats = categories::list_categories_with_path(&conn)?;
+
     let template = SpendingTemplate {
         title: "Spending".into(),
         settings: app_settings,
@@ -72,6 +84,8 @@ pub async fn index(
         xsrf_token: state.xsrf_token.value().to_string(),
         date_range,
         presets: DatePreset::all(),
+        active_tab,
+        categories: cats,
     };
 
     template.render_html()

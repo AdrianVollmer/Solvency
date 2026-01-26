@@ -51,22 +51,76 @@
         <input type="hidden" id="to_date" value="{{ date_range.to_str() }}">
     </div>
 
-    {# Charts #}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
-            <h2 class="section-title mb-4">Spending by Category</h2>
-            <div id="category-chart" class="aspect-square max-h-[400px]" role="img" aria-label="Pie chart showing spending by category"></div>
-        </div>
-
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
-            <h2 class="section-title mb-4">Spending Over Time</h2>
-            <div id="time-chart" class="aspect-video" role="img" aria-label="Line chart showing spending over time"></div>
-        </div>
+    {# Chart tabs #}
+    <div class="flex flex-wrap gap-2">
+        <a href="/spending?{% if date_range.preset.is_some() %}preset={{ date_range.preset.unwrap().as_str() }}{% else %}from_date={{ date_range.from_str() }}&amp;to_date={{ date_range.to_str() }}{% endif %}&amp;tab=category"
+            class="tab {% if active_tab == "category" %}tab-active{% else %}tab-inactive{% endif %}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                <path d="M8 3.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                <circle cx="8" cy="8" r="2" fill="currentColor"/>
+            </svg>
+            By Category
+        </a>
+        <a href="/spending?{% if date_range.preset.is_some() %}preset={{ date_range.preset.unwrap().as_str() }}{% else %}from_date={{ date_range.from_str() }}&amp;to_date={{ date_range.to_str() }}{% endif %}&amp;tab=time"
+            class="tab {% if active_tab == "time" %}tab-active{% else %}tab-inactive{% endif %}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <polyline points="1,12 5,7 9,9 15,3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <polyline points="1,12 5,7 9,9 15,3 15,12 1,12" fill="currentColor" opacity="0.15"/>
+            </svg>
+            Over Time
+        </a>
+        <a href="/spending?{% if date_range.preset.is_some() %}preset={{ date_range.preset.unwrap().as_str() }}{% else %}from_date={{ date_range.from_str() }}&amp;to_date={{ date_range.to_str() }}{% endif %}&amp;tab=monthly"
+            class="tab {% if active_tab == "monthly" %}tab-active{% else %}tab-inactive{% endif %}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="1" y="8" width="3.5" height="7" rx="0.75" fill="currentColor" opacity="0.5"/>
+                <rect x="6.25" y="4" width="3.5" height="11" rx="0.75" fill="currentColor" opacity="0.75"/>
+                <rect x="11.5" y="1" width="3.5" height="14" rx="0.75" fill="currentColor"/>
+            </svg>
+            Monthly
+        </a>
     </div>
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
-        <h2 class="section-title mb-4">Monthly Summary</h2>
+    {# Active chart #}
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6" data-active-tab="{{ active_tab }}">
+        {% if active_tab == "category" %}
+        <h2 class="section-title mb-4">Spending by Category</h2>
+        <div id="category-chart" class="aspect-square max-h-[500px]" role="img" aria-label="Sunburst chart showing spending by category"></div>
+        {% else if active_tab == "time" %}
+        <h2 class="section-title mb-4">Spending Over Time</h2>
+        <div id="time-chart" class="aspect-video" role="img" aria-label="Line chart showing spending over time"></div>
+        {% else %}
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="section-title">Monthly Summary</h2>
+            <div class="relative" id="category-filter">
+                <button type="button" id="category-filter-btn"
+                    class="btn-ghost px-3 py-2 text-sm rounded-lg inline-flex items-center gap-2 border border-neutral-200 dark:border-neutral-700">
+                    <span id="category-filter-label">All categories</span>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div id="category-filter-dropdown"
+                    class="hidden absolute right-0 z-20 mt-1 w-64 max-h-72 overflow-y-auto rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-lg py-1">
+                    <div class="flex items-center justify-between px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-700">
+                        <button type="button" id="category-select-all" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Select all</button>
+                        <button type="button" id="category-select-none" class="text-xs text-neutral-500 dark:text-neutral-400 hover:underline">Clear</button>
+                    </div>
+                    {% for cat in categories %}
+                    <label class="flex items-center gap-2 py-1.5 pr-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer"
+                        style="padding-left: {{ cat.indent_px() }}px">
+                        <input type="checkbox" value="{{ cat.category.id }}"
+                            class="category-checkbox rounded border-neutral-300 dark:border-neutral-600 text-primary-600 focus:ring-primary-500" />
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0"
+                            style="background: {{ cat.category.color }}"></span>
+                        <span class="text-sm truncate">{{ cat.category.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
         <div id="monthly-chart" class="aspect-[2/1]" role="img" aria-label="Bar chart showing monthly spending summary"></div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -36,6 +36,10 @@ impl CategoryWithPath {
         self.category.parent_id == Some(*parent_id)
     }
 
+    pub fn indent_px(&self) -> i64 {
+        self.depth * 20 + 12
+    }
+
     pub fn parent_id_or_empty(&self) -> String {
         self.category
             .parent_id
