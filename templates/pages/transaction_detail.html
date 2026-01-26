@@ -30,7 +30,7 @@
                         {{ settings.format_money(transaction.amount_cents)|safe }}
                     </div>
                     <div class="text-sm text-gray-500 dark:text-gray-400">
-                        {% if transaction.is_income() %}Income{% else %}Transaction{% endif %}
+                        {% if transaction.is_income() %}Income{% else %}Expense{% endif %}
                     </div>
                 </div>
             </div>
