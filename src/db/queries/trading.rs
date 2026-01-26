@@ -11,6 +11,12 @@ use tracing::debug;
 /// Raw activity row for position calculations: (symbol, activity_type, quantity, unit_price_cents, fee_cents, currency)
 type ActivityRow = (String, String, Option<f64>, Option<i64>, i64, String);
 
+/// Raw activity row for closed position calculations: (symbol, activity_type, quantity, unit_price_cents, currency, date)
+type ClosedPositionActivityRow = (String, String, Option<f64>, Option<i64>, String, String);
+
+/// Accumulator for position tracking: (quantity, total_cost, total_proceeds, total_fees, total_taxes, total_dividends, currency, first_date, last_date)
+type PositionAccumulator = (f64, i64, i64, i64, i64, i64, String, String, String);
+
 // Activity operations
 
 #[derive(Default)]
@@ -397,7 +403,7 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
          ORDER BY symbol, date ASC, id ASC",
     )?;
 
-    let activities: Vec<(String, String, Option<f64>, Option<i64>, String, String)> = stmt
+    let activities: Vec<ClosedPositionActivityRow> = stmt
         .query_map([], |row| {
             Ok((
                 row.get(0)?,
@@ -413,8 +419,7 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
 
     // Calculate positions by symbol, tracking cost, proceeds, fees, taxes, dividends, and dates
     // (quantity, total_cost, total_proceeds, total_fees, total_taxes, total_dividends, currency, first_date, last_date)
-    let mut positions_map: HashMap<String, (f64, i64, i64, i64, i64, i64, String, String, String)> =
-        HashMap::new();
+    let mut positions_map: HashMap<String, PositionAccumulator> = HashMap::new();
 
     for (symbol, activity_type_str, quantity, unit_price_cents, currency, date) in activities {
         let activity_type: TradingActivityType = activity_type_str

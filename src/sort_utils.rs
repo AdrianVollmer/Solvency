@@ -6,18 +6,22 @@ pub enum SortDirection {
     Asc,
 }
 
+impl std::str::FromStr for SortDirection {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_str() {
+            "asc" => Self::Asc,
+            _ => Self::Desc,
+        })
+    }
+}
+
 impl SortDirection {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Asc => "asc",
             Self::Desc => "desc",
-        }
-    }
-
-    pub fn from_str(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
-            "asc" => Self::Asc,
-            _ => Self::Desc,
         }
     }
 
@@ -63,7 +67,7 @@ pub trait Sortable {
 
         let direction = self
             .sort_dir()
-            .map(|s| SortDirection::from_str(s))
+            .map(|s| s.parse().unwrap())
             .unwrap_or_default();
 
         TableSort { column, direction }

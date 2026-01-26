@@ -83,7 +83,7 @@ fn sort_coverage(coverage: &mut [SymbolDataCoverage], sort: &TableSort<MarketDat
                 // Sort by coverage status: Complete < Stale < No data
                 let status_a = a.coverage_status();
                 let status_b = b.coverage_status();
-                status_a.cmp(&status_b)
+                status_a.cmp(status_b)
             }
         };
 
