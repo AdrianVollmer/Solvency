@@ -11,6 +11,7 @@ RUN npm ci
 COPY scripts/build-ts.js scripts/generate-icons.js ./scripts/
 COPY static ./static
 COPY tailwind.config.js ./
+COPY templates ./templates
 
 # Build CSS and JS
 RUN npm run build:css && npm run build:ts
@@ -80,6 +81,9 @@ COPY --from=rust-builder /build/target/release/moneymapper /app/moneymapper
 
 # Copy static assets from frontend builder
 COPY --from=frontend-builder /build/static /app/static
+
+# Copy migrations for runtime execution
+COPY --from=rust-builder /build/migrations /app/migrations
 
 # Create data directory
 RUN mkdir -p /app/data
