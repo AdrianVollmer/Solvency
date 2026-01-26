@@ -30,6 +30,17 @@ interface MonthlyByCategoryResponse {
 
 let activeChart: any = null;
 
+function showEmptyState(container: HTMLElement): void {
+  if (activeChart) {
+    activeChart.dispose();
+    activeChart = null;
+  }
+  container.innerHTML =
+    '<div class="flex items-center justify-center h-full min-h-[200px] text-neutral-400 dark:text-neutral-500 text-sm">' +
+    "No data for the selected period" +
+    "</div>";
+}
+
 function formatCurrency(cents: number): string {
   return "$" + (cents / 100).toFixed(2);
 }
@@ -73,6 +84,11 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
     "/api/analytics/spending-by-category-tree",
     params
   );
+
+  if (data.length === 0) {
+    showEmptyState(container);
+    return;
+  }
 
   if (activeChart) {
     activeChart.dispose();
@@ -154,6 +170,11 @@ async function updateTimeChart(params: URLSearchParams): Promise<void> {
     params
   );
 
+  if (data.length === 0) {
+    showEmptyState(container);
+    return;
+  }
+
   if (activeChart) {
     activeChart.dispose();
   }
@@ -225,12 +246,6 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
 
   const selectedIds = getSelectedCategoryIds();
 
-  if (activeChart) {
-    activeChart.dispose();
-  }
-
-  activeChart = echarts.init(container, getTheme());
-
   if (selectedIds.length > 0) {
     // Multi-bar mode: one series per selected category
     const catParams = new URLSearchParams(params);
@@ -240,6 +255,16 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
       "/api/analytics/monthly-by-category",
       catParams
     );
+
+    if (data.series.length === 0) {
+      showEmptyState(container);
+      return;
+    }
+
+    if (activeChart) {
+      activeChart.dispose();
+    }
+    activeChart = echarts.init(container, getTheme());
 
     const series = data.series.map((s) => ({
       name: s.category,
@@ -293,6 +318,16 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
       "/api/analytics/monthly-summary",
       params
     );
+
+    if (data.length === 0) {
+      showEmptyState(container);
+      return;
+    }
+
+    if (activeChart) {
+      activeChart.dispose();
+    }
+    activeChart = echarts.init(container, getTheme());
 
     const option = {
       backgroundColor: "transparent",

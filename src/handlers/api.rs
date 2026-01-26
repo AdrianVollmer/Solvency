@@ -1,6 +1,7 @@
 use axum::extract::{Query, State};
 use axum::response::Json;
 use serde::{Deserialize, Serialize};
+use tracing::{debug, warn};
 
 use crate::db::queries::{categories, transactions};
 use crate::error::AppResult;
@@ -90,6 +91,11 @@ pub async fn spending_over_time(
     State(state): State<AppState>,
     Query(params): Query<AnalyticsParams>,
 ) -> AppResult<Json<Vec<TimeSeriesPoint>>> {
+    debug!(
+        from_date = ?params.from_date,
+        to_date = ?params.to_date,
+        "spending_over_time: fetching data"
+    );
     let conn = state.db.get()?;
 
     let filter = transactions::TransactionFilter {
@@ -99,6 +105,10 @@ pub async fn spending_over_time(
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
+    debug!(
+        transactions = transaction_list.len(),
+        "spending_over_time: loaded transactions"
+    );
 
     let mut daily_totals: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
 
@@ -116,6 +126,15 @@ pub async fn spending_over_time(
 
     result.sort_by(|a, b| a.date.cmp(&b.date));
 
+    if result.is_empty() {
+        warn!("spending_over_time: no data points in selected period");
+    } else {
+        debug!(
+            data_points = result.len(),
+            "spending_over_time: returning time series"
+        );
+    }
+
     Ok(Json(result))
 }
 
@@ -123,6 +142,11 @@ pub async fn monthly_summary(
     State(state): State<AppState>,
     Query(params): Query<AnalyticsParams>,
 ) -> AppResult<Json<Vec<MonthlySummary>>> {
+    debug!(
+        from_date = ?params.from_date,
+        to_date = ?params.to_date,
+        "monthly_summary: fetching data"
+    );
     let conn = state.db.get()?;
 
     let filter = transactions::TransactionFilter {
@@ -132,6 +156,10 @@ pub async fn monthly_summary(
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
+    debug!(
+        transactions = transaction_list.len(),
+        "monthly_summary: loaded transactions"
+    );
 
     let mut monthly_data: std::collections::HashMap<String, (i64, i64)> =
         std::collections::HashMap::new();
@@ -164,6 +192,15 @@ pub async fn monthly_summary(
 
     result.sort_by(|a, b| a.month.cmp(&b.month));
 
+    if result.is_empty() {
+        warn!("monthly_summary: no monthly data in selected period");
+    } else {
+        debug!(
+            months = result.len(),
+            "monthly_summary: returning summaries"
+        );
+    }
+
     Ok(Json(result))
 }
 
@@ -180,6 +217,11 @@ pub async fn spending_by_category_tree(
     State(state): State<AppState>,
     Query(params): Query<AnalyticsParams>,
 ) -> AppResult<Json<Vec<CategoryTreeNode>>> {
+    debug!(
+        from_date = ?params.from_date,
+        to_date = ?params.to_date,
+        "spending_by_category_tree: fetching data"
+    );
     let conn = state.db.get()?;
 
     let filter = transactions::TransactionFilter {
@@ -190,6 +232,11 @@ pub async fn spending_by_category_tree(
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
     let all_categories = categories::list_categories(&conn)?;
+    debug!(
+        transactions = transaction_list.len(),
+        categories = all_categories.len(),
+        "spending_by_category_tree: loaded raw data"
+    );
 
     // Group spending by category_id, then keep only net-negative
     // categories (actual spending) and flip sign to positive.
@@ -330,6 +377,15 @@ pub async fn spending_by_category_tree(
         total_b.cmp(&total_a)
     });
 
+    if result.is_empty() {
+        warn!("spending_by_category_tree: no spending data in selected period");
+    } else {
+        debug!(
+            top_level_nodes = result.len(),
+            "spending_by_category_tree: returning tree"
+        );
+    }
+
     Ok(Json(result))
 }
 
@@ -357,6 +413,12 @@ pub async fn monthly_by_category(
     State(state): State<AppState>,
     Query(params): Query<MonthlyByCategoryParams>,
 ) -> AppResult<Json<MonthlyByCategoryResponse>> {
+    debug!(
+        from_date = ?params.from_date,
+        to_date = ?params.to_date,
+        category_ids = ?params.category_ids,
+        "monthly_by_category: fetching data"
+    );
     let conn = state.db.get()?;
 
     let selected_ids: std::collections::HashSet<i64> = params
@@ -368,6 +430,7 @@ pub async fn monthly_by_category(
         .collect();
 
     if selected_ids.is_empty() {
+        debug!("monthly_by_category: no category IDs provided, returning empty");
         return Ok(Json(MonthlyByCategoryResponse {
             months: Vec::new(),
             series: Vec::new(),
@@ -453,6 +516,19 @@ pub async fn monthly_by_category(
         let sum_b: i64 = b.totals.iter().sum();
         sum_b.cmp(&sum_a)
     });
+
+    if series.is_empty() {
+        warn!(
+            selected = selected_ids.len(),
+            "monthly_by_category: no spending data for selected categories"
+        );
+    } else {
+        debug!(
+            months = months.len(),
+            series = series.len(),
+            "monthly_by_category: returning data"
+        );
+    }
 
     Ok(Json(MonthlyByCategoryResponse { months, series }))
 }
