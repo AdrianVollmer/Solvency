@@ -2,10 +2,10 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-<div class="space-y-8">
+<div class="space-y-6">
     {% call ui::page_header(title="Settings", subtitle="Configure your preferences") %}{% endcall %}
 
-    <form hx-post="/settings/update" hx-target="#settings-message" hx-swap="innerHTML" class="space-y-8 max-w-2xl">
+    <form hx-post="/settings/update" hx-target="#settings-message" hx-swap="innerHTML" class="space-y-6 max-w-2xl">
         {# Appearance #}
         <section>
             <h2 class="section-title mb-4">Appearance</h2>
