@@ -5,7 +5,7 @@ use serde::Serialize;
 pub struct NetWorthDataPoint {
     pub date: String,
     pub net_worth_cents: i64,
-    pub expense_component_cents: i64,
+    pub transaction_component_cents: i64,
     pub portfolio_component_cents: i64,
 }
 

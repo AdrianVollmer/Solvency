@@ -9,7 +9,7 @@ If no path is provided, defaults to 'moneymapper.db' in the current directory.
 
 This script generates 3 years of demo data including:
 - Multiple accounts (Cash and Securities)
-- Expenses with realistic categories
+- Transactions with realistic categories
 - Monthly salary with yearly raises and variations
 - Trading activities (buys, sells, dividends)
 """
@@ -20,7 +20,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# Realistic expense templates by category
+# Realistic transaction templates by category
 EXPENSE_TEMPLATES: dict[str, list[tuple[str, int, int]]] = {
     # (description, min_cents, max_cents)
     "Groceries": [
@@ -271,8 +271,8 @@ def get_account_map(conn: sqlite3.Connection) -> dict[str, int]:
 def clear_existing_data(conn: sqlite3.Connection) -> None:
     """Clear existing generated data but keep schema and default categories."""
     print("Clearing existing data...")
-    conn.execute("DELETE FROM expense_tags")
-    conn.execute("DELETE FROM expenses")
+    conn.execute("DELETE FROM transaction_tags")
+    conn.execute("DELETE FROM transactions")
     conn.execute("DELETE FROM trading_activities")
     conn.execute("DELETE FROM market_data")
     conn.execute("DELETE FROM accounts")
@@ -390,13 +390,13 @@ def generate_salary_schedule(
     return salaries
 
 
-def seed_expenses(
+def seed_transactions(
     conn: sqlite3.Connection,
-    num_expenses: int = 1500,
+    num_transactions: int = 1500,
     days_back: int = 1095,
 ) -> None:
-    """Generate realistic expenses over 3 years."""
-    print(f"Seeding {num_expenses} expenses over {days_back} days...")
+    """Generate realistic transactions over 3 years."""
+    print(f"Seeding {num_transactions} transactions over {days_back} days...")
 
     category_map = get_category_map(conn)
     tag_map = get_tag_map(conn)
@@ -446,14 +446,14 @@ def seed_expenses(
         "subscription": [],  # Assigned via pattern matching
     }
 
-    expenses_data: list[tuple] = []
-    expense_tags_data: list[tuple[int, int]] = []
+    transactions_data: list[tuple] = []
+    transaction_tags_data: list[tuple[int, int]] = []
 
-    for _ in range(num_expenses):
+    for _ in range(num_transactions):
         # Pick random category
         category_name = random.choice(weighted_categories)
 
-        # Get expense template
+        # Get transaction template
         if category_name not in EXPENSE_TEMPLATES:
             continue
 
@@ -465,12 +465,12 @@ def seed_expenses(
 
         # Generate date (weighted toward recent dates)
         days_ago = int(random.paretovariate(1.5) * 30) % days_back
-        expense_date = today - timedelta(days=days_ago)
+        transaction_date = today - timedelta(days=days_ago)
 
         # Get category ID
         category_id = category_map.get(category_name)
 
-        # Assign account based on expense type
+        # Assign account based on transaction type
         # Rent/mortgage from checking, small purchases on credit card
         if category_name in ["Rent/Mortgage", "Utilities", "Insurance"]:
             account_id = checking_id
@@ -485,7 +485,7 @@ def seed_expenses(
             note_templates = [
                 "Paid with credit card",
                 "Split with roommate",
-                "Business expense - need to submit",
+                "Business transaction - need to submit",
                 "Birthday celebration",
                 "Weekly shopping",
                 "Emergency purchase",
@@ -497,16 +497,16 @@ def seed_expenses(
         # Generate payee (the recipient of the payment - i.e. the vendor)
         payee = description.split(" - ")[0]  # Use vendor name as payee
 
-        expenses_data.append(
+        transactions_data.append(
             (
-                expense_date.isoformat(),
-                -amount_cents,  # Negative for expenses
+                transaction_date.isoformat(),
+                -amount_cents,  # Negative for transactions
                 "USD",
                 description,
                 category_id,
                 account_id,
                 notes,
-                None,  # payer (not set for expenses - we are the payer)
+                None,  # payer (not set for transactions - we are the payer)
                 payee,  # payee (the vendor receiving money)
             )
         )
@@ -518,7 +518,7 @@ def seed_expenses(
         datetime.combine(today, datetime.min.time()),
     )
     for salary_date, amount, desc in salary_schedule:
-        expenses_data.append(
+        transactions_data.append(
             (
                 salary_date.date().isoformat(),
                 amount,  # Positive for income
@@ -548,14 +548,14 @@ def seed_expenses(
         desc, min_c, max_c, payer = random.choice(other_income)
         amount_cents = random.randint(min_c, max_c)
         days_ago = random.randint(0, days_back)
-        expense_date = today - timedelta(days=days_ago)
+        transaction_date = today - timedelta(days=days_ago)
 
         # Tax refund goes to savings, others to checking
         income_account = savings_id if desc == "Tax Refund" else checking_id
 
-        expenses_data.append(
+        transactions_data.append(
             (
-                expense_date.isoformat(),
+                transaction_date.isoformat(),
                 amount_cents,  # Positive for income
                 "USD",
                 desc,
@@ -567,29 +567,29 @@ def seed_expenses(
             )
         )
 
-    # Insert expenses
+    # Insert transactions
     conn.executemany(
-        """INSERT INTO expenses
+        """INSERT INTO transactions
            (date, amount_cents, currency, description, category_id, account_id, notes, payer, payee)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        expenses_data,
+        transactions_data,
     )
     conn.commit()
 
-    # Get expense IDs and assign tags
-    print("Assigning tags to expenses...")
+    # Get transaction IDs and assign tags
+    print("Assigning tags to transactions...")
     cursor = conn.execute(
-        "SELECT id, description, category_id FROM expenses ORDER BY id"
+        "SELECT id, description, category_id FROM transactions ORDER BY id"
     )
-    expenses = cursor.fetchall()
+    transactions = cursor.fetchall()
 
     # Reverse lookup for category names
     id_to_category = {v: k for k, v in category_map.items()}
 
-    for expense in expenses:
-        expense_id = expense["id"]
-        description = expense["description"]
-        category_id = expense["category_id"]
+    for transaction in transactions:
+        transaction_id = transaction["id"]
+        description = transaction["description"]
+        category_id = transaction["category_id"]
         category_name = id_to_category.get(category_id, "")
 
         tags_to_add: set[str] = set()
@@ -619,15 +619,15 @@ def seed_expenses(
         if random.random() < 0.08:
             tags_to_add.add("impulse")
 
-        # Insert expense-tag relationships
+        # Insert transaction-tag relationships
         for tag_name in tags_to_add:
             tag_id = tag_map.get(tag_name)
             if tag_id:
-                expense_tags_data.append((expense_id, tag_id))
+                transaction_tags_data.append((transaction_id, tag_id))
 
     conn.executemany(
-        "INSERT OR IGNORE INTO expense_tags (expense_id, tag_id) VALUES (?, ?)",
-        expense_tags_data,
+        "INSERT OR IGNORE INTO transaction_tags (transaction_id, tag_id) VALUES (?, ?)",
+        transaction_tags_data,
     )
     conn.commit()
 
@@ -860,11 +860,11 @@ def print_summary(conn: sqlite3.Connection) -> None:
     cursor = conn.execute("SELECT COUNT(*) as count FROM tags")
     print(f"Tags: {cursor.fetchone()['count']}")
 
-    cursor = conn.execute("SELECT COUNT(*) as count FROM expenses")
-    print(f"Expenses: {cursor.fetchone()['count']}")
+    cursor = conn.execute("SELECT COUNT(*) as count FROM transactions")
+    print(f"Transactions: {cursor.fetchone()['count']}")
 
-    cursor = conn.execute("SELECT COUNT(*) as count FROM expense_tags")
-    print(f"Expense-Tag relations: {cursor.fetchone()['count']}")
+    cursor = conn.execute("SELECT COUNT(*) as count FROM transaction_tags")
+    print(f"Transaction-Tag relations: {cursor.fetchone()['count']}")
 
     cursor = conn.execute("SELECT COUNT(*) as count FROM rules")
     print(f"Rules: {cursor.fetchone()['count']}")
@@ -872,24 +872,24 @@ def print_summary(conn: sqlite3.Connection) -> None:
     cursor = conn.execute("SELECT COUNT(*) as count FROM trading_activities")
     print(f"Trading activities: {cursor.fetchone()['count']}")
 
-    # Expense summary
+    # Transaction summary
     cursor = conn.execute(
-        "SELECT SUM(amount_cents) / 100.0 as total FROM expenses WHERE amount_cents < 0"
+        "SELECT SUM(amount_cents) / 100.0 as total FROM transactions WHERE amount_cents < 0"
     )
-    total_expenses = cursor.fetchone()["total"] or 0
-    print(f"Total spending: ${abs(total_expenses):,.2f}")
+    total_transactions = cursor.fetchone()["total"] or 0
+    print(f"Total spending: ${abs(total_transactions):,.2f}")
 
     cursor = conn.execute(
-        "SELECT SUM(amount_cents) / 100.0 as total FROM expenses WHERE amount_cents > 0"
+        "SELECT SUM(amount_cents) / 100.0 as total FROM transactions WHERE amount_cents > 0"
     )
     total_income = cursor.fetchone()["total"] or 0
     print(f"Total income: ${total_income:,.2f}")
 
     cursor = conn.execute(
-        """SELECT MIN(date) as min_date, MAX(date) as max_date FROM expenses"""
+        """SELECT MIN(date) as min_date, MAX(date) as max_date FROM transactions"""
     )
     row = cursor.fetchone()
-    print(f"Expense date range: {row['min_date']} to {row['max_date']}")
+    print(f"Transaction date range: {row['min_date']} to {row['max_date']}")
 
     # Trading summary
     cursor = conn.execute(
@@ -911,10 +911,10 @@ def main() -> None:
         help="Path to the SQLite database file (default: demo.db)",
     )
     parser.add_argument(
-        "--expenses",
+        "--transactions",
         type=int,
         default=1500,
-        help="Number of expenses to generate (default: 1500)",
+        help="Number of transactions to generate (default: 1500)",
     )
     parser.add_argument(
         "--days",
@@ -947,7 +947,7 @@ def main() -> None:
         seed_accounts(conn)
         seed_tags(conn)
         seed_rules(conn)
-        seed_expenses(conn, num_expenses=args.expenses, days_back=args.days)
+        seed_transactions(conn, num_transactions=args.transactions, days_back=args.days)
         seed_trading_activities(conn, days_back=args.days)
         print_summary(conn)
 

@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
-use crate::db::queries::{categories, expenses, import, settings, tags};
+use crate::db::queries::{categories, transactions, import, settings, tags};
 use crate::error::{html_escape, AppError, AppResult};
-use crate::models::{CategoryWithPath, ImportSession, ImportStatus, NewExpense, Settings};
+use crate::models::{CategoryWithPath, ImportSession, ImportStatus, NewTransaction, Settings};
 use crate::services::csv_parser::parse_csv;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -215,14 +215,14 @@ async fn parse_files_background(
             Ok(result) => {
                 debug!(
                     file_name = %file_name,
-                    rows_parsed = result.expenses.len(),
+                    rows_parsed = result.transactions.len(),
                     parse_errors = result.errors.len(),
                     "CSV file parsed"
                 );
                 // Insert rows into database
                 if let Ok(conn) = state.db.get() {
-                    for expense in result.expenses {
-                        if let Err(e) = import::insert_row(&conn, &session_id, row_index, &expense)
+                    for transaction in result.transactions {
+                        if let Err(e) = import::insert_row(&conn, &session_id, row_index, &transaction)
                         {
                             all_errors.push(format!("{}: Failed to store row: {}", file_name, e));
                         }
@@ -494,7 +494,7 @@ async fn import_rows_background(state: AppState, session_id: String) {
             })
             .collect();
 
-        let new_expense = NewExpense {
+        let new_transaction = NewTransaction {
             date: row.data.date.clone(),
             amount_cents: (amount * 100.0).round() as i64,
             currency: row.data.currency.clone(),
@@ -514,7 +514,7 @@ async fn import_rows_background(state: AppState, session_id: String) {
             customer_reference: row.data.customer_reference.clone(),
         };
 
-        match expenses::create_expense(&conn, &new_expense) {
+        match transactions::create_transaction(&conn, &new_transaction) {
             Ok(_) => {
                 let _ = import::mark_row_imported(&conn, row.id);
             }

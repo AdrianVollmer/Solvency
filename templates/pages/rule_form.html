@@ -3,11 +3,11 @@
 
 {% block content %}
 <div class="space-y-6">
-    {% call ui::page_header(title="Add Rule", back_url="/rules", back_label="Rules", subtitle="Create a rule to automatically categorize expenses") %}{% endcall %}
+    {% call ui::page_header(title="Add Rule", back_url="/rules", back_label="Rules", subtitle="Create a rule to automatically categorize transactions") %}{% endcall %}
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl">
         <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-            Rules automatically assign categories or tags to expenses based on description patterns.
+            Rules automatically assign categories or tags to transactions based on description patterns.
             Use regular expressions for flexible matching.
         </p>
 

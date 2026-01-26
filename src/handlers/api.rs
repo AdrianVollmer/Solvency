@@ -2,7 +2,7 @@ use axum::extract::{Query, State};
 use axum::response::Json;
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::expenses;
+use crate::db::queries::transactions;
 use crate::error::AppResult;
 use crate::state::AppState;
 
@@ -30,7 +30,7 @@ pub struct TimeSeriesPoint {
 pub struct MonthlySummary {
     pub month: String,
     pub total_cents: i64,
-    pub expense_count: i64,
+    pub transaction_count: i64,
     pub average_cents: i64,
 }
 
@@ -40,29 +40,29 @@ pub async fn spending_by_category(
 ) -> AppResult<Json<Vec<CategorySpending>>> {
     let conn = state.db.get()?;
 
-    let filter = expenses::ExpenseFilter {
+    let filter = transactions::TransactionFilter {
         from_date: params.from_date,
         to_date: params.to_date,
         ..Default::default()
     };
 
-    let expense_list = expenses::list_expenses(&conn, &filter)?;
+    let transaction_list = transactions::list_transactions(&conn, &filter)?;
 
     let mut category_totals: std::collections::HashMap<String, (String, i64)> =
         std::collections::HashMap::new();
 
-    for expense in &expense_list {
-        let category_name = expense
+    for transaction in &transaction_list {
+        let category_name = transaction
             .category_name
             .clone()
             .unwrap_or_else(|| "Uncategorized".into());
-        let color = expense
+        let color = transaction
             .category_color
             .clone()
             .unwrap_or_else(|| "#6b7280".into());
 
         let entry = category_totals.entry(category_name).or_insert((color, 0));
-        entry.1 += expense.expense.amount_cents;
+        entry.1 += transaction.transaction.amount_cents;
     }
 
     let total: i64 = category_totals.values().map(|(_, v)| v).sum();
@@ -92,21 +92,21 @@ pub async fn spending_over_time(
 ) -> AppResult<Json<Vec<TimeSeriesPoint>>> {
     let conn = state.db.get()?;
 
-    let filter = expenses::ExpenseFilter {
+    let filter = transactions::TransactionFilter {
         from_date: params.from_date,
         to_date: params.to_date,
         ..Default::default()
     };
 
-    let expense_list = expenses::list_expenses(&conn, &filter)?;
+    let transaction_list = transactions::list_transactions(&conn, &filter)?;
 
     let mut daily_totals: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
 
-    for expense in &expense_list {
+    for transaction in &transaction_list {
         let entry = daily_totals
-            .entry(expense.expense.date.clone())
+            .entry(transaction.transaction.date.clone())
             .or_insert(0);
-        *entry += expense.expense.amount_cents;
+        *entry += transaction.transaction.amount_cents;
     }
 
     let mut result: Vec<TimeSeriesPoint> = daily_totals
@@ -125,37 +125,37 @@ pub async fn monthly_summary(
 ) -> AppResult<Json<Vec<MonthlySummary>>> {
     let conn = state.db.get()?;
 
-    let filter = expenses::ExpenseFilter {
+    let filter = transactions::TransactionFilter {
         from_date: params.from_date,
         to_date: params.to_date,
         ..Default::default()
     };
 
-    let expense_list = expenses::list_expenses(&conn, &filter)?;
+    let transaction_list = transactions::list_transactions(&conn, &filter)?;
 
     let mut monthly_data: std::collections::HashMap<String, (i64, i64)> =
         std::collections::HashMap::new();
 
-    for expense in &expense_list {
-        let month = if expense.expense.date.len() >= 7 {
-            expense.expense.date[..7].to_string()
+    for transaction in &transaction_list {
+        let month = if transaction.transaction.date.len() >= 7 {
+            transaction.transaction.date[..7].to_string()
         } else {
             continue;
         };
 
         let entry = monthly_data.entry(month).or_insert((0, 0));
-        entry.0 += expense.expense.amount_cents;
+        entry.0 += transaction.transaction.amount_cents;
         entry.1 += 1;
     }
 
     let mut result: Vec<MonthlySummary> = monthly_data
         .into_iter()
-        .map(|(month, (total_cents, expense_count))| MonthlySummary {
+        .map(|(month, (total_cents, transaction_count))| MonthlySummary {
             month,
             total_cents,
-            expense_count,
-            average_cents: if expense_count > 0 {
-                total_cents / expense_count
+            transaction_count,
+            average_cents: if transaction_count > 0 {
+                total_cents / transaction_count
             } else {
                 0
             },

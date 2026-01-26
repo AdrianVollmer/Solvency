@@ -1,4 +1,4 @@
--- Accounts for tracking which account expenses and trading activities belong to
+-- Accounts for tracking which account transactions and trading activities belong to
 
 CREATE TABLE accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -10,10 +10,10 @@ CREATE TABLE accounts (
 
 CREATE INDEX idx_accounts_type ON accounts(account_type);
 
--- Add optional account_id to expenses (only Cash accounts)
-ALTER TABLE expenses ADD COLUMN account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL;
+-- Add optional account_id to transactions (only Cash accounts)
+ALTER TABLE transactions ADD COLUMN account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL;
 
-CREATE INDEX idx_expenses_account ON expenses(account_id);
+CREATE INDEX idx_transactions_account ON transactions(account_id);
 
 -- Add optional account_id to trading_activities (only Securities accounts)
 ALTER TABLE trading_activities ADD COLUMN account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL;

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Expense {
+pub struct Transaction {
     pub id: i64,
     pub date: String,
     pub amount_cents: i64,
@@ -26,7 +26,7 @@ pub struct Expense {
     pub customer_reference: Option<String>,
 }
 
-impl Expense {
+impl Transaction {
     pub fn amount_display(&self) -> String {
         let is_negative = self.amount_cents < 0;
         let abs_cents = self.amount_cents.abs();
@@ -48,11 +48,11 @@ impl Expense {
         self.amount_cents > 0
     }
 
-    pub fn is_expense(&self) -> bool {
+    pub fn is_transaction(&self) -> bool {
         self.amount_cents < 0
     }
 
-    /// Returns the counterparty: payer for income, payee for expenses
+    /// Returns the counterparty: payer for income, payee for transactions
     pub fn counterparty(&self) -> Option<&str> {
         if self.is_income() {
             self.payer.as_deref()
@@ -63,24 +63,24 @@ impl Expense {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ExpenseWithRelations {
+pub struct TransactionWithRelations {
     #[serde(flatten)]
-    pub expense: Expense,
+    pub transaction: Transaction,
     pub category_name: Option<String>,
     pub category_color: Option<String>,
     pub account_name: Option<String>,
     pub tags: Vec<Tag>,
 }
 
-impl Deref for ExpenseWithRelations {
-    type Target = Expense;
+impl Deref for TransactionWithRelations {
+    type Target = Transaction;
 
     fn deref(&self) -> &Self::Target {
-        &self.expense
+        &self.transaction
     }
 }
 
-impl ExpenseWithRelations {
+impl TransactionWithRelations {
     pub fn category_color_or_default(&self) -> &str {
         self.category_color.as_deref().unwrap_or("#6b7280")
     }
@@ -126,7 +126,7 @@ impl ExpenseWithRelations {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct NewExpense {
+pub struct NewTransaction {
     pub date: String,
     pub amount_cents: i64,
     pub currency: String,
@@ -148,7 +148,7 @@ pub struct NewExpense {
     pub customer_reference: Option<String>,
 }
 
-impl NewExpense {
+impl NewTransaction {
     pub fn from_decimal(amount: f64) -> i64 {
         (amount * 100.0).round() as i64
     }

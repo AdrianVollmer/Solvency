@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 
-/// Daily expense sum: (date, amount_cents)
-pub type DailyExpenseSum = (String, i64);
+/// Daily transaction sum: (date, amount_cents)
+pub type DailyTransactionSum = (String, i64);
 
 /// Activity row for net worth: (date, symbol, activity_type, quantity, unit_price_cents, fee_cents, currency)
 pub type NetWorthActivityRow = (
@@ -20,11 +20,11 @@ pub type MarketDataRow = (String, String, i64);
 /// Last trade price row: (symbol, price_cents, date)
 pub type LastTradePriceRow = (String, i64, String);
 
-/// Get daily expense sums (grouped by date, ordered ascending)
-pub fn get_daily_expense_sums(conn: &Connection) -> rusqlite::Result<Vec<DailyExpenseSum>> {
+/// Get daily transaction sums (grouped by date, ordered ascending)
+pub fn get_daily_transaction_sums(conn: &Connection) -> rusqlite::Result<Vec<DailyTransactionSum>> {
     let mut stmt = conn.prepare(
         "SELECT date, SUM(amount_cents) as daily_sum
-         FROM expenses
+         FROM transactions
          GROUP BY date
          ORDER BY date ASC",
     )?;
@@ -104,11 +104,11 @@ pub fn get_last_trade_prices(conn: &Connection) -> rusqlite::Result<Vec<LastTrad
     Ok(rows)
 }
 
-/// Get the earliest date from expenses or trading activities
+/// Get the earliest date from transactions or trading activities
 pub fn get_earliest_date(conn: &Connection) -> rusqlite::Result<Option<String>> {
     conn.query_row(
         "SELECT MIN(date) FROM (
-            SELECT MIN(date) as date FROM expenses
+            SELECT MIN(date) as date FROM transactions
             UNION ALL
             SELECT MIN(date) as date FROM trading_activities
         )",
@@ -117,11 +117,11 @@ pub fn get_earliest_date(conn: &Connection) -> rusqlite::Result<Option<String>> 
     )
 }
 
-/// Get the latest date from expenses or trading activities
+/// Get the latest date from transactions or trading activities
 pub fn get_latest_date(conn: &Connection) -> rusqlite::Result<Option<String>> {
     conn.query_row(
         "SELECT MAX(date) FROM (
-            SELECT MAX(date) as date FROM expenses
+            SELECT MAX(date) as date FROM transactions
             UNION ALL
             SELECT MAX(date) as date FROM trading_activities
         )",

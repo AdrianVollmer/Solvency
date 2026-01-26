@@ -1,10 +1,10 @@
-use crate::models::expense::{Expense, ExpenseWithRelations, NewExpense};
+use crate::models::transaction::{Transaction, TransactionWithRelations, NewTransaction};
 use crate::models::tag::{Tag, TagStyle};
 use rusqlite::{params, Connection, OptionalExtension};
 use tracing::{debug, trace};
 
 #[derive(Default)]
-pub struct ExpenseFilter {
+pub struct TransactionFilter {
     pub search: Option<String>,
     pub category_id: Option<i64>,
     pub tag_id: Option<i64>,
@@ -16,17 +16,17 @@ pub struct ExpenseFilter {
     pub sort_sql: Option<String>,
 }
 
-pub fn list_expenses(
+pub fn list_transactions(
     conn: &Connection,
-    filter: &ExpenseFilter,
-) -> rusqlite::Result<Vec<ExpenseWithRelations>> {
+    filter: &TransactionFilter,
+) -> rusqlite::Result<Vec<TransactionWithRelations>> {
     let mut sql = String::from(
         "SELECT e.id, e.date, e.amount_cents, e.currency, e.description,
                 e.category_id, e.account_id, e.notes, e.created_at, e.updated_at,
                 e.value_date, e.payer, e.payee, e.reference, e.transaction_type,
                 e.counterparty_iban, e.creditor_id, e.mandate_reference, e.customer_reference,
                 c.name as category_name, c.color as category_color, a.name as account_name
-         FROM expenses e
+         FROM transactions e
          LEFT JOIN categories c ON e.category_id = c.id
          LEFT JOIN accounts a ON e.account_id = a.id
          WHERE 1=1",
@@ -50,7 +50,7 @@ pub fn list_expenses(
         params_vec.push(Box::new(to_date.clone()));
     }
     if let Some(tag_id) = filter.tag_id {
-        sql.push_str(" AND EXISTS(SELECT 1 FROM expense_tags et WHERE et.expense_id = e.id AND et.tag_id = ?)");
+        sql.push_str(" AND EXISTS(SELECT 1 FROM transaction_tags et WHERE et.transaction_id = e.id AND et.tag_id = ?)");
         params_vec.push(Box::new(tag_id));
     }
 
@@ -70,9 +70,9 @@ pub fn list_expenses(
     let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
     let mut stmt = conn.prepare(&sql)?;
 
-    let expense_iter = stmt.query_map(params_refs.as_slice(), |row| {
-        Ok(ExpenseWithRelations {
-            expense: Expense {
+    let transaction_iter = stmt.query_map(params_refs.as_slice(), |row| {
+        Ok(TransactionWithRelations {
+            transaction: Transaction {
                 id: row.get(0)?,
                 date: row.get(1)?,
                 amount_cents: row.get(2)?,
@@ -100,21 +100,21 @@ pub fn list_expenses(
         })
     })?;
 
-    let mut expenses: Vec<ExpenseWithRelations> = expense_iter.filter_map(|e| e.ok()).collect();
+    let mut transactions: Vec<TransactionWithRelations> = transaction_iter.filter_map(|e| e.ok()).collect();
 
-    let expense_ids: Vec<i64> = expenses.iter().map(|e| e.expense.id).collect();
-    let mut tags_map = get_tags_for_expenses(conn, &expense_ids)?;
+    let transaction_ids: Vec<i64> = transactions.iter().map(|e| e.transaction.id).collect();
+    let mut tags_map = get_tags_for_transactions(conn, &transaction_ids)?;
 
-    for expense in &mut expenses {
-        expense.tags = tags_map.remove(&expense.expense.id).unwrap_or_default();
+    for transaction in &mut transactions {
+        transaction.tags = tags_map.remove(&transaction.transaction.id).unwrap_or_default();
     }
 
-    debug!(count = expenses.len(), "Listed expenses");
-    Ok(expenses)
+    debug!(count = transactions.len(), "Listed transactions");
+    Ok(transactions)
 }
 
-pub fn count_expenses(conn: &Connection, filter: &ExpenseFilter) -> rusqlite::Result<i64> {
-    let mut sql = String::from("SELECT COUNT(*) FROM expenses e WHERE 1=1");
+pub fn count_transactions(conn: &Connection, filter: &TransactionFilter) -> rusqlite::Result<i64> {
+    let mut sql = String::from("SELECT COUNT(*) FROM transactions e WHERE 1=1");
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
     if let Some(ref search) = filter.search {
@@ -134,7 +134,7 @@ pub fn count_expenses(conn: &Connection, filter: &ExpenseFilter) -> rusqlite::Re
         params_vec.push(Box::new(to_date.clone()));
     }
     if let Some(tag_id) = filter.tag_id {
-        sql.push_str(" AND EXISTS(SELECT 1 FROM expense_tags et WHERE et.expense_id = e.id AND et.tag_id = ?)");
+        sql.push_str(" AND EXISTS(SELECT 1 FROM transaction_tags et WHERE et.transaction_id = e.id AND et.tag_id = ?)");
         params_vec.push(Box::new(tag_id));
     }
 
@@ -142,23 +142,23 @@ pub fn count_expenses(conn: &Connection, filter: &ExpenseFilter) -> rusqlite::Re
     conn.query_row(&sql, params_refs.as_slice(), |row| row.get(0))
 }
 
-pub fn get_expense(conn: &Connection, id: i64) -> rusqlite::Result<Option<ExpenseWithRelations>> {
-    trace!(expense_id = id, "Fetching expense");
-    let expense = conn
+pub fn get_transaction(conn: &Connection, id: i64) -> rusqlite::Result<Option<TransactionWithRelations>> {
+    trace!(transaction_id = id, "Fetching transaction");
+    let transaction = conn
         .query_row(
             "SELECT e.id, e.date, e.amount_cents, e.currency, e.description,
                     e.category_id, e.account_id, e.notes, e.created_at, e.updated_at,
                     e.value_date, e.payer, e.payee, e.reference, e.transaction_type,
                     e.counterparty_iban, e.creditor_id, e.mandate_reference, e.customer_reference,
                     c.name, c.color, a.name
-             FROM expenses e
+             FROM transactions e
              LEFT JOIN categories c ON e.category_id = c.id
              LEFT JOIN accounts a ON e.account_id = a.id
              WHERE e.id = ?",
             [id],
             |row| {
-                Ok(ExpenseWithRelations {
-                    expense: Expense {
+                Ok(TransactionWithRelations {
+                    transaction: Transaction {
                         id: row.get(0)?,
                         date: row.get(1)?,
                         amount_cents: row.get(2)?,
@@ -188,125 +188,125 @@ pub fn get_expense(conn: &Connection, id: i64) -> rusqlite::Result<Option<Expens
         )
         .optional()?;
 
-    if let Some(mut exp) = expense {
-        exp.tags = get_expense_tags(conn, id)?;
+    if let Some(mut exp) = transaction {
+        exp.tags = get_transaction_tags(conn, id)?;
         Ok(Some(exp))
     } else {
         Ok(None)
     }
 }
 
-pub fn create_expense(conn: &Connection, expense: &NewExpense) -> rusqlite::Result<i64> {
+pub fn create_transaction(conn: &Connection, transaction: &NewTransaction) -> rusqlite::Result<i64> {
     conn.execute(
-        "INSERT INTO expenses (date, amount_cents, currency, description, category_id, account_id, notes,
+        "INSERT INTO transactions (date, amount_cents, currency, description, category_id, account_id, notes,
          value_date, payer, payee, reference, transaction_type, counterparty_iban,
          creditor_id, mandate_reference, customer_reference)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         params![
-            expense.date,
-            expense.amount_cents,
-            expense.currency,
-            expense.description,
-            expense.category_id,
-            expense.account_id,
-            expense.notes,
-            expense.value_date,
-            expense.payer,
-            expense.payee,
-            expense.reference,
-            expense.transaction_type,
-            expense.counterparty_iban,
-            expense.creditor_id,
-            expense.mandate_reference,
-            expense.customer_reference,
+            transaction.date,
+            transaction.amount_cents,
+            transaction.currency,
+            transaction.description,
+            transaction.category_id,
+            transaction.account_id,
+            transaction.notes,
+            transaction.value_date,
+            transaction.payer,
+            transaction.payee,
+            transaction.reference,
+            transaction.transaction_type,
+            transaction.counterparty_iban,
+            transaction.creditor_id,
+            transaction.mandate_reference,
+            transaction.customer_reference,
         ],
     )?;
 
     let id = conn.last_insert_rowid();
 
-    for tag_id in &expense.tag_ids {
+    for tag_id in &transaction.tag_ids {
         conn.execute(
-            "INSERT OR IGNORE INTO expense_tags (expense_id, tag_id) VALUES (?, ?)",
+            "INSERT OR IGNORE INTO transaction_tags (transaction_id, tag_id) VALUES (?, ?)",
             params![id, tag_id],
         )?;
     }
 
     debug!(
-        expense_id = id,
-        amount_cents = expense.amount_cents,
-        "Created expense"
+        transaction_id = id,
+        amount_cents = transaction.amount_cents,
+        "Created transaction"
     );
     Ok(id)
 }
 
-pub fn update_expense(conn: &Connection, id: i64, expense: &NewExpense) -> rusqlite::Result<()> {
+pub fn update_transaction(conn: &Connection, id: i64, transaction: &NewTransaction) -> rusqlite::Result<()> {
     conn.execute(
-        "UPDATE expenses SET date = ?, amount_cents = ?, currency = ?,
+        "UPDATE transactions SET date = ?, amount_cents = ?, currency = ?,
          description = ?, category_id = ?, account_id = ?, notes = ?,
          value_date = ?, payer = ?, payee = ?, reference = ?, transaction_type = ?,
          counterparty_iban = ?, creditor_id = ?, mandate_reference = ?, customer_reference = ?,
          updated_at = datetime('now')
          WHERE id = ?",
         params![
-            expense.date,
-            expense.amount_cents,
-            expense.currency,
-            expense.description,
-            expense.category_id,
-            expense.account_id,
-            expense.notes,
-            expense.value_date,
-            expense.payer,
-            expense.payee,
-            expense.reference,
-            expense.transaction_type,
-            expense.counterparty_iban,
-            expense.creditor_id,
-            expense.mandate_reference,
-            expense.customer_reference,
+            transaction.date,
+            transaction.amount_cents,
+            transaction.currency,
+            transaction.description,
+            transaction.category_id,
+            transaction.account_id,
+            transaction.notes,
+            transaction.value_date,
+            transaction.payer,
+            transaction.payee,
+            transaction.reference,
+            transaction.transaction_type,
+            transaction.counterparty_iban,
+            transaction.creditor_id,
+            transaction.mandate_reference,
+            transaction.customer_reference,
             id,
         ],
     )?;
 
-    conn.execute("DELETE FROM expense_tags WHERE expense_id = ?", [id])?;
+    conn.execute("DELETE FROM transaction_tags WHERE transaction_id = ?", [id])?;
 
-    for tag_id in &expense.tag_ids {
+    for tag_id in &transaction.tag_ids {
         conn.execute(
-            "INSERT OR IGNORE INTO expense_tags (expense_id, tag_id) VALUES (?, ?)",
+            "INSERT OR IGNORE INTO transaction_tags (transaction_id, tag_id) VALUES (?, ?)",
             params![id, tag_id],
         )?;
     }
 
-    debug!(expense_id = id, "Updated expense");
+    debug!(transaction_id = id, "Updated transaction");
     Ok(())
 }
 
-pub fn delete_expense(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
-    let rows = conn.execute("DELETE FROM expenses WHERE id = ?", [id])?;
+pub fn delete_transaction(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
+    let rows = conn.execute("DELETE FROM transactions WHERE id = ?", [id])?;
     if rows > 0 {
-        debug!(expense_id = id, "Deleted expense");
+        debug!(transaction_id = id, "Deleted transaction");
     }
     Ok(rows > 0)
 }
 
-pub fn delete_all_expenses(conn: &Connection) -> rusqlite::Result<usize> {
-    conn.execute("DELETE FROM expense_tags", [])?;
-    let rows = conn.execute("DELETE FROM expenses", [])?;
-    tracing::warn!(count = rows, "Deleted all expenses");
+pub fn delete_all_transactions(conn: &Connection) -> rusqlite::Result<usize> {
+    conn.execute("DELETE FROM transaction_tags", [])?;
+    let rows = conn.execute("DELETE FROM transactions", [])?;
+    tracing::warn!(count = rows, "Deleted all transactions");
     Ok(rows)
 }
 
-fn get_expense_tags(conn: &Connection, expense_id: i64) -> rusqlite::Result<Vec<Tag>> {
+fn get_transaction_tags(conn: &Connection, transaction_id: i64) -> rusqlite::Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
         "SELECT t.id, t.name, t.color, t.style, t.created_at
          FROM tags t
-         JOIN expense_tags et ON t.id = et.tag_id
-         WHERE et.expense_id = ?
+         JOIN transaction_tags et ON t.id = et.tag_id
+         WHERE et.transaction_id = ?
          ORDER BY t.name",
     )?;
 
     let tags = stmt
-        .query_map([expense_id], |row| {
+        .query_map([transaction_id], |row| {
             let style_str: String = row.get(3)?;
             Ok(Tag {
                 id: row.get(0)?,
@@ -322,32 +322,32 @@ fn get_expense_tags(conn: &Connection, expense_id: i64) -> rusqlite::Result<Vec<
     Ok(tags)
 }
 
-fn get_tags_for_expenses(
+fn get_tags_for_transactions(
     conn: &Connection,
-    expense_ids: &[i64],
+    transaction_ids: &[i64],
 ) -> rusqlite::Result<std::collections::HashMap<i64, Vec<Tag>>> {
     use std::collections::HashMap;
 
-    if expense_ids.is_empty() {
+    if transaction_ids.is_empty() {
         return Ok(HashMap::new());
     }
 
-    let placeholders: String = expense_ids
+    let placeholders: String = transaction_ids
         .iter()
         .map(|_| "?")
         .collect::<Vec<_>>()
         .join(",");
     let sql = format!(
-        "SELECT et.expense_id, t.id, t.name, t.color, t.style, t.created_at
+        "SELECT et.transaction_id, t.id, t.name, t.color, t.style, t.created_at
          FROM tags t
-         JOIN expense_tags et ON t.id = et.tag_id
-         WHERE et.expense_id IN ({})
+         JOIN transaction_tags et ON t.id = et.tag_id
+         WHERE et.transaction_id IN ({})
          ORDER BY t.name",
         placeholders
     );
 
     let mut stmt = conn.prepare(&sql)?;
-    let params: Vec<&dyn rusqlite::ToSql> = expense_ids
+    let params: Vec<&dyn rusqlite::ToSql> = transaction_ids
         .iter()
         .map(|id| id as &dyn rusqlite::ToSql)
         .collect();

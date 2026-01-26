@@ -35,7 +35,7 @@
                     <option value="Securities" {% if let Some(acc) = account %}{% if acc.account_type.as_str() == "Securities" %}selected{% endif %}{% endif %}>Securities</option>
                 </select>
                 <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                    Cash accounts can be linked to expenses. Securities accounts can be linked to trading activities.
+                    Cash accounts can be linked to transactions. Securities accounts can be linked to trading activities.
                 </p>
             </div>
 
@@ -60,7 +60,7 @@
                 Delete Account
             </button>
             <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                This will remove the account. Expenses and trading activities linked to this account will have their account reference cleared.
+                This will remove the account. Transactions and trading activities linked to this account will have their account reference cleared.
             </p>
         </div>
         {% endif %}

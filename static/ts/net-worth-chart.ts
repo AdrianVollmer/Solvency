@@ -3,11 +3,11 @@ declare const echarts: any;
 interface NetWorthChartResponse {
   labels: string[];
   net_worth: number[];
-  expense_component: number[];
+  transaction_component: number[];
   portfolio_component: number[];
 }
 
-interface ExpenseItem {
+interface TransactionItem {
   id: number;
   date: string;
   description: string;
@@ -17,8 +17,8 @@ interface ExpenseItem {
   category_color: string | null;
 }
 
-interface TopExpensesResponse {
-  expenses: ExpenseItem[];
+interface TopTransactionsResponse {
+  transactions: TransactionItem[];
   from_date: string;
   to_date: string;
 }
@@ -99,40 +99,40 @@ function updateBrushMode(): void {
   }
 }
 
-async function fetchTopExpenses(fromDate: string, toDate: string): Promise<TopExpensesResponse> {
+async function fetchTopTransactions(fromDate: string, toDate: string): Promise<TopTransactionsResponse> {
   const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
-  const response = await fetch(`/api/net-worth/top-expenses?${params}`);
-  if (!response.ok) throw new Error("Failed to fetch expenses");
+  const response = await fetch(`/api/net-worth/top-transactions?${params}`);
+  if (!response.ok) throw new Error("Failed to fetch transactions");
   return response.json();
 }
 
-function showTopExpenses(data: TopExpensesResponse, currency: string, locale: string): void {
-  const container = document.getElementById("top-expenses-container");
-  const periodEl = document.getElementById("top-expenses-period");
-  const tbody = document.getElementById("top-expenses-body");
+function showTopTransactions(data: TopTransactionsResponse, currency: string, locale: string): void {
+  const container = document.getElementById("top-transactions-container");
+  const periodEl = document.getElementById("top-transactions-period");
+  const tbody = document.getElementById("top-transactions-body");
 
   if (!container || !periodEl || !tbody) return;
 
   periodEl.textContent = `${data.from_date} to ${data.to_date}`;
 
-  tbody.innerHTML = data.expenses
-    .map((expense) => {
+  tbody.innerHTML = data.transactions
+    .map((transaction) => {
       const amountClass =
-        expense.amount_cents >= 0
+        transaction.amount_cents >= 0
           ? "text-green-600 dark:text-green-400"
           : "text-red-600 dark:text-red-400";
-      const categoryBadge = expense.category_name
-        ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" style="background-color: ${expense.category_color || "#6b7280"}20; color: ${expense.category_color || "#6b7280"}">${expense.category_name}</span>`
+      const categoryBadge = transaction.category_name
+        ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" style="background-color: ${transaction.category_color || "#6b7280"}20; color: ${transaction.category_color || "#6b7280"}">${transaction.category_name}</span>`
         : '<span class="text-neutral-400">-</span>';
 
       return `
         <tr>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-white">${expense.date}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-white">${transaction.date}</td>
           <td class="px-6 py-4 text-sm text-neutral-900 dark:text-white">
-            <a href="/expenses/${expense.id}" class="hover:text-blue-600 dark:hover:text-blue-400">${expense.description}</a>
+            <a href="/transactions/${transaction.id}" class="hover:text-blue-600 dark:hover:text-blue-400">${transaction.description}</a>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm">${categoryBadge}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${amountClass}">${formatMoney(expense.amount_cents, currency, locale)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${amountClass}">${formatMoney(transaction.amount_cents, currency, locale)}</td>
         </tr>
       `;
     })
@@ -142,8 +142,8 @@ function showTopExpenses(data: TopExpensesResponse, currency: string, locale: st
   container.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-function hideTopExpenses(): void {
-  const container = document.getElementById("top-expenses-container");
+function hideTopTransactions(): void {
+  const container = document.getElementById("top-transactions-container");
   if (container) {
     container.classList.add("hidden");
   }
@@ -171,7 +171,7 @@ async function loadNetWorthChart(): Promise<void> {
 
     // Convert cents to dollars for display
     const netWorthDollars = data.net_worth.map((c) => c / 100);
-    const expenseDollars = data.expense_component.map((c) => c / 100);
+    const transactionDollars = data.transaction_component.map((c) => c / 100);
     const portfolioDollars = data.portfolio_component.map((c) => c / 100);
 
     const showSymbols = data.labels.length <= 100;
@@ -190,11 +190,11 @@ async function loadNetWorthChart(): Promise<void> {
         },
       },
       legend: {
-        data: ["Net Worth", "Expenses (Cumulative)", "Portfolio Value"],
+        data: ["Net Worth", "Transactions (Cumulative)", "Portfolio Value"],
         top: 0,
         selected: {
           "Net Worth": true,
-          "Expenses (Cumulative)": false,
+          "Transactions (Cumulative)": false,
           "Portfolio Value": false,
         },
       },
@@ -280,7 +280,7 @@ async function loadNetWorthChart(): Promise<void> {
           z: 3,
         },
         {
-          name: "Expenses (Cumulative)",
+          name: "Transactions (Cumulative)",
           type: "line",
           smooth: true,
           lineStyle: {
@@ -292,7 +292,7 @@ async function loadNetWorthChart(): Promise<void> {
             color: "#22c55e",
           },
           symbol: "none",
-          data: expenseDollars,
+          data: transactionDollars,
           z: 2,
         },
         {
@@ -329,10 +329,10 @@ async function loadNetWorthChart(): Promise<void> {
 
       if (fromDate && toDate) {
         try {
-          const expensesData = await fetchTopExpenses(fromDate, toDate);
-          showTopExpenses(expensesData, currency, locale);
+          const transactionsData = await fetchTopTransactions(fromDate, toDate);
+          showTopTransactions(transactionsData, currency, locale);
         } catch (error) {
-          console.error("Failed to fetch top expenses:", error);
+          console.error("Failed to fetch top transactions:", error);
         }
       }
 
@@ -362,10 +362,10 @@ async function loadNetWorthChart(): Promise<void> {
       }
     });
 
-    // Close button for expenses table
-    const closeBtn = document.getElementById("top-expenses-close");
+    // Close button for transactions table
+    const closeBtn = document.getElementById("top-transactions-close");
     if (closeBtn) {
-      closeBtn.addEventListener("click", hideTopExpenses);
+      closeBtn.addEventListener("click", hideTopTransactions);
     }
   } catch (error) {
     console.error("Failed to load net worth chart:", error);

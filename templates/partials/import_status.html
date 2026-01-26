@@ -36,7 +36,7 @@
                     <div>
                         <h2 class="text-lg font-semibold">Preview</h2>
                         <p class="text-sm text-gray-600 dark:text-gray-400">
-                            {{ session.total_rows }} expense{% if session.total_rows != 1 %}s{% endif %} ready to import
+                            {{ session.total_rows }} transaction{% if session.total_rows != 1 %}s{% endif %} ready to import
                             {% if session.error_count > 0 %}
                                 ({{ session.error_count }} error{% if session.error_count != 1 %}s{% endif %})
                             {% endif %}
@@ -74,7 +74,7 @@
                         hx-target="#wizard-content"
                         hx-swap="outerHTML"
                         class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
-                    Import {{ session.total_rows }} Expense{% if session.total_rows != 1 %}s{% endif %}
+                    Import {{ session.total_rows }} Transaction{% if session.total_rows != 1 %}s{% endif %}
                 </button>
             </div>
         </div>
@@ -95,8 +95,8 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center">
                 <span class="icon-xl mx-auto text-primary-600 animate-spin mb-4" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
-                <h2 class="text-xl font-semibold mb-2">Importing expenses...</h2>
-                <p class="text-gray-600 dark:text-gray-400 mb-6">Please wait while we save your expenses.</p>
+                <h2 class="text-xl font-semibold mb-2">Importing transactions...</h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Please wait while we save your transactions.</p>
 
                 <div class="max-w-md mx-auto">
                     <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -126,15 +126,15 @@
                 <h2 class="text-xl font-semibold mb-2">Import Complete!</h2>
                 {% let success_count = session.processed_rows - session.error_count %}
                 <p class="text-gray-600 dark:text-gray-400 mb-6">
-                    Successfully imported {{ success_count }} expense{% if success_count != 1 %}s{% endif %}.
+                    Successfully imported {{ success_count }} transaction{% if success_count != 1 %}s{% endif %}.
                     {% if session.error_count > 0 %}
                     <span class="text-yellow-600 dark:text-yellow-400">{{ session.error_count }} failed.</span>
                     {% endif %}
                 </p>
 
                 <div class="flex justify-center gap-4">
-                    <a href="/expenses" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                        View Expenses
+                    <a href="/transactions" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                        View Transactions
                     </a>
                     <a href="/import" class="px-6 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                         Import More

@@ -4,7 +4,7 @@ pub mod api_logs;
 pub mod balances;
 pub mod categories;
 pub mod dashboard;
-pub mod expenses;
+pub mod transactions;
 pub mod import;
 pub mod market_data;
 pub mod net_worth;
@@ -27,18 +27,18 @@ pub fn routes() -> Router<AppState> {
         .route("/", get(dashboard::index))
         .route("/balances", get(balances::index))
         .route("/spending", get(spending::index))
-        .route("/expenses", get(expenses::index))
+        .route("/transactions", get(transactions::index))
         .route("/import", get(import::index))
         .route("/settings", get(settings::index))
-        // Expense CRUD
-        .route("/expenses/new", get(expenses::new_form))
-        .route("/expenses/create", post(expenses::create))
-        .route("/expenses/table", get(expenses::table_partial))
-        .route("/expenses/:id", get(expenses::show))
-        .route("/expenses/:id/edit", get(expenses::edit_form))
-        .route("/expenses/:id/update", post(expenses::update))
-        .route("/expenses/:id/delete", delete(expenses::delete))
-        .route("/expenses/delete-all", delete(expenses::delete_all))
+        // Transaction CRUD
+        .route("/transactions/new", get(transactions::new_form))
+        .route("/transactions/create", post(transactions::create))
+        .route("/transactions/table", get(transactions::table_partial))
+        .route("/transactions/:id", get(transactions::show))
+        .route("/transactions/:id/edit", get(transactions::edit_form))
+        .route("/transactions/:id/update", post(transactions::update))
+        .route("/transactions/:id/delete", delete(transactions::delete))
+        .route("/transactions/delete-all", delete(transactions::delete_all))
         // Category management
         .route("/categories", get(categories::index))
         .route("/categories/create", post(categories::create))
@@ -131,7 +131,7 @@ pub fn routes() -> Router<AppState> {
         // Net Worth
         .route("/trading/net-worth", get(net_worth::index))
         .route("/api/net-worth/chart", get(net_worth::chart_data))
-        .route("/api/net-worth/top-expenses", get(net_worth::top_expenses))
+        .route("/api/net-worth/top-transactions", get(net_worth::top_transactions))
         // Trading Market Data
         .route("/trading/market-data", get(market_data::index))
         .route("/trading/market-data/refresh", post(market_data::refresh))

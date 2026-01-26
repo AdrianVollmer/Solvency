@@ -15,7 +15,7 @@ interface TimeSeriesData {
 interface MonthlySummary {
   month: string;
   total_cents: number;
-  expense_count: number;
+  transaction_count: number;
   average_cents: number;
 }
 
@@ -181,7 +181,7 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
         return [
           `<strong>${point.axisValue}</strong>`,
           `Total: ${formatCurrency(item.total_cents)}`,
-          `Expenses: ${item.expense_count}`,
+          `Transactions: ${item.transaction_count}`,
           `Average: ${formatCurrency(item.average_cents)}`,
         ].join("<br/>");
       },

@@ -1,0 +1,33 @@
+{% import "macros/ui.html" as ui %}
+<tr id="transaction-{{ transaction.id }}"
+    onclick="window.location.href='/transactions/{{ transaction.id }}'"
+    class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer row-hover">
+    <td class="px-6 py-4 whitespace-nowrap text-sm tabular-nums">{{ transaction.date }}</td>
+    <td class="px-6 py-4">
+        <div class="text-sm font-medium">{{ transaction.description }}</div>
+        {% if transaction.has_notes() %}
+        <div class="text-xs text-neutral-500 dark:text-neutral-400 truncate max-w-xs">{{ transaction.notes_text() }}</div>
+        {% endif %}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
+        {% match transaction.counterparty() %}
+        {% when Some with (cp) %}{{ cp }}{% when None %}-{% endmatch %}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        {% if transaction.has_category() %}
+        {% call ui::category_badge(color=transaction.category_color_or_default(), name=transaction.category_name_or_default()) %}{% endcall %}
+        {% else %}
+        <span class="text-neutral-400 text-sm">-</span>
+        {% endif %}
+    </td>
+    <td class="px-6 py-4">
+        <div class="flex flex-wrap gap-1">
+            {% for tag in transaction.tags %}
+            {% call ui::badge(color=tag.color.as_str(), content=tag.name.as_str()) %}{% endcall %}
+            {% endfor %}
+        </div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-right tabular-nums {% if transaction.amount_cents < 0 %}text-red-600 dark:text-red-400{% else %}text-accent-600 dark:text-accent-400{% endif %}">
+        {{ settings.format_money(transaction.amount_cents)|safe }}
+    </td>
+</tr>

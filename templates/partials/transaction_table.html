@@ -5,17 +5,17 @@
             <caption class="sr-only">Transactions list</caption>
             <thead class="bg-neutral-50 dark:bg-neutral-900">
                 <tr>
-                    {% call table::th_sort_htmx(label="Date", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("date"), indicator=sort.indicator_str("date"), align="left", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
-                    {% call table::th_sort_htmx(label="Description", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("description"), indicator=sort.indicator_str("description"), align="left", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
-                    {% call table::th_sort_htmx(label="Payee", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("counterparty"), indicator=sort.indicator_str("counterparty"), align="left", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
-                    {% call table::th_sort_htmx(label="Category", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("category"), indicator=sort.indicator_str("category"), align="left", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
+                    {% call table::th_sort_htmx(label="Date", url="/transactions/table", target="#transaction-table", sort_qs=sort.query_string_for_str("date"), indicator=sort.indicator_str("date"), align="left", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
+                    {% call table::th_sort_htmx(label="Description", url="/transactions/table", target="#transaction-table", sort_qs=sort.query_string_for_str("description"), indicator=sort.indicator_str("description"), align="left", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
+                    {% call table::th_sort_htmx(label="Payee", url="/transactions/table", target="#transaction-table", sort_qs=sort.query_string_for_str("counterparty"), indicator=sort.indicator_str("counterparty"), align="left", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
+                    {% call table::th_sort_htmx(label="Category", url="/transactions/table", target="#transaction-table", sort_qs=sort.query_string_for_str("category"), indicator=sort.indicator_str("category"), align="left", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
                     {% call table::th(label="Tags", align="left") %}{% endcall %}
-                    {% call table::th_sort_htmx(label="Amount", url="/expenses/table", target="#expense-table", sort_qs=sort.query_string_for_str("amount"), indicator=sort.indicator_str("amount"), align="right", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
+                    {% call table::th_sort_htmx(label="Amount", url="/transactions/table", target="#transaction-table", sort_qs=sort.query_string_for_str("amount"), indicator=sort.indicator_str("amount"), align="right", extra=filter.preserve_query_string(date_range)) %}{% endcall %}
                 </tr>
             </thead>
             <tbody class="divide-y divide-neutral-100 dark:divide-neutral-700">
-                {% for expense in expenses %}
-                {% include "components/expense_row.html" %}
+                {% for transaction in transactions %}
+                {% include "components/transaction_row.html" %}
                 {% else %}
                 <tr>
                     <td colspan="6" class="px-6 py-12 text-center text-neutral-500 dark:text-neutral-400 cursor-default">
@@ -36,13 +36,13 @@
         </p>
         <div class="flex gap-2">
             {% if page > 1 %}
-            <a href="/expenses?page={{ page - 1 }}&{{ filter.preserve_query_string(date_range) }}&{{ sort.query_string() }}"
+            <a href="/transactions?page={{ page - 1 }}&{{ filter.preserve_query_string(date_range) }}&{{ sort.query_string() }}"
                 class="btn btn-secondary text-sm">
                 Previous
             </a>
             {% endif %}
             {% if page * page_size < total_count %}
-            <a href="/expenses?page={{ page + 1 }}&{{ filter.preserve_query_string(date_range) }}&{{ sort.query_string() }}"
+            <a href="/transactions?page={{ page + 1 }}&{{ filter.preserve_query_string(date_range) }}&{{ sort.query_string() }}"
                 class="btn btn-secondary text-sm">
                 Next
             </a>

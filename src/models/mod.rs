@@ -1,7 +1,7 @@
 pub mod account;
 pub mod api_log;
 pub mod category;
-pub mod expense;
+pub mod transaction;
 pub mod import;
 pub mod market_data;
 pub mod net_worth;
@@ -13,7 +13,7 @@ pub mod trading;
 pub use account::{Account, AccountType, NewAccount};
 pub use api_log::{ApiLog, NewApiLog};
 pub use category::{Category, CategoryWithPath, NewCategory};
-pub use expense::{Expense, ExpenseWithRelations, NewExpense};
+pub use transaction::{Transaction, TransactionWithRelations, NewTransaction};
 pub use import::{ImportRow, ImportRowStatus, ImportSession, ImportStatus};
 pub use market_data::{MarketData, NewMarketData, SymbolDataCoverage};
 pub use net_worth::{NetWorthDataPoint, NetWorthSummary};

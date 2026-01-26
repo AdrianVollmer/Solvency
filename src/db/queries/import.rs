@@ -3,7 +3,7 @@ use tracing::{debug, info};
 
 use crate::error::AppResult;
 use crate::models::{ImportRow, ImportSession, ImportStatus};
-use crate::services::csv_parser::ParsedExpense;
+use crate::services::csv_parser::ParsedTransaction;
 
 // Session operations
 
@@ -125,7 +125,7 @@ pub fn insert_row(
     conn: &Connection,
     session_id: &str,
     row_index: i64,
-    data: &ParsedExpense,
+    data: &ParsedTransaction,
 ) -> AppResult<i64> {
     let data_json = serde_json::to_string(data).unwrap();
     conn.execute(
@@ -153,8 +153,8 @@ pub fn get_rows_paginated(
     let rows = stmt
         .query_map(params![session_id, limit, offset], |row| {
             let data_json: String = row.get(3)?;
-            let data: ParsedExpense =
-                serde_json::from_str(&data_json).unwrap_or_else(|_| ParsedExpense {
+            let data: ParsedTransaction =
+                serde_json::from_str(&data_json).unwrap_or_else(|_| ParsedTransaction {
                     date: String::new(),
                     amount: String::new(),
                     currency: "USD".to_string(),
@@ -212,8 +212,8 @@ pub fn get_pending_rows(conn: &Connection, session_id: &str) -> AppResult<Vec<Im
     let rows = stmt
         .query_map(params![session_id], |row| {
             let data_json: String = row.get(3)?;
-            let data: ParsedExpense =
-                serde_json::from_str(&data_json).unwrap_or_else(|_| ParsedExpense {
+            let data: ParsedTransaction =
+                serde_json::from_str(&data_json).unwrap_or_else(|_| ParsedTransaction {
                     date: String::new(),
                     amount: String::new(),
                     currency: "USD".to_string(),

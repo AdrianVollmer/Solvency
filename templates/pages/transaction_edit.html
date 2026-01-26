@@ -3,20 +3,20 @@
 
 {% block content %}
 <div class="space-y-6 max-w-2xl mx-auto">
-    {% let back_url = format!("/expenses/{}", self.expense.id) %}
+    {% let back_url = format!("/transactions/{}", self.transaction.id) %}
     {% call ui::page_header(title="Edit Transaction", back_url=back_url.as_str(), back_label="Details") %}{% endcall %}
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700 p-6">
-        <form method="POST" action="/expenses/{{ expense.id }}/update" class="space-y-6">
+        <form method="POST" action="/transactions/{{ transaction.id }}/update" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Date</label>
-                    <input type="date" name="date" required value="{{ expense.date }}"
+                    <input type="date" name="date" required value="{{ transaction.date }}"
                         class="input w-full">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Amount</label>
-                    <input type="number" name="amount" step="0.01" required value="{{ expense.amount_display() }}"
+                    <input type="number" name="amount" step="0.01" required value="{{ transaction.amount_display() }}"
                         class="input w-full">
                 </div>
             </div>
@@ -25,13 +25,13 @@
                 <div>
                     <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Currency</label>
                     <select name="currency" class="input w-full">
-                        <option value="USD" {% if expense.is_currency("USD") %}selected{% endif %}>USD</option>
-                        <option value="EUR" {% if expense.is_currency("EUR") %}selected{% endif %}>EUR</option>
-                        <option value="GBP" {% if expense.is_currency("GBP") %}selected{% endif %}>GBP</option>
-                        <option value="JPY" {% if expense.is_currency("JPY") %}selected{% endif %}>JPY</option>
-                        <option value="CAD" {% if expense.is_currency("CAD") %}selected{% endif %}>CAD</option>
-                        <option value="AUD" {% if expense.is_currency("AUD") %}selected{% endif %}>AUD</option>
-                        <option value="CHF" {% if expense.is_currency("CHF") %}selected{% endif %}>CHF</option>
+                        <option value="USD" {% if transaction.is_currency("USD") %}selected{% endif %}>USD</option>
+                        <option value="EUR" {% if transaction.is_currency("EUR") %}selected{% endif %}>EUR</option>
+                        <option value="GBP" {% if transaction.is_currency("GBP") %}selected{% endif %}>GBP</option>
+                        <option value="JPY" {% if transaction.is_currency("JPY") %}selected{% endif %}>JPY</option>
+                        <option value="CAD" {% if transaction.is_currency("CAD") %}selected{% endif %}>CAD</option>
+                        <option value="AUD" {% if transaction.is_currency("AUD") %}selected{% endif %}>AUD</option>
+                        <option value="CHF" {% if transaction.is_currency("CHF") %}selected{% endif %}>CHF</option>
                     </select>
                 </div>
                 <div>
@@ -39,7 +39,7 @@
                     <select name="category_id" class="input w-full">
                         <option value="">No Category</option>
                         {% for cat in categories %}
-                        <option value="{{ cat.category.id }}" {% if expense.matches_category(cat.category.id) %}selected{% endif %}>
+                        <option value="{{ cat.category.id }}" {% if transaction.matches_category(cat.category.id) %}selected{% endif %}>
                             {{ cat.display_name() }}
                         </option>
                         {% endfor %}
@@ -53,7 +53,7 @@
                 <select name="account_id" class="input w-full">
                     <option value="">No Account</option>
                     {% for account in accounts %}
-                    <option value="{{ account.id }}" {% if expense.matches_account(account.id) %}selected{% endif %}>
+                    <option value="{{ account.id }}" {% if transaction.matches_account(account.id) %}selected{% endif %}>
                         {{ account.name }} (ID: {{ account.id }})
                     </option>
                     {% endfor %}
@@ -63,14 +63,14 @@
 
             <div>
                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description</label>
-                <input type="text" name="description" required value="{{ expense.description }}"
+                <input type="text" name="description" required value="{{ transaction.description }}"
                     class="input w-full">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Notes (optional)</label>
                 <textarea name="notes" rows="3"
-                    class="input w-full">{{ expense.notes_text() }}</textarea>
+                    class="input w-full">{{ transaction.notes_text() }}</textarea>
             </div>
 
             <div>
@@ -78,7 +78,7 @@
                 <div class="flex flex-wrap gap-2">
                     {% for tag in tags %}
                     <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" name="tag_ids" value="{{ tag.id }}" {% if expense.has_tag(tag.id) %}checked{% endif %}
+                        <input type="checkbox" name="tag_ids" value="{{ tag.id }}" {% if transaction.has_tag(tag.id) %}checked{% endif %}
                             class="w-4 h-4 text-primary-600 rounded focus:ring-primary-500">
                         <span class="text-sm px-2 py-0.5 rounded" style="background-color: {{ tag.color }}20; color: {{ tag.color }};">{{ tag.name }}</span>
                     </label>
@@ -87,7 +87,7 @@
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                <a href="/expenses/{{ expense.id }}"
+                <a href="/transactions/{{ transaction.id }}"
                     class="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-center">
                     Cancel
                 </a>

@@ -129,7 +129,7 @@ pub struct ImportRow {
     pub id: i64,
     pub session_id: String,
     pub row_index: i64,
-    pub data: crate::services::csv_parser::ParsedExpense,
+    pub data: crate::services::csv_parser::ParsedTransaction,
     pub category_id: Option<i64>,
     pub category_name: Option<String>,
     pub status: String,

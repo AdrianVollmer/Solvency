@@ -2,7 +2,7 @@ pub mod accounts;
 pub mod api_logs;
 pub mod balances;
 pub mod categories;
-pub mod expenses;
+pub mod transactions;
 pub mod import;
 pub mod market_data;
 pub mod net_worth;

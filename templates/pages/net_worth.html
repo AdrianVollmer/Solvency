@@ -12,9 +12,9 @@
 
     {% if !has_data %}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
-        <p class="text-neutral-500 dark:text-neutral-400">No data yet. Add expenses or trading activities to see your net worth.</p>
+        <p class="text-neutral-500 dark:text-neutral-400">No data yet. Add transactions or trading activities to see your net worth.</p>
         <div class="mt-4 flex gap-3 justify-center">
-            <a href="/expenses" class="btn btn-primary">Add Expense</a>
+            <a href="/transactions" class="btn btn-primary">Add Transaction</a>
             <a href="/trading/activities" class="btn btn-secondary">Add Activity</a>
         </div>
     </div>
@@ -51,20 +51,20 @@
         </div>
         <div class="px-6 py-3 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900">
             <p class="text-xs text-muted">
-                Click the legend items to show/hide the expense and portfolio components.
-                Use the slider below to zoom. Hold <kbd class="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">Shift</kbd> and drag to select a period and see the largest expenses.
+                Click the legend items to show/hide the transaction and portfolio components.
+                Use the slider below to zoom. Hold <kbd class="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">Shift</kbd> and drag to select a period and see the largest transactions.
             </p>
         </div>
     </div>
 
-    {# Top Expenses (shown when shift+dragging on chart) #}
-    <div id="top-expenses-container" class="hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {# Top Transactions (shown when shift+dragging on chart) #}
+    <div id="top-transactions-container" class="hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
             <div>
-                <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Largest Expenses</h2>
-                <p id="top-expenses-period" class="text-sm text-neutral-500 dark:text-neutral-400"></p>
+                <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Largest Transactions</h2>
+                <p id="top-transactions-period" class="text-sm text-neutral-500 dark:text-neutral-400"></p>
             </div>
-            <button id="top-expenses-close" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Close">
+            <button id="top-transactions-close" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Close">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("x")|safe }}</span>
             </button>
         </div>
@@ -78,7 +78,7 @@
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Amount</th>
                     </tr>
                 </thead>
-                <tbody id="top-expenses-body" class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                <tbody id="top-transactions-body" class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                 </tbody>
             </table>
         </div>

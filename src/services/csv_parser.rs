@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, trace, warn};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ParsedExpense {
+pub struct ParsedTransaction {
     pub date: String,
     pub amount: String,
     pub currency: String,
@@ -24,7 +24,7 @@ pub struct ParsedExpense {
     pub row_number: usize,
 }
 
-impl ParsedExpense {
+impl ParsedTransaction {
     pub fn tags_joined(&self) -> String {
         self.tags.join(", ")
     }
@@ -40,7 +40,7 @@ impl ParsedExpense {
 
 #[derive(Debug)]
 pub struct ParseResult {
-    pub expenses: Vec<ParsedExpense>,
+    pub transactions: Vec<ParsedTransaction>,
     pub errors: Vec<String>,
 }
 
@@ -90,7 +90,7 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
     let desc_col =
         desc_col.ok_or_else(|| AppError::CsvParse("No description column found in CSV".into()))?;
 
-    let mut expenses = Vec::new();
+    let mut transactions = Vec::new();
     let mut errors = Vec::new();
 
     for (row_idx, result) in reader.records().enumerate() {
@@ -157,7 +157,7 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
         let mandate_reference = get_optional_field(&record, mandate_reference_col);
         let customer_reference = get_optional_field(&record, customer_reference_col);
 
-        expenses.push(ParsedExpense {
+        transactions.push(ParsedTransaction {
             date,
             amount: amount_clean,
             currency,
@@ -186,12 +186,12 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
         );
     }
     debug!(
-        row_count = expenses.len(),
+        row_count = transactions.len(),
         error_count = errors.len(),
         "CSV parsing completed"
     );
 
-    Ok(ParseResult { expenses, errors })
+    Ok(ParseResult { transactions, errors })
 }
 
 fn find_column(headers: &csv::StringRecord, name: &str) -> Option<usize> {
@@ -252,12 +252,12 @@ mod tests {
         let csv = b"date,amount,description\n2024-01-15,50.00,Groceries\n2024-01-16,25.50,Coffee";
 
         let result = parse_csv(csv).unwrap();
-        assert_eq!(result.expenses.len(), 2);
+        assert_eq!(result.transactions.len(), 2);
         assert_eq!(result.errors.len(), 0);
 
-        assert_eq!(result.expenses[0].date, "2024-01-15");
-        assert_eq!(result.expenses[0].amount, "50.00");
-        assert_eq!(result.expenses[0].description, "Groceries");
+        assert_eq!(result.transactions[0].date, "2024-01-15");
+        assert_eq!(result.transactions[0].amount, "50.00");
+        assert_eq!(result.transactions[0].description, "Groceries");
     }
 
     #[test]

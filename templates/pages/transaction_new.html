@@ -3,10 +3,10 @@
 
 {% block content %}
 <div class="space-y-6 max-w-2xl mx-auto">
-    {% call ui::page_header(title="Add Transaction", back_url="/expenses", back_label="Transactions", subtitle="Record a new transaction") %}{% endcall %}
+    {% call ui::page_header(title="Add Transaction", back_url="/transactions", back_label="Transactions", subtitle="Record a new transaction") %}{% endcall %}
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
-        <form method="POST" action="/expenses/create" class="space-y-4">
+        <form method="POST" action="/transactions/create" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="new-date" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Date</label>
@@ -82,7 +82,7 @@
             </fieldset>
 
             <div class="flex gap-3 pt-4">
-                <a href="/expenses" class="btn btn-secondary flex-1 text-center">
+                <a href="/transactions" class="btn btn-secondary flex-1 text-center">
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary flex-1">

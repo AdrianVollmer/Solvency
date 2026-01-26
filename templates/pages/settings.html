@@ -146,7 +146,7 @@
             <div class="border-t border-neutral-200 dark:border-neutral-700 pt-6">
                 <h3 class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">Clear Database</h3>
                 <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                    Delete all data from the database. <strong class="text-red-600 dark:text-red-400">Warning:</strong> This will permanently remove all expenses, categories, accounts, and other data. The database structure will be preserved.
+                    Delete all data from the database. <strong class="text-red-600 dark:text-red-400">Warning:</strong> This will permanently remove all transactions, categories, accounts, and other data. The database structure will be preserved.
                 </p>
                 {% call ui::delete_action_reload(endpoint="/settings/clear-database", confirm="Are you sure you want to clear the ENTIRE database? All data will be permanently deleted. This cannot be undone.", label="Clear Database") %}{% endcall %}
             </div>

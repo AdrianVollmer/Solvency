@@ -29,10 +29,10 @@
     {% call ui::delete_button(target="rule-123", endpoint="/rules/123", confirm="Delete?", label="Delete rule") %}
 
     Delete action with redirect:
-    {% call ui::delete_action_redirect(endpoint="/expenses/123", confirm="Delete?", label="Delete", redirect="/expenses") %}
+    {% call ui::delete_action_redirect(endpoint="/transactions/123", confirm="Delete?", label="Delete", redirect="/transactions") %}
 
     Delete action with reload:
-    {% call ui::delete_action_reload(endpoint="/expenses/delete-all", confirm="Delete all?", label="Delete All") %}
+    {% call ui::delete_action_reload(endpoint="/transactions/delete-all", confirm="Delete all?", label="Delete All") %}
 
     Empty state (pass any Lucide icon name):
     {% call ui::empty_state(icon="trending-up", title="No items") %}
@@ -215,14 +215,14 @@
 </button>
 {% endmacro %}
 
-{# Delete expense action with redirect to expenses list #}
-{% macro delete_expense_action(expense_id, confirm, label) %}
+{# Delete transaction action with redirect to transactions list #}
+{% macro delete_transaction_action(transaction_id, confirm, label) %}
 <button
-    hx-delete="/expenses/{{ expense_id }}"
+    hx-delete="/transactions/{{ transaction_id }}"
     hx-confirm="{{ confirm }}"
     hx-target="body"
     hx-swap="none"
-    hx-on::after-request="if(event.detail.successful) window.location.href='/expenses'"
+    hx-on::after-request="if(event.detail.successful) window.location.href='/transactions'"
     class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
     <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
     {{ label }}

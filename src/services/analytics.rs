@@ -1,47 +1,47 @@
-use crate::models::ExpenseWithRelations;
+use crate::models::TransactionWithRelations;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct SpendingSummary {
     pub total_cents: i64,
-    pub expense_count: usize,
+    pub transaction_count: usize,
     pub average_cents: i64,
-    pub max_expense_cents: i64,
-    pub min_expense_cents: i64,
+    pub max_transaction_cents: i64,
+    pub min_transaction_cents: i64,
 }
 
 impl SpendingSummary {
-    pub fn from_expenses(expenses: &[ExpenseWithRelations]) -> Self {
-        if expenses.is_empty() {
+    pub fn from_transactions(transactions: &[TransactionWithRelations]) -> Self {
+        if transactions.is_empty() {
             return Self {
                 total_cents: 0,
-                expense_count: 0,
+                transaction_count: 0,
                 average_cents: 0,
-                max_expense_cents: 0,
-                min_expense_cents: 0,
+                max_transaction_cents: 0,
+                min_transaction_cents: 0,
             };
         }
 
-        let total_cents: i64 = expenses.iter().map(|e| e.expense.amount_cents).sum();
-        let expense_count = expenses.len();
-        let average_cents = total_cents / expense_count as i64;
-        let max_expense_cents = expenses
+        let total_cents: i64 = transactions.iter().map(|e| e.transaction.amount_cents).sum();
+        let transaction_count = transactions.len();
+        let average_cents = total_cents / transaction_count as i64;
+        let max_transaction_cents = transactions
             .iter()
-            .map(|e| e.expense.amount_cents)
+            .map(|e| e.transaction.amount_cents)
             .max()
             .unwrap_or(0);
-        let min_expense_cents = expenses
+        let min_transaction_cents = transactions
             .iter()
-            .map(|e| e.expense.amount_cents)
+            .map(|e| e.transaction.amount_cents)
             .min()
             .unwrap_or(0);
 
         Self {
             total_cents,
-            expense_count,
+            transaction_count,
             average_cents,
-            max_expense_cents,
-            min_expense_cents,
+            max_transaction_cents,
+            min_transaction_cents,
         }
     }
 }
@@ -52,24 +52,24 @@ pub struct CategoryBreakdown {
     pub color: String,
     pub total_cents: i64,
     pub percentage: f64,
-    pub expense_count: usize,
+    pub transaction_count: usize,
 }
 
-pub fn spending_by_category(expenses: &[ExpenseWithRelations]) -> Vec<CategoryBreakdown> {
+pub fn spending_by_category(transactions: &[TransactionWithRelations]) -> Vec<CategoryBreakdown> {
     let mut category_data: HashMap<String, (String, i64, usize)> = HashMap::new();
 
-    for expense in expenses {
-        let category = expense
+    for transaction in transactions {
+        let category = transaction
             .category_name
             .clone()
             .unwrap_or_else(|| "Uncategorized".into());
-        let color = expense
+        let color = transaction
             .category_color
             .clone()
             .unwrap_or_else(|| "#6b7280".into());
 
         let entry = category_data.entry(category).or_insert((color, 0, 0));
-        entry.1 += expense.expense.amount_cents;
+        entry.1 += transaction.transaction.amount_cents;
         entry.2 += 1;
     }
 
@@ -78,7 +78,7 @@ pub fn spending_by_category(expenses: &[ExpenseWithRelations]) -> Vec<CategoryBr
     let mut result: Vec<CategoryBreakdown> = category_data
         .into_iter()
         .map(
-            |(category, (color, total_cents, expense_count))| CategoryBreakdown {
+            |(category, (color, total_cents, transaction_count))| CategoryBreakdown {
                 category,
                 color,
                 total_cents,
@@ -87,7 +87,7 @@ pub fn spending_by_category(expenses: &[ExpenseWithRelations]) -> Vec<CategoryBr
                 } else {
                     0.0
                 },
-                expense_count,
+                transaction_count,
             },
         )
         .collect();
@@ -100,26 +100,26 @@ pub fn spending_by_category(expenses: &[ExpenseWithRelations]) -> Vec<CategoryBr
 pub struct DailySpending {
     pub date: String,
     pub total_cents: i64,
-    pub expense_count: usize,
+    pub transaction_count: usize,
 }
 
-pub fn spending_by_day(expenses: &[ExpenseWithRelations]) -> Vec<DailySpending> {
+pub fn spending_by_day(transactions: &[TransactionWithRelations]) -> Vec<DailySpending> {
     let mut daily_data: HashMap<String, (i64, usize)> = HashMap::new();
 
-    for expense in expenses {
+    for transaction in transactions {
         let entry = daily_data
-            .entry(expense.expense.date.clone())
+            .entry(transaction.transaction.date.clone())
             .or_insert((0, 0));
-        entry.0 += expense.expense.amount_cents;
+        entry.0 += transaction.transaction.amount_cents;
         entry.1 += 1;
     }
 
     let mut result: Vec<DailySpending> = daily_data
         .into_iter()
-        .map(|(date, (total_cents, expense_count))| DailySpending {
+        .map(|(date, (total_cents, transaction_count))| DailySpending {
             date,
             total_cents,
-            expense_count,
+            transaction_count,
         })
         .collect();
 

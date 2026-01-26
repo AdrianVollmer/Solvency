@@ -4,7 +4,7 @@ use axum::response::Html;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::{expenses, settings};
+use crate::db::queries::{transactions, settings};
 use crate::error::AppResult;
 use crate::filters;
 use crate::models::net_worth::NetWorthDataPoint;
@@ -109,7 +109,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 pub struct NetWorthChartResponse {
     pub labels: Vec<String>,
     pub net_worth: Vec<i64>,
-    pub expense_component: Vec<i64>,
+    pub transaction_component: Vec<i64>,
     pub portfolio_component: Vec<i64>,
 }
 
@@ -124,9 +124,9 @@ impl NetWorthChartResponse {
         Self {
             labels: decimated.iter().map(|p| p.date.clone()).collect(),
             net_worth: decimated.iter().map(|p| clamp(p.net_worth_cents)).collect(),
-            expense_component: decimated
+            transaction_component: decimated
                 .iter()
-                .map(|p| clamp(p.expense_component_cents))
+                .map(|p| clamp(p.transaction_component_cents))
                 .collect(),
             portfolio_component: decimated
                 .iter()
@@ -145,16 +145,16 @@ pub async fn chart_data(State(state): State<AppState>) -> AppResult<Json<NetWort
     Ok(Json(response))
 }
 
-/// Query params for top expenses endpoint
+/// Query params for top transactions endpoint
 #[derive(Deserialize)]
-pub struct TopExpensesParams {
+pub struct TopTransactionsParams {
     pub from_date: String,
     pub to_date: String,
 }
 
-/// Single expense in the response
+/// Single transaction in the response
 #[derive(Serialize)]
-pub struct ExpenseItem {
+pub struct TransactionItem {
     pub id: i64,
     pub date: String,
     pub description: String,
@@ -164,22 +164,22 @@ pub struct ExpenseItem {
     pub category_color: Option<String>,
 }
 
-/// Response for top expenses endpoint
+/// Response for top transactions endpoint
 #[derive(Serialize)]
-pub struct TopExpensesResponse {
-    pub expenses: Vec<ExpenseItem>,
+pub struct TopTransactionsResponse {
+    pub transactions: Vec<TransactionItem>,
     pub from_date: String,
     pub to_date: String,
 }
 
-/// Get top 10 expenses by absolute value in a date range
-pub async fn top_expenses(
+/// Get top 10 transactions by absolute value in a date range
+pub async fn top_transactions(
     State(state): State<AppState>,
-    Query(params): Query<TopExpensesParams>,
-) -> AppResult<Json<TopExpensesResponse>> {
+    Query(params): Query<TopTransactionsParams>,
+) -> AppResult<Json<TopTransactionsResponse>> {
     let conn = state.db.get()?;
 
-    let filter = expenses::ExpenseFilter {
+    let filter = transactions::TransactionFilter {
         from_date: Some(params.from_date.clone()),
         to_date: Some(params.to_date.clone()),
         sort_sql: Some("ABS(e.amount_cents) DESC".to_string()),
@@ -187,17 +187,17 @@ pub async fn top_expenses(
         ..Default::default()
     };
 
-    let expense_list = expenses::list_expenses(&conn, &filter)?;
+    let transaction_list = transactions::list_transactions(&conn, &filter)?;
 
-    let response = TopExpensesResponse {
-        expenses: expense_list
+    let response = TopTransactionsResponse {
+        transactions: transaction_list
             .into_iter()
-            .map(|e| ExpenseItem {
-                id: e.expense.id,
-                date: e.expense.date,
-                description: e.expense.description,
-                amount_cents: e.expense.amount_cents,
-                currency: e.expense.currency,
+            .map(|e| TransactionItem {
+                id: e.transaction.id,
+                date: e.transaction.date,
+                description: e.transaction.description,
+                amount_cents: e.transaction.amount_cents,
+                currency: e.transaction.currency,
                 category_name: e.category_name,
                 category_color: e.category_color,
             })

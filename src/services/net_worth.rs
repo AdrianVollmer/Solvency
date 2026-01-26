@@ -1,5 +1,5 @@
 use crate::db::queries::net_worth::{
-    get_all_activities_ordered, get_all_market_data, get_daily_expense_sums, get_earliest_date,
+    get_all_activities_ordered, get_all_market_data, get_daily_transaction_sums, get_earliest_date,
     get_last_trade_prices, get_latest_date,
 };
 use crate::models::net_worth::{NetWorthDataPoint, NetWorthSummary};
@@ -213,8 +213,8 @@ fn generate_date_range(start: &str, end: &str) -> Vec<String> {
     dates
 }
 
-/// Build cumulative expense sums indexed by date
-fn build_cumulative_expenses(daily_sums: &[(String, i64)]) -> BTreeMap<String, i64> {
+/// Build cumulative transaction sums indexed by date
+fn build_cumulative_transactions(daily_sums: &[(String, i64)]) -> BTreeMap<String, i64> {
     let mut cumulative = BTreeMap::new();
     let mut running_total = 0i64;
 
@@ -226,7 +226,7 @@ fn build_cumulative_expenses(daily_sums: &[(String, i64)]) -> BTreeMap<String, i
     cumulative
 }
 
-/// Get cumulative expense value at date (carry forward if no exact match)
+/// Get cumulative transaction value at date (carry forward if no exact match)
 fn get_cumulative_at_date(cumulative: &BTreeMap<String, i64>, date: &str) -> i64 {
     // Try exact match first
     if let Some(&value) = cumulative.get(date) {
@@ -252,7 +252,7 @@ pub fn calculate_net_worth_history(conn: &Connection) -> rusqlite::Result<NetWor
     };
 
     // Pre-fetch all data
-    let daily_expense_sums = get_daily_expense_sums(conn)?;
+    let daily_transaction_sums = get_daily_transaction_sums(conn)?;
     let activities = get_all_activities_ordered(conn)?;
     let market_data = get_all_market_data(conn)?;
     let last_trade_prices = get_last_trade_prices(conn)?;
@@ -266,8 +266,8 @@ pub fn calculate_net_worth_history(conn: &Connection) -> rusqlite::Result<NetWor
         price_lookup.set_fallback(symbol, *price);
     }
 
-    // Build cumulative expense sums
-    let cumulative_expenses = build_cumulative_expenses(&daily_expense_sums);
+    // Build cumulative transaction sums
+    let cumulative_transactions = build_cumulative_transactions(&daily_transaction_sums);
 
     // Generate date range
     let dates = generate_date_range(&start_date, &end_date);
@@ -295,19 +295,19 @@ pub fn calculate_net_worth_history(conn: &Connection) -> rusqlite::Result<NetWor
             activity_idx += 1;
         }
 
-        // Get cumulative expense value
-        let expense_component = get_cumulative_at_date(&cumulative_expenses, date);
+        // Get cumulative transaction value
+        let transaction_component = get_cumulative_at_date(&cumulative_transactions, date);
 
         // Calculate portfolio value
         let portfolio_component = position_state.value_at_prices(&price_lookup, date);
 
-        // Net worth = expense cumulative + portfolio value
-        let net_worth = expense_component.saturating_add(portfolio_component);
+        // Net worth = transaction cumulative + portfolio value
+        let net_worth = transaction_component.saturating_add(portfolio_component);
 
         data_points.push(NetWorthDataPoint {
             date: date.clone(),
             net_worth_cents: net_worth,
-            expense_component_cents: expense_component,
+            transaction_component_cents: transaction_component,
             portfolio_component_cents: portfolio_component,
         });
     }

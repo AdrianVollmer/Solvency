@@ -3,9 +3,9 @@ use axum::extract::State;
 use axum::response::Html;
 use tracing::debug;
 
-use crate::db::queries::{expenses, settings};
+use crate::db::queries::{transactions, settings};
 use crate::error::AppResult;
-use crate::models::{ExpenseWithRelations, Settings};
+use crate::models::{TransactionWithRelations, Settings};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -18,10 +18,10 @@ pub struct DashboardTemplate {
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
-    pub recent_expenses: Vec<ExpenseWithRelations>,
+    pub recent_transactions: Vec<TransactionWithRelations>,
     pub total_this_month: i64,
     pub total_last_month: i64,
-    pub expense_count: i64,
+    pub transaction_count: i64,
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -36,37 +36,37 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let last_month_start = last_month.format("%Y-%m-01").to_string();
     let last_month_end = now.format("%Y-%m-01").to_string();
 
-    let filter = expenses::ExpenseFilter {
+    let filter = transactions::TransactionFilter {
         limit: Some(5),
         ..Default::default()
     };
-    let recent_expenses = expenses::list_expenses(&conn, &filter)?;
+    let recent_transactions = transactions::list_transactions(&conn, &filter)?;
 
-    let this_month_filter = expenses::ExpenseFilter {
+    let this_month_filter = transactions::TransactionFilter {
         from_date: Some(this_month_start),
         ..Default::default()
     };
-    let this_month_expenses = expenses::list_expenses(&conn, &this_month_filter)?;
-    let total_this_month: i64 = this_month_expenses
+    let this_month_transactions = transactions::list_transactions(&conn, &this_month_filter)?;
+    let total_this_month: i64 = this_month_transactions
         .iter()
-        .map(|e| e.expense.amount_cents)
+        .map(|e| e.transaction.amount_cents)
         .sum();
 
-    let last_month_filter = expenses::ExpenseFilter {
+    let last_month_filter = transactions::TransactionFilter {
         from_date: Some(last_month_start),
         to_date: Some(last_month_end),
         ..Default::default()
     };
-    let last_month_expenses = expenses::list_expenses(&conn, &last_month_filter)?;
-    let total_last_month: i64 = last_month_expenses
+    let last_month_transactions = transactions::list_transactions(&conn, &last_month_filter)?;
+    let total_last_month: i64 = last_month_transactions
         .iter()
-        .map(|e| e.expense.amount_cents)
+        .map(|e| e.transaction.amount_cents)
         .sum();
 
-    let expense_count = expenses::count_expenses(&conn, &expenses::ExpenseFilter::default())?;
+    let transaction_count = transactions::count_transactions(&conn, &transactions::TransactionFilter::default())?;
 
     debug!(
-        expense_count = expense_count,
+        transaction_count = transaction_count,
         total_this_month = total_this_month,
         total_last_month = total_last_month,
         "Dashboard data loaded"
@@ -79,10 +79,10 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
-        recent_expenses,
+        recent_transactions,
         total_this_month,
         total_last_month,
-        expense_count,
+        transaction_count,
     };
 
     Ok(Html(template.render().unwrap()))

@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS tags (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Expenses table
-CREATE TABLE IF NOT EXISTS expenses (
+-- Transactions table
+CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
     amount_cents INTEGER NOT NULL,
@@ -34,17 +34,17 @@ CREATE TABLE IF NOT EXISTS expenses (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC);
-CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category_id);
 
--- Many-to-many: Expenses to Tags
-CREATE TABLE IF NOT EXISTS expense_tags (
-    expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+-- Many-to-many: Transactions to Tags
+CREATE TABLE IF NOT EXISTS transaction_tags (
+    transaction_id INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
     tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (expense_id, tag_id)
+    PRIMARY KEY (transaction_id, tag_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_expense_tags_tag ON expense_tags(tag_id);
+CREATE INDEX IF NOT EXISTS idx_transaction_tags_tag ON transaction_tags(tag_id);
 
 -- App settings (key-value store)
 CREATE TABLE IF NOT EXISTS settings (

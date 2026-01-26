@@ -6,18 +6,18 @@ use serde::Deserialize;
 use tracing::{debug, info, warn};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
-use crate::db::queries::{accounts, categories, expenses, settings, tags};
+use crate::db::queries::{accounts, categories, transactions, settings, tags};
 use crate::error::{AppError, AppResult};
 use crate::models::{
-    Account, AccountType, CategoryWithPath, ExpenseWithRelations, NewExpense, Settings, Tag,
+    Account, AccountType, CategoryWithPath, TransactionWithRelations, NewTransaction, Settings, Tag,
 };
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
-/// Sortable columns for the expenses table.
+/// Sortable columns for the transactions table.
 #[derive(Debug, Default, Clone, PartialEq)]
-pub enum ExpenseSortColumn {
+pub enum TransactionSortColumn {
     #[default]
     Date,
     Description,
@@ -26,7 +26,7 @@ pub enum ExpenseSortColumn {
     Amount,
 }
 
-impl SortableColumn for ExpenseSortColumn {
+impl SortableColumn for TransactionSortColumn {
     fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "date" => Some(Self::Date),
@@ -60,53 +60,53 @@ impl SortableColumn for ExpenseSortColumn {
 }
 
 #[derive(Template)]
-#[template(path = "pages/expenses.html")]
-pub struct ExpensesTemplate {
+#[template(path = "pages/transactions.html")]
+pub struct TransactionsTemplate {
     pub title: String,
     pub settings: Settings,
     pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
-    pub expenses: Vec<ExpenseWithRelations>,
+    pub transactions: Vec<TransactionWithRelations>,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
     pub total_count: i64,
     pub page: i64,
     pub page_size: i64,
-    pub filter: ExpenseFilterParams,
+    pub filter: TransactionFilterParams,
     pub date_range: DateRange,
     pub presets: &'static [DatePreset],
-    pub sort: TableSort<ExpenseSortColumn>,
+    pub sort: TableSort<TransactionSortColumn>,
 }
 
 #[derive(Template)]
-#[template(path = "partials/expense_table.html")]
-pub struct ExpenseTableTemplate {
+#[template(path = "partials/transaction_table.html")]
+pub struct TransactionTableTemplate {
     pub settings: Settings,
     pub icons: crate::filters::Icons,
-    pub expenses: Vec<ExpenseWithRelations>,
+    pub transactions: Vec<TransactionWithRelations>,
     pub total_count: i64,
     pub page: i64,
     pub page_size: i64,
-    pub filter: ExpenseFilterParams,
+    pub filter: TransactionFilterParams,
     pub date_range: DateRange,
-    pub sort: TableSort<ExpenseSortColumn>,
+    pub sort: TableSort<TransactionSortColumn>,
 }
 
 #[derive(Template)]
-#[template(path = "components/expense_form.html")]
-pub struct ExpenseFormTemplate {
+#[template(path = "components/transaction_form.html")]
+pub struct TransactionFormTemplate {
     pub icons: crate::filters::Icons,
-    pub expense: Option<ExpenseWithRelations>,
+    pub transaction: Option<TransactionWithRelations>,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
     pub is_edit: bool,
 }
 
 #[derive(Template)]
-#[template(path = "pages/expense_new.html")]
-pub struct ExpenseNewTemplate {
+#[template(path = "pages/transaction_new.html")]
+pub struct TransactionNewTemplate {
     pub title: String,
     pub settings: Settings,
     pub icons: crate::filters::Icons,
@@ -119,45 +119,45 @@ pub struct ExpenseNewTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "components/expense_row.html")]
-pub struct ExpenseRowTemplate {
+#[template(path = "components/transaction_row.html")]
+pub struct TransactionRowTemplate {
     pub settings: Settings,
     pub icons: crate::filters::Icons,
-    pub expense: ExpenseWithRelations,
+    pub transaction: TransactionWithRelations,
 }
 
 #[derive(Template)]
-#[template(path = "pages/expense_detail.html")]
-pub struct ExpenseDetailTemplate {
+#[template(path = "pages/transaction_detail.html")]
+pub struct TransactionDetailTemplate {
     pub title: String,
     pub settings: Settings,
     pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
-    pub expense: ExpenseWithRelations,
+    pub transaction: TransactionWithRelations,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
     pub accounts: Vec<Account>,
 }
 
 #[derive(Template)]
-#[template(path = "pages/expense_edit.html")]
-pub struct ExpenseEditTemplate {
+#[template(path = "pages/transaction_edit.html")]
+pub struct TransactionEditTemplate {
     pub title: String,
     pub settings: Settings,
     pub icons: crate::filters::Icons,
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
-    pub expense: ExpenseWithRelations,
+    pub transaction: TransactionWithRelations,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
     pub accounts: Vec<Account>,
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
-pub struct ExpenseFilterParams {
+pub struct TransactionFilterParams {
     pub search: Option<String>,
     pub category_id: Option<i64>,
     pub tag_id: Option<i64>,
@@ -170,7 +170,7 @@ pub struct ExpenseFilterParams {
     pub dir: Option<String>,
 }
 
-impl DateFilterable for ExpenseFilterParams {
+impl DateFilterable for TransactionFilterParams {
     fn from_date(&self) -> Option<&String> {
         self.from_date.as_ref()
     }
@@ -188,7 +188,7 @@ impl DateFilterable for ExpenseFilterParams {
     }
 }
 
-impl Sortable for ExpenseFilterParams {
+impl Sortable for TransactionFilterParams {
     fn sort_by(&self) -> Option<&String> {
         self.sort.as_ref()
     }
@@ -198,7 +198,7 @@ impl Sortable for ExpenseFilterParams {
     }
 }
 
-impl ExpenseFilterParams {
+impl TransactionFilterParams {
     pub fn matches_category(&self, id: &i64) -> bool {
         self.category_id == Some(*id)
     }
@@ -249,7 +249,7 @@ impl ExpenseFilterParams {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ExpenseFormData {
+pub struct TransactionFormData {
     pub date: String,
     pub amount: String,
     pub currency: String,
@@ -261,14 +261,14 @@ pub struct ExpenseFormData {
     pub tag_ids: Vec<i64>,
 }
 
-impl ExpenseFormData {
-    fn to_new_expense(&self) -> Result<NewExpense, AppError> {
+impl TransactionFormData {
+    fn to_new_transaction(&self) -> Result<NewTransaction, AppError> {
         let amount: f64 = self
             .amount
             .parse()
             .map_err(|_| AppError::Validation("Invalid amount".into()))?;
 
-        Ok(NewExpense {
+        Ok(NewTransaction {
             date: self.date.clone(),
             amount_cents: (amount * 100.0).round() as i64,
             currency: self.currency.clone(),
@@ -293,7 +293,7 @@ impl ExpenseFormData {
 
 pub async fn index(
     State(state): State<AppState>,
-    Query(params): Query<ExpenseFilterParams>,
+    Query(params): Query<TransactionFilterParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
@@ -303,9 +303,9 @@ pub async fn index(
     let page_size = app_settings.page_size;
 
     let date_range = params.resolve_date_range();
-    let sort: TableSort<ExpenseSortColumn> = params.resolve_sort();
+    let sort: TableSort<TransactionSortColumn> = params.resolve_sort();
 
-    let filter = expenses::ExpenseFilter {
+    let filter = transactions::TransactionFilter {
         search: params.search.clone(),
         category_id: params.category_id,
         tag_id: params.tag_id,
@@ -316,19 +316,19 @@ pub async fn index(
         sort_sql: Some(sort.sql_order_by()),
     };
 
-    let expense_list = expenses::list_expenses(&conn, &filter)?;
-    let total_count = expenses::count_expenses(&conn, &filter)?;
+    let transaction_list = transactions::list_transactions(&conn, &filter)?;
+    let total_count = transactions::count_transactions(&conn, &filter)?;
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
 
-    let template = ExpensesTemplate {
+    let template = TransactionsTemplate {
         title: "Transactions".into(),
         settings: app_settings,
         icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
-        expenses: expense_list,
+        transactions: transaction_list,
         categories: cats,
         tags: tag_list,
         total_count,
@@ -345,7 +345,7 @@ pub async fn index(
 
 pub async fn table_partial(
     State(state): State<AppState>,
-    Query(params): Query<ExpenseFilterParams>,
+    Query(params): Query<TransactionFilterParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
@@ -355,9 +355,9 @@ pub async fn table_partial(
     let page_size = app_settings.page_size;
 
     let date_range = params.resolve_date_range();
-    let sort: TableSort<ExpenseSortColumn> = params.resolve_sort();
+    let sort: TableSort<TransactionSortColumn> = params.resolve_sort();
 
-    let filter = expenses::ExpenseFilter {
+    let filter = transactions::TransactionFilter {
         search: params.search.clone(),
         category_id: params.category_id,
         tag_id: params.tag_id,
@@ -368,13 +368,13 @@ pub async fn table_partial(
         sort_sql: Some(sort.sql_order_by()),
     };
 
-    let expense_list = expenses::list_expenses(&conn, &filter)?;
-    let total_count = expenses::count_expenses(&conn, &filter)?;
+    let transaction_list = transactions::list_transactions(&conn, &filter)?;
+    let total_count = transactions::count_transactions(&conn, &filter)?;
 
-    let template = ExpenseTableTemplate {
+    let template = TransactionTableTemplate {
         settings: app_settings,
         icons: crate::filters::Icons,
-        expenses: expense_list,
+        transactions: transaction_list,
         total_count,
         page,
         page_size,
@@ -389,8 +389,8 @@ pub async fn table_partial(
 pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let expense = expenses::get_expense(&conn, id)?
-        .ok_or_else(|| AppError::NotFound(format!("Expense {} not found", id)))?;
+    let transaction = transactions::get_transaction(&conn, id)?
+        .ok_or_else(|| AppError::NotFound(format!("Transaction {} not found", id)))?;
 
     let app_settings = settings::get_settings(&conn)?;
 
@@ -398,14 +398,14 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     let tag_list = tags::list_tags(&conn)?;
     let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
 
-    let template = ExpenseDetailTemplate {
+    let template = TransactionDetailTemplate {
         title: format!("Transaction #{}", id),
         settings: app_settings,
         icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
-        expense,
+        transaction,
         categories: cats,
         tags: tag_list,
         accounts: cash_accounts,
@@ -422,7 +422,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
     let tag_list = tags::list_tags(&conn)?;
     let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
 
-    let template = ExpenseNewTemplate {
+    let template = TransactionNewTemplate {
         title: "Add Transaction".into(),
         settings: app_settings,
         icons: crate::filters::Icons,
@@ -443,8 +443,8 @@ pub async fn edit_form(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let expense = expenses::get_expense(&conn, id)?
-        .ok_or_else(|| AppError::NotFound(format!("Expense {} not found", id)))?;
+    let transaction = transactions::get_transaction(&conn, id)?
+        .ok_or_else(|| AppError::NotFound(format!("Transaction {} not found", id)))?;
 
     let app_settings = settings::get_settings(&conn)?;
 
@@ -452,14 +452,14 @@ pub async fn edit_form(
     let tag_list = tags::list_tags(&conn)?;
     let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
 
-    let template = ExpenseEditTemplate {
+    let template = TransactionEditTemplate {
         title: "Edit Transaction".into(),
         settings: app_settings,
         icons: crate::filters::Icons,
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
-        expense,
+        transaction,
         categories: cats,
         tags: tag_list,
         accounts: cash_accounts,
@@ -470,47 +470,47 @@ pub async fn edit_form(
 
 pub async fn create(
     State(state): State<AppState>,
-    Form(form): Form<ExpenseFormData>,
+    Form(form): Form<TransactionFormData>,
 ) -> AppResult<Redirect> {
-    debug!(description = %form.description, amount = %form.amount, "Creating expense");
+    debug!(description = %form.description, amount = %form.amount, "Creating transaction");
     let conn = state.db.get()?;
 
-    let new_expense = form.to_new_expense()?;
-    let id = expenses::create_expense(&conn, &new_expense)?;
-    info!(expense_id = id, "Expense created via web form");
+    let new_transaction = form.to_new_transaction()?;
+    let id = transactions::create_transaction(&conn, &new_transaction)?;
+    info!(transaction_id = id, "Transaction created via web form");
 
-    Ok(Redirect::to("/expenses"))
+    Ok(Redirect::to("/transactions"))
 }
 
 pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<i64>,
-    Form(form): Form<ExpenseFormData>,
+    Form(form): Form<TransactionFormData>,
 ) -> AppResult<Redirect> {
-    debug!(expense_id = id, "Updating expense");
+    debug!(transaction_id = id, "Updating transaction");
     let conn = state.db.get()?;
 
-    let new_expense = form.to_new_expense()?;
-    expenses::update_expense(&conn, id, &new_expense)?;
-    info!(expense_id = id, "Expense updated via web form");
+    let new_transaction = form.to_new_transaction()?;
+    transactions::update_transaction(&conn, id, &new_transaction)?;
+    info!(transaction_id = id, "Transaction updated via web form");
 
-    Ok(Redirect::to(&format!("/expenses/{}", id)))
+    Ok(Redirect::to(&format!("/transactions/{}", id)))
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
-    info!(expense_id = id, "Deleting expense");
+    info!(transaction_id = id, "Deleting transaction");
     let conn = state.db.get()?;
 
-    expenses::delete_expense(&conn, id)?;
+    transactions::delete_transaction(&conn, id)?;
 
     Ok(Html(String::new()))
 }
 
 pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>> {
-    warn!("Deleting all expenses");
+    warn!("Deleting all transactions");
     let conn = state.db.get()?;
 
-    expenses::delete_all_expenses(&conn)?;
+    transactions::delete_all_transactions(&conn)?;
 
     Ok(Html(String::new()))
 }
