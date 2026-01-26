@@ -1,11 +1,12 @@
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::response::{Html, Redirect};
-use axum::Form;
-use serde::Deserialize;
+use axum::http::header;
+use axum::response::{Html, IntoResponse, Redirect};
+use axum::{Form, Json};
+use serde::{Deserialize, Serialize};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
-use crate::db::queries::{settings, trading};
+use crate::db::queries::{accounts, settings, trading};
 use crate::error::{AppError, AppResult};
 use crate::models::{NewTradingActivity, Settings, TradingActivity, TradingActivityType};
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
@@ -521,4 +522,135 @@ pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>
     trading::delete_all_activities(&conn)?;
 
     Ok(Html(String::new()))
+}
+
+#[derive(Serialize)]
+struct TradingActivityExport {
+    date: String,
+    symbol: String,
+    quantity: Option<f64>,
+    activity_type: TradingActivityType,
+    unit_price_cents: Option<i64>,
+    currency: String,
+    fee_cents: i64,
+    account_name: Option<String>,
+    notes: Option<String>,
+}
+
+pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
+    let conn = state.db.get()?;
+
+    let filter = crate::db::queries::trading::TradingActivityFilter {
+        symbol: None,
+        activity_type: None,
+        from_date: None,
+        to_date: None,
+        limit: None,
+        offset: None,
+        sort_sql: None,
+    };
+
+    let activities = trading::list_activities(&conn, &filter)?;
+
+    // Build account id -> name map for export
+    let account_list = accounts::list_accounts(&conn)?;
+    let account_id_to_name: std::collections::HashMap<i64, String> = account_list
+        .iter()
+        .map(|a| (a.id, a.name.clone()))
+        .collect();
+
+    let export_data: Vec<TradingActivityExport> = activities
+        .iter()
+        .map(|a| TradingActivityExport {
+            date: a.date.clone(),
+            symbol: a.symbol.clone(),
+            quantity: a.quantity,
+            activity_type: a.activity_type,
+            unit_price_cents: a.unit_price_cents,
+            currency: a.currency.clone(),
+            fee_cents: a.fee_cents,
+            account_name: a
+                .account_id
+                .and_then(|id| account_id_to_name.get(&id).cloned()),
+            notes: a.notes.clone(),
+        })
+        .collect();
+
+    let json = serde_json::to_string_pretty(&export_data)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize: {}", e)))?;
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"trading_activities.json\"",
+            ),
+        ],
+        json,
+    ))
+}
+
+#[derive(Deserialize)]
+struct TradingActivityImport {
+    date: String,
+    symbol: String,
+    quantity: Option<f64>,
+    activity_type: TradingActivityType,
+    unit_price_cents: Option<i64>,
+    #[serde(default = "default_currency")]
+    currency: String,
+    #[serde(default)]
+    fee_cents: i64,
+    account_name: Option<String>,
+    #[serde(default)]
+    notes: Option<String>,
+}
+
+fn default_currency() -> String {
+    "USD".to_string()
+}
+
+pub async fn import(
+    State(state): State<AppState>,
+    Json(value): Json<serde_json::Value>,
+) -> AppResult<Json<serde_json::Value>> {
+    let data: Vec<TradingActivityImport> = serde_json::from_value(value)
+        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
+
+    let conn = state.db.get()?;
+
+    let account_list = accounts::list_accounts(&conn)?;
+    let account_name_to_id: std::collections::HashMap<String, i64> = account_list
+        .iter()
+        .map(|a| (a.name.clone(), a.id))
+        .collect();
+
+    let mut created = 0;
+    for item in data {
+        let account_id = item
+            .account_name
+            .as_ref()
+            .and_then(|name| account_name_to_id.get(name).copied());
+
+        let new_activity = NewTradingActivity {
+            date: item.date,
+            symbol: item.symbol,
+            quantity: item.quantity,
+            activity_type: item.activity_type,
+            unit_price_cents: item.unit_price_cents,
+            currency: item.currency,
+            fee_cents: item.fee_cents,
+            account_id,
+            notes: item.notes,
+        };
+
+        trading::create_activity(&conn, &new_activity)?;
+        created += 1;
+    }
+
+    Ok(Json(serde_json::json!({
+        "imported": created,
+        "message": format!("Successfully imported {} trading activities", created)
+    })))
 }

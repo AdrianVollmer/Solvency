@@ -3,9 +3,9 @@ use axum::extract::State;
 use axum::response::Html;
 use tracing::debug;
 
-use crate::db::queries::{transactions, settings};
+use crate::db::queries::{settings, transactions};
 use crate::error::AppResult;
-use crate::models::{TransactionWithRelations, Settings};
+use crate::models::{Settings, TransactionWithRelations};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -63,7 +63,8 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         .map(|e| e.transaction.amount_cents)
         .sum();
 
-    let transaction_count = transactions::count_transactions(&conn, &transactions::TransactionFilter::default())?;
+    let transaction_count =
+        transactions::count_transactions(&conn, &transactions::TransactionFilter::default())?;
 
     debug!(
         transaction_count = transaction_count,

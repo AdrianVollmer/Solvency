@@ -1,15 +1,16 @@
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::response::{Html, Redirect};
-use axum::Form;
-use serde::Deserialize;
+use axum::http::header;
+use axum::response::{Html, IntoResponse, Redirect};
+use axum::{Form, Json};
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
-use crate::db::queries::{accounts, categories, transactions, settings, tags};
+use crate::db::queries::{accounts, categories, settings, tags, transactions};
 use crate::error::{AppError, AppResult};
 use crate::models::{
-    Account, AccountType, CategoryWithPath, TransactionWithRelations, NewTransaction, Settings, Tag,
+    Account, AccountType, CategoryWithPath, NewTransaction, Settings, Tag, TransactionWithRelations,
 };
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
@@ -513,4 +514,188 @@ pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>
     transactions::delete_all_transactions(&conn)?;
 
     Ok(Html(String::new()))
+}
+
+#[derive(Serialize)]
+struct TransactionExport {
+    date: String,
+    amount_cents: i64,
+    currency: String,
+    description: String,
+    category_name: Option<String>,
+    account_name: Option<String>,
+    notes: Option<String>,
+    tags: Vec<String>,
+    value_date: Option<String>,
+    payer: Option<String>,
+    payee: Option<String>,
+    reference: Option<String>,
+    transaction_type: Option<String>,
+    counterparty_iban: Option<String>,
+    creditor_id: Option<String>,
+    mandate_reference: Option<String>,
+    customer_reference: Option<String>,
+}
+
+pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
+    let conn = state.db.get()?;
+
+    let filter = crate::db::queries::transactions::TransactionFilter {
+        search: None,
+        category_id: None,
+        tag_id: None,
+        from_date: None,
+        to_date: None,
+        limit: None,
+        offset: None,
+        sort_sql: None,
+    };
+
+    let txns = transactions::list_transactions(&conn, &filter)?;
+
+    let export_data: Vec<TransactionExport> = txns
+        .iter()
+        .map(|t| TransactionExport {
+            date: t.transaction.date.clone(),
+            amount_cents: t.transaction.amount_cents,
+            currency: t.transaction.currency.clone(),
+            description: t.transaction.description.clone(),
+            category_name: t.category_name.clone(),
+            account_name: t.account_name.clone(),
+            notes: t.transaction.notes.clone(),
+            tags: t.tags.iter().map(|tag| tag.name.clone()).collect(),
+            value_date: t.transaction.value_date.clone(),
+            payer: t.transaction.payer.clone(),
+            payee: t.transaction.payee.clone(),
+            reference: t.transaction.reference.clone(),
+            transaction_type: t.transaction.transaction_type.clone(),
+            counterparty_iban: t.transaction.counterparty_iban.clone(),
+            creditor_id: t.transaction.creditor_id.clone(),
+            mandate_reference: t.transaction.mandate_reference.clone(),
+            customer_reference: t.transaction.customer_reference.clone(),
+        })
+        .collect();
+
+    let json = serde_json::to_string_pretty(&export_data)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize: {}", e)))?;
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"transactions.json\"",
+            ),
+        ],
+        json,
+    ))
+}
+
+#[derive(Deserialize)]
+struct TransactionImport {
+    date: String,
+    amount_cents: i64,
+    #[serde(default = "default_currency")]
+    currency: String,
+    description: String,
+    category_name: Option<String>,
+    account_name: Option<String>,
+    #[serde(default)]
+    notes: Option<String>,
+    #[serde(default)]
+    tags: Vec<String>,
+    #[serde(default)]
+    value_date: Option<String>,
+    #[serde(default)]
+    payer: Option<String>,
+    #[serde(default)]
+    payee: Option<String>,
+    #[serde(default)]
+    reference: Option<String>,
+    #[serde(default)]
+    transaction_type: Option<String>,
+    #[serde(default)]
+    counterparty_iban: Option<String>,
+    #[serde(default)]
+    creditor_id: Option<String>,
+    #[serde(default)]
+    mandate_reference: Option<String>,
+    #[serde(default)]
+    customer_reference: Option<String>,
+}
+
+fn default_currency() -> String {
+    "USD".to_string()
+}
+
+pub async fn import(
+    State(state): State<AppState>,
+    Json(value): Json<serde_json::Value>,
+) -> AppResult<Json<serde_json::Value>> {
+    let data: Vec<TransactionImport> = serde_json::from_value(value)
+        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
+
+    let conn = state.db.get()?;
+
+    // Build lookup maps for category and account names
+    let cat_list = categories::list_categories(&conn)?;
+    let cat_name_to_id: std::collections::HashMap<String, i64> =
+        cat_list.iter().map(|c| (c.name.clone(), c.id)).collect();
+
+    let account_list = accounts::list_accounts(&conn)?;
+    let account_name_to_id: std::collections::HashMap<String, i64> = account_list
+        .iter()
+        .map(|a| (a.name.clone(), a.id))
+        .collect();
+
+    let tag_list = tags::list_tags(&conn)?;
+    let tag_name_to_id: std::collections::HashMap<String, i64> =
+        tag_list.iter().map(|t| (t.name.clone(), t.id)).collect();
+
+    let mut created = 0;
+    for item in data {
+        let category_id = item
+            .category_name
+            .as_ref()
+            .and_then(|name| cat_name_to_id.get(name).copied());
+
+        let account_id = item
+            .account_name
+            .as_ref()
+            .and_then(|name| account_name_to_id.get(name).copied());
+
+        let tag_ids: Vec<i64> = item
+            .tags
+            .iter()
+            .filter_map(|name| tag_name_to_id.get(name).copied())
+            .collect();
+
+        let new_txn = NewTransaction {
+            date: item.date,
+            amount_cents: item.amount_cents,
+            currency: item.currency,
+            description: item.description,
+            category_id,
+            account_id,
+            notes: item.notes,
+            tag_ids,
+            value_date: item.value_date,
+            payer: item.payer,
+            payee: item.payee,
+            reference: item.reference,
+            transaction_type: item.transaction_type,
+            counterparty_iban: item.counterparty_iban,
+            creditor_id: item.creditor_id,
+            mandate_reference: item.mandate_reference,
+            customer_reference: item.customer_reference,
+        };
+
+        transactions::create_transaction(&conn, &new_txn)?;
+        created += 1;
+    }
+
+    Ok(Json(serde_json::json!({
+        "imported": created,
+        "message": format!("Successfully imported {} transactions", created)
+    })))
 }

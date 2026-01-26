@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block content %}
+<div class="space-y-6">
+    {% call ui::page_header(title="Add Category", back_url="/categories", back_label="Categories", subtitle="Create a new category to organize transactions") %}{% endcall %}
+
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-lg">
+        <form action="/categories/create" method="POST" class="space-y-4">
+            <div>
+                <label for="category-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
+                <input type="text" id="category-name" name="name" required
+                    class="input w-full"
+                    placeholder="e.g., Food, Transport, Entertainment">
+            </div>
+
+            <div>
+                <label for="category-parent" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Parent Category</label>
+                <select id="category-parent" name="parent_id" class="input w-full">
+                    <option value="">None (Root Level)</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category.id }}">{{ cat.path }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="category-color" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Color</label>
+                    <input type="color" id="category-color" name="color" value="#6b7280"
+                        class="h-10 w-20 rounded border border-neutral-200 dark:border-neutral-700 cursor-pointer">
+                </div>
+                <div>
+                    <label for="category-icon" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Icon</label>
+                    <input type="text" id="category-icon" name="icon" value="folder"
+                        class="input w-full"
+                        placeholder="e.g., folder, shopping-cart">
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <a href="/categories" class="btn btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary flex-1">
+                    Add Category
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

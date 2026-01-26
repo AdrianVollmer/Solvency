@@ -1,5 +1,5 @@
-use crate::models::transaction::{Transaction, TransactionWithRelations, NewTransaction};
 use crate::models::tag::{Tag, TagStyle};
+use crate::models::transaction::{NewTransaction, Transaction, TransactionWithRelations};
 use rusqlite::{params, Connection, OptionalExtension};
 use tracing::{debug, trace};
 
@@ -100,13 +100,16 @@ pub fn list_transactions(
         })
     })?;
 
-    let mut transactions: Vec<TransactionWithRelations> = transaction_iter.filter_map(|e| e.ok()).collect();
+    let mut transactions: Vec<TransactionWithRelations> =
+        transaction_iter.filter_map(|e| e.ok()).collect();
 
     let transaction_ids: Vec<i64> = transactions.iter().map(|e| e.transaction.id).collect();
     let mut tags_map = get_tags_for_transactions(conn, &transaction_ids)?;
 
     for transaction in &mut transactions {
-        transaction.tags = tags_map.remove(&transaction.transaction.id).unwrap_or_default();
+        transaction.tags = tags_map
+            .remove(&transaction.transaction.id)
+            .unwrap_or_default();
     }
 
     debug!(count = transactions.len(), "Listed transactions");
@@ -142,7 +145,10 @@ pub fn count_transactions(conn: &Connection, filter: &TransactionFilter) -> rusq
     conn.query_row(&sql, params_refs.as_slice(), |row| row.get(0))
 }
 
-pub fn get_transaction(conn: &Connection, id: i64) -> rusqlite::Result<Option<TransactionWithRelations>> {
+pub fn get_transaction(
+    conn: &Connection,
+    id: i64,
+) -> rusqlite::Result<Option<TransactionWithRelations>> {
     trace!(transaction_id = id, "Fetching transaction");
     let transaction = conn
         .query_row(
@@ -196,7 +202,10 @@ pub fn get_transaction(conn: &Connection, id: i64) -> rusqlite::Result<Option<Tr
     }
 }
 
-pub fn create_transaction(conn: &Connection, transaction: &NewTransaction) -> rusqlite::Result<i64> {
+pub fn create_transaction(
+    conn: &Connection,
+    transaction: &NewTransaction,
+) -> rusqlite::Result<i64> {
     conn.execute(
         "INSERT INTO transactions (date, amount_cents, currency, description, category_id, account_id, notes,
          value_date, payer, payee, reference, transaction_type, counterparty_iban,
@@ -239,7 +248,11 @@ pub fn create_transaction(conn: &Connection, transaction: &NewTransaction) -> ru
     Ok(id)
 }
 
-pub fn update_transaction(conn: &Connection, id: i64, transaction: &NewTransaction) -> rusqlite::Result<()> {
+pub fn update_transaction(
+    conn: &Connection,
+    id: i64,
+    transaction: &NewTransaction,
+) -> rusqlite::Result<()> {
     conn.execute(
         "UPDATE transactions SET date = ?, amount_cents = ?, currency = ?,
          description = ?, category_id = ?, account_id = ?, notes = ?,
@@ -268,7 +281,10 @@ pub fn update_transaction(conn: &Connection, id: i64, transaction: &NewTransacti
         ],
     )?;
 
-    conn.execute("DELETE FROM transaction_tags WHERE transaction_id = ?", [id])?;
+    conn.execute(
+        "DELETE FROM transaction_tags WHERE transaction_id = ?",
+        [id],
+    )?;
 
     for tag_id in &transaction.tag_ids {
         conn.execute(

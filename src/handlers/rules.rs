@@ -164,6 +164,14 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     Ok(Html(String::new()))
 }
 
+pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+
+    rules::delete_all_rules(&conn)?;
+
+    Ok(Html(String::new()))
+}
+
 #[derive(Serialize)]
 struct RuleExport {
     name: String,

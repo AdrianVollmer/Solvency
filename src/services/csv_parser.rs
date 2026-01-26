@@ -191,7 +191,10 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
         "CSV parsing completed"
     );
 
-    Ok(ParseResult { transactions, errors })
+    Ok(ParseResult {
+        transactions,
+        errors,
+    })
 }
 
 fn find_column(headers: &csv::StringRecord, name: &str) -> Option<usize> {

@@ -1,6 +1,6 @@
 use crate::models::tag::{NewTag, Tag, TagStyle};
 use rusqlite::{params, Connection, OptionalExtension};
-use tracing::debug;
+use tracing::{debug, warn};
 
 pub fn list_tags(conn: &Connection) -> rusqlite::Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
@@ -136,4 +136,11 @@ pub fn delete_tag(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
         debug!(tag_id = id, "Deleted tag");
     }
     Ok(rows > 0)
+}
+
+pub fn delete_all_tags(conn: &Connection) -> rusqlite::Result<usize> {
+    conn.execute("DELETE FROM transaction_tags", [])?;
+    let rows = conn.execute("DELETE FROM tags", [])?;
+    warn!(count = rows, "Deleted all tags");
+    Ok(rows)
 }

@@ -1,6 +1,6 @@
 use crate::models::account::{Account, AccountType, NewAccount};
 use rusqlite::{params, Connection, OptionalExtension};
-use tracing::debug;
+use tracing::{debug, warn};
 
 pub fn list_accounts(conn: &Connection) -> rusqlite::Result<Vec<Account>> {
     let mut stmt = conn.prepare(
@@ -99,4 +99,10 @@ pub fn delete_account(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
         debug!(account_id = id, "Deleted account");
     }
     Ok(rows > 0)
+}
+
+pub fn delete_all_accounts(conn: &Connection) -> rusqlite::Result<usize> {
+    let rows = conn.execute("DELETE FROM accounts", [])?;
+    warn!(count = rows, "Deleted all accounts");
+    Ok(rows)
 }

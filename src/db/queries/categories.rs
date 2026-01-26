@@ -1,6 +1,6 @@
 use crate::models::category::{Category, CategoryWithPath, NewCategory};
 use rusqlite::{params, Connection, OptionalExtension};
-use tracing::debug;
+use tracing::{debug, warn};
 
 pub fn list_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
     let mut stmt = conn.prepare(
@@ -155,6 +155,12 @@ pub fn get_top_level_categories(conn: &Connection) -> rusqlite::Result<Vec<Categ
         .collect();
 
     Ok(categories)
+}
+
+pub fn delete_all_categories(conn: &Connection) -> rusqlite::Result<usize> {
+    let rows = conn.execute("DELETE FROM categories", [])?;
+    warn!(count = rows, "Deleted all categories");
+    Ok(rows)
 }
 
 pub fn get_child_categories(conn: &Connection, parent_id: i64) -> rusqlite::Result<Vec<Category>> {

@@ -125,21 +125,14 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         {% call ui::page_header(title="Categories", subtitle="Organize your transactions") %}{% endcall %}
-        <div class="flex items-center gap-2">
-            <a href="/categories/export" class="btn btn-secondary flex items-center gap-2">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
-                Export
-            </a>
-            <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
-                Import
-            </button>
-            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importCategories(this.files[0])" aria-label="Import categories from JSON file">
-            <button onclick="window.categoriesPage.openAddModal()" class="btn btn-primary flex items-center gap-2">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
-                Add Category
-            </button>
-        </div>
+        {% call ui::page_action_bar(
+            export_url="/categories/export",
+            import_url="/categories/import",
+            delete_endpoint="/categories/delete-all",
+            delete_confirm="Are you sure you want to delete ALL categories? This cannot be undone.",
+            add_url="/categories/new",
+            add_label="Add Category"
+        ) %}{% endcall %}
     </div>
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700">
@@ -238,26 +231,5 @@ document.addEventListener('DOMContentLoaded', function() {
         window.categoriesPage.init(categories);
     }
 });
-
-async function importCategories(file) {
-    if (!file) return;
-    try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        const response = await fetch('/categories/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        showToast(result.message, { type: result.imported > 0 ? 'success' : 'info' });
-        if (result.imported > 0) {
-            location.reload();
-        }
-    } catch (e) {
-        showToast('Import failed: ' + e.message, { type: 'error' });
-    }
-    document.getElementById('import-file').value = '';
-}
 </script>
 {% endblock %}

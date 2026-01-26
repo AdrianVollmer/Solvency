@@ -4,7 +4,6 @@ pub mod api_logs;
 pub mod balances;
 pub mod categories;
 pub mod dashboard;
-pub mod transactions;
 pub mod import;
 pub mod market_data;
 pub mod net_worth;
@@ -15,6 +14,7 @@ pub mod tags;
 pub mod trading_activities;
 pub mod trading_import;
 pub mod trading_positions;
+pub mod transactions;
 
 use axum::routing::{delete, get, post, put};
 use axum::Router;
@@ -39,11 +39,15 @@ pub fn routes() -> Router<AppState> {
         .route("/transactions/:id/update", post(transactions::update))
         .route("/transactions/:id/delete", delete(transactions::delete))
         .route("/transactions/delete-all", delete(transactions::delete_all))
+        .route("/transactions/export", get(transactions::export))
+        .route("/transactions/import", post(transactions::import))
         // Category management
         .route("/categories", get(categories::index))
+        .route("/categories/new", get(categories::new_form))
         .route("/categories/create", post(categories::create))
         .route("/categories/export", get(categories::export))
         .route("/categories/import", post(categories::import))
+        .route("/categories/delete-all", delete(categories::delete_all))
         .route("/categories/:id", put(categories::update))
         .route("/categories/:id", delete(categories::delete))
         // Account management
@@ -55,6 +59,7 @@ pub fn routes() -> Router<AppState> {
         .route("/accounts/:id/edit", get(accounts::edit_form))
         .route("/accounts/:id/update", post(accounts::update))
         .route("/accounts/:id", delete(accounts::delete))
+        .route("/accounts/delete-all", delete(accounts::delete_all))
         // Tag management
         .route("/tags", get(tags::index))
         .route("/tags/new", get(tags::new_form))
@@ -63,6 +68,7 @@ pub fn routes() -> Router<AppState> {
         .route("/tags/import", post(tags::import))
         .route("/tags/search", get(tags::search))
         .route("/tags/:id", delete(tags::delete))
+        .route("/tags/delete-all", delete(tags::delete_all))
         // Rule management
         .route("/rules", get(rules::index))
         .route("/rules/new", get(rules::new_form))
@@ -71,6 +77,7 @@ pub fn routes() -> Router<AppState> {
         .route("/rules/import", post(rules::import))
         .route("/rules/:id", put(rules::update))
         .route("/rules/:id", delete(rules::delete))
+        .route("/rules/delete-all", delete(rules::delete_all))
         // Import
         .route("/import/format", get(import::format))
         .route("/import/upload", post(import::upload))
@@ -117,6 +124,14 @@ pub fn routes() -> Router<AppState> {
             "/trading/activities/delete-all",
             delete(trading_activities::delete_all),
         )
+        .route(
+            "/trading/activities/export",
+            get(trading_activities::export),
+        )
+        .route(
+            "/trading/activities/import",
+            post(trading_activities::import),
+        )
         // Trading Positions
         .route("/trading/positions", get(trading_positions::index))
         .route(
@@ -131,7 +146,10 @@ pub fn routes() -> Router<AppState> {
         // Net Worth
         .route("/trading/net-worth", get(net_worth::index))
         .route("/api/net-worth/chart", get(net_worth::chart_data))
-        .route("/api/net-worth/top-transactions", get(net_worth::top_transactions))
+        .route(
+            "/api/net-worth/top-transactions",
+            get(net_worth::top_transactions),
+        )
         // Trading Market Data
         .route("/trading/market-data", get(market_data::index))
         .route("/trading/market-data/refresh", post(market_data::refresh))

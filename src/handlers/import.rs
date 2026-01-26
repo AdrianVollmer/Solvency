@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
-use crate::db::queries::{categories, transactions, import, settings, tags};
+use crate::db::queries::{categories, import, settings, tags, transactions};
 use crate::error::{html_escape, AppError, AppResult};
 use crate::models::{CategoryWithPath, ImportSession, ImportStatus, NewTransaction, Settings};
 use crate::services::csv_parser::parse_csv;
@@ -222,7 +222,8 @@ async fn parse_files_background(
                 // Insert rows into database
                 if let Ok(conn) = state.db.get() {
                     for transaction in result.transactions {
-                        if let Err(e) = import::insert_row(&conn, &session_id, row_index, &transaction)
+                        if let Err(e) =
+                            import::insert_row(&conn, &session_id, row_index, &transaction)
                         {
                             all_errors.push(format!("{}: Failed to store row: {}", file_name, e));
                         }

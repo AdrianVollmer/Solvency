@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::extract::{Path, State};
 use axum::http::header;
-use axum::response::{Html, IntoResponse, Json};
+use axum::response::{Html, IntoResponse, Json, Redirect};
 use axum::Form;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -31,12 +31,42 @@ pub struct CategoryRowTemplate {
     pub category: CategoryWithPath,
 }
 
+#[derive(Template)]
+#[template(path = "pages/category_form.html")]
+pub struct CategoryFormTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub icons: crate::filters::Icons,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub xsrf_token: String,
+    pub categories: Vec<CategoryWithPath>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CategoryFormData {
     pub name: String,
     pub parent_id: Option<i64>,
     pub color: Option<String>,
     pub icon: Option<String>,
+}
+
+pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = settings::get_settings(&conn)?;
+    let cats = categories::list_categories_with_path(&conn)?;
+
+    let template = CategoryFormTemplate {
+        title: "Add Category".into(),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        categories: cats,
+    };
+
+    Ok(Html(template.render().unwrap()))
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -62,7 +92,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 pub async fn create(
     State(state): State<AppState>,
     Form(form): Form<CategoryFormData>,
-) -> AppResult<Html<String>> {
+) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
     let new_category = NewCategory {
@@ -72,25 +102,9 @@ pub async fn create(
         icon: form.icon.unwrap_or_else(|| "folder".into()),
     };
 
-    let id = categories::create_category(&conn, &new_category)?;
+    categories::create_category(&conn, &new_category)?;
 
-    let cat = categories::get_category(&conn, id)?
-        .ok_or_else(|| AppError::Internal("Failed to retrieve created category".into()))?;
-
-    let template = CategoryRowTemplate {
-        icons: crate::filters::Icons,
-        category: CategoryWithPath {
-            category: cat,
-            path: new_category.name,
-            depth: if new_category.parent_id.is_some() {
-                1
-            } else {
-                0
-            },
-        },
-    };
-
-    Ok(Html(template.render().unwrap()))
+    Ok(Redirect::to("/categories"))
 }
 
 pub async fn update(
@@ -132,6 +146,14 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     let conn = state.db.get()?;
 
     categories::delete_category(&conn, id)?;
+
+    Ok(Html(String::new()))
+}
+
+pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+
+    categories::delete_all_categories(&conn)?;
 
     Ok(Html(String::new()))
 }

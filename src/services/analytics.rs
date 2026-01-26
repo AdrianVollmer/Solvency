@@ -22,7 +22,10 @@ impl SpendingSummary {
             };
         }
 
-        let total_cents: i64 = transactions.iter().map(|e| e.transaction.amount_cents).sum();
+        let total_cents: i64 = transactions
+            .iter()
+            .map(|e| e.transaction.amount_cents)
+            .sum();
         let transaction_count = transactions.len();
         let average_cents = total_cents / transaction_count as i64;
         let max_transaction_cents = transactions

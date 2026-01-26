@@ -53,6 +53,36 @@
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
     <div id="modal-container" class="fixed inset-0 z-40 hidden"></div>
 
+    <script>
+    async function importResource(file, url) {
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (typeof showToast === 'function') {
+                showToast(result.message, { type: result.imported > 0 ? 'success' : 'info' });
+            } else {
+                alert(result.message);
+            }
+            if (result.imported > 0) {
+                location.reload();
+            }
+        } catch (e) {
+            if (typeof showToast === 'function') {
+                showToast('Import failed: ' + e.message, { type: 'error' });
+            } else {
+                alert('Import failed: ' + e.message);
+            }
+        }
+        document.querySelector('input[type="file"]').value = '';
+    }
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

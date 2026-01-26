@@ -1,6 +1,6 @@
 use crate::models::rule::{NewRule, Rule, RuleActionType};
 use rusqlite::{params, Connection, OptionalExtension};
-use tracing::debug;
+use tracing::{debug, warn};
 
 pub fn list_rules(conn: &Connection) -> rusqlite::Result<Vec<Rule>> {
     let mut stmt = conn.prepare(
@@ -89,4 +89,10 @@ pub fn delete_rule(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
         debug!(rule_id = id, "Deleted rule");
     }
     Ok(rows > 0)
+}
+
+pub fn delete_all_rules(conn: &Connection) -> rusqlite::Result<usize> {
+    let rows = conn.execute("DELETE FROM rules", [])?;
+    warn!(count = rows, "Deleted all rules");
+    Ok(rows)
 }

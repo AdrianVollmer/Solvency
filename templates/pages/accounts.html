@@ -5,21 +5,14 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         {% call ui::page_header(title="Accounts", subtitle="Manage your financial accounts") %}{% endcall %}
-        <div class="flex items-center gap-2">
-            <a href="/accounts/export" class="btn btn-secondary flex items-center gap-2">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
-                Export
-            </a>
-            <button onclick="document.getElementById('import-file').click()" class="btn btn-secondary flex items-center gap-2">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
-                Import
-            </button>
-            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importAccounts(this.files[0])" aria-label="Import accounts from JSON file">
-            <a href="/accounts/new" class="btn btn-primary flex items-center gap-2">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
-                Add Account
-            </a>
-        </div>
+        {% call ui::page_action_bar(
+            export_url="/accounts/export",
+            import_url="/accounts/import",
+            delete_endpoint="/accounts/delete-all",
+            delete_confirm="Are you sure you want to delete ALL accounts? This cannot be undone.",
+            add_url="/accounts/new",
+            add_label="Add Account"
+        ) %}{% endcall %}
     </div>
 
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
@@ -59,26 +52,4 @@
     </div>
 </div>
 
-<script>
-async function importAccounts(file) {
-    if (!file) return;
-    try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        const response = await fetch('/accounts/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        alert(result.message);
-        if (result.imported > 0) {
-            location.reload();
-        }
-    } catch (e) {
-        alert('Import failed: ' + e.message);
-    }
-    document.getElementById('import-file').value = '';
-}
-</script>
 {% endblock %}

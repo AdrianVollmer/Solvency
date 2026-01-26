@@ -54,7 +54,7 @@
                 <span class="text-sm font-medium">Market Data</span>
             </a>
 
-            <a href="/categories" class="nav-item {% if title == "Categories" %}nav-item-active{% endif %}">
+            <a href="/categories" class="nav-item {% if title == "Categories" || title == "Add Category" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("folder")|safe }}</span>
                 <span class="text-sm font-medium">Categories</span>
             </a>

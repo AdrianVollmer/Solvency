@@ -45,6 +45,16 @@
     Tag badge:
     {% call ui::tag_badge(color="#3b82f6", name="Tag", style="solid") %}
     {% call ui::tag_badge_deletable(color="#3b82f6", name="Tag", style="solid", tag_id="123", endpoint="/tags/123") %}
+
+    Page action bar (resource listing pages):
+    {% call ui::page_action_bar(
+        export_url="/tags/export",
+        import_url="/tags/import",
+        delete_endpoint="/tags/delete-all",
+        delete_confirm="Are you sure you want to delete ALL tags?",
+        add_url="/tags/new",
+        add_label="Add Tag"
+    ) %}{% endcall %}
 #}
 
 {# Page header for detail pages #}
@@ -319,6 +329,36 @@
     <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ label }}</p>
     <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ value }}</p>
     <p class="text-sm text-red-600 dark:text-red-400">{{ secondary }}</p>
+</div>
+{% endmacro %}
+
+{# Page action bar for resource listing pages #}
+{# Provides consistent Export, Import, Delete All, Add buttons #}
+{% macro page_action_bar(export_url, import_url, delete_endpoint, delete_confirm, add_url, add_label) %}
+<div class="flex flex-wrap items-center gap-2">
+    <a href="{{ export_url }}" class="btn btn-secondary flex items-center gap-2">
+        <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
+        Export
+    </a>
+    <button onclick="this.nextElementSibling.click()" class="btn btn-secondary flex items-center gap-2">
+        <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
+        Import
+    </button>
+    <input type="file" accept=".json" class="hidden" onchange="importResource(this.files[0], '{{ import_url }}')" aria-label="Import from JSON file">
+    <button
+        hx-delete="{{ delete_endpoint }}"
+        hx-confirm="{{ delete_confirm }}"
+        hx-target="body"
+        hx-swap="none"
+        hx-on::after-request="if(event.detail.successful) window.location.reload()"
+        class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+        <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+        Delete All
+    </button>
+    <a href="{{ add_url }}" class="btn btn-primary flex items-center gap-2">
+        <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
+        {{ add_label }}
+    </a>
 </div>
 {% endmacro %}
 

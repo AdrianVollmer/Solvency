@@ -4,7 +4,7 @@ use axum::response::Html;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::{transactions, settings};
+use crate::db::queries::{settings, transactions};
 use crate::error::AppResult;
 use crate::filters;
 use crate::models::net_worth::NetWorthDataPoint;
