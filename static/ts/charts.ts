@@ -139,7 +139,7 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
               opacity: 1,
             },
             label: {
-              rotate: "tangential",
+              rotate: "radial",
               fontSize: 12,
             },
           },
