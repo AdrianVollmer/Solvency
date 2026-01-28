@@ -12,10 +12,16 @@ built with Rust.
 ## Features
 
 The primary use case is running this program as a self-hosted Docker
-instance accessed locally or via VPN. There is currently no support for
-multiple users.
+instance accessed locally or via VPN. Your data stays yours! There is currently
+no support for multiple users.
 
-Market data is pulled from Yahoo Finances.
+- **Transaction tracking** with categories, tags, and multi-currency support
+- **Spending analytics** with interactive charts (Sankey diagrams, category breakdowns, time series)
+- **Investment portfolio** tracking with positions, realized/unrealized gains, and market data from Yahoo Finance
+- **Net worth** calculation and historical trends
+- **Automatic categorization** via pattern-matching rules
+- **Bulk import/export** of transactions and trading activities from CSV
+- **Dark mode** and customizable settings
 
 ## Demo
 
