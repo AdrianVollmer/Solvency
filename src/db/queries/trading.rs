@@ -244,32 +244,13 @@ fn calculate_positions_from_activities(activities: Vec<ActivityRow>) -> Vec<Posi
             .or_insert((0.0, 0, currency));
 
         match activity_type {
-            TradingActivityType::Buy | TradingActivityType::AddHolding => {
+            TradingActivityType::Buy => {
                 let cost = (qty * price as f64).round() as i64;
                 entry.0 += qty;
                 entry.1 += cost;
             }
-            TradingActivityType::Sell | TradingActivityType::RemoveHolding => {
+            TradingActivityType::Sell => {
                 // For sells, reduce quantity and proportionally reduce cost basis
-                if entry.0 > 0.0 {
-                    let avg_cost = entry.1 as f64 / entry.0;
-                    let cost_reduction = (qty * avg_cost).round() as i64;
-                    entry.0 -= qty;
-                    entry.1 -= cost_reduction;
-                    if entry.0 < 0.0 {
-                        entry.0 = 0.0;
-                    }
-                    if entry.1 < 0 {
-                        entry.1 = 0;
-                    }
-                }
-            }
-            TradingActivityType::TransferIn => {
-                let cost = (qty * price as f64).round() as i64;
-                entry.0 += qty;
-                entry.1 += cost;
-            }
-            TradingActivityType::TransferOut => {
                 if entry.0 > 0.0 {
                     let avg_cost = entry.1 as f64 / entry.0;
                     let cost_reduction = (qty * avg_cost).round() as i64;
@@ -290,25 +271,13 @@ fn calculate_positions_from_activities(activities: Vec<ActivityRow>) -> Vec<Posi
                     entry.0 *= qty;
                 }
             }
-            TradingActivityType::Deposit => {
-                // Cash deposit - adds to cash position
-                let amount = (qty * price as f64).round() as i64;
-                entry.0 += qty;
-                entry.1 += amount;
+            TradingActivityType::Fee | TradingActivityType::Tax => {
+                // These reduce cost basis (they're expenses associated with the position)
+                entry.1 += (qty * price as f64).round() as i64;
             }
-            TradingActivityType::Withdrawal
-            | TradingActivityType::Fee
-            | TradingActivityType::Tax => {
-                // These reduce cash
-                let amount = (qty * price as f64).round() as i64;
-                entry.0 -= qty;
-                entry.1 -= amount;
-            }
-            TradingActivityType::Dividend | TradingActivityType::Interest => {
-                // These add cash
-                let amount = (qty * price as f64).round() as i64;
-                entry.0 += qty;
-                entry.1 += amount;
+            TradingActivityType::Dividend => {
+                // Dividends don't affect position quantity or cost basis
+                // They're just income events
             }
         }
     }
@@ -327,16 +296,8 @@ fn calculate_positions_from_activities(activities: Vec<ActivityRow>) -> Vec<Posi
         )
         .collect();
 
-    // Sort: cash positions first, then alphabetically
-    positions.sort_by(|a, b| {
-        let a_is_cash = a.is_cash();
-        let b_is_cash = b.is_cash();
-        match (a_is_cash, b_is_cash) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => a.symbol.cmp(&b.symbol),
-        }
-    });
+    // Sort alphabetically by symbol
+    positions.sort_by(|a, b| a.symbol.cmp(&b.symbol));
 
     positions
 }
@@ -399,7 +360,6 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
     let mut stmt = conn.prepare(
         "SELECT symbol, activity_type, quantity, unit_price_cents, currency, date
          FROM trading_activities
-         WHERE symbol NOT LIKE '$CASH-%'
          ORDER BY symbol, date ASC, id ASC",
     )?;
 
@@ -446,26 +406,12 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
         }
 
         match activity_type {
-            TradingActivityType::Buy | TradingActivityType::AddHolding => {
+            TradingActivityType::Buy => {
                 let cost = (qty * price as f64).round() as i64;
                 entry.0 += qty;
                 entry.1 += cost;
             }
-            TradingActivityType::Sell | TradingActivityType::RemoveHolding => {
-                let proceeds = (qty * price as f64).round() as i64;
-                entry.0 -= qty;
-                entry.2 += proceeds;
-                if entry.0 < 0.0 {
-                    entry.0 = 0.0;
-                }
-            }
-            TradingActivityType::TransferIn => {
-                let cost = (qty * price as f64).round() as i64;
-                entry.0 += qty;
-                entry.1 += cost;
-            }
-            TradingActivityType::TransferOut => {
-                // Treat as proceeds at the price
+            TradingActivityType::Sell => {
                 let proceeds = (qty * price as f64).round() as i64;
                 entry.0 -= qty;
                 entry.2 += proceeds;
@@ -490,9 +436,6 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
             TradingActivityType::Dividend => {
                 // Dividend amount is stored in unit_price_cents
                 entry.5 += price;
-            }
-            _ => {
-                // Interest, deposits, withdrawals don't affect position calculations
             }
         }
     }

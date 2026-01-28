@@ -114,12 +114,11 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
                    MIN(date) as first_activity_date,
                    MAX(date) as last_activity_date,
                    SUM(CASE
-                       WHEN activity_type IN ('BUY', 'ADD_HOLDING', 'TRANSFER_IN') THEN COALESCE(quantity, 0)
-                       WHEN activity_type IN ('SELL', 'REMOVE_HOLDING', 'TRANSFER_OUT') THEN -COALESCE(quantity, 0)
+                       WHEN activity_type = 'BUY' THEN COALESCE(quantity, 0)
+                       WHEN activity_type = 'SELL' THEN -COALESCE(quantity, 0)
                        ELSE 0
                    END) as net_quantity
             FROM trading_activities
-            WHERE symbol NOT LIKE '$CASH-%'
             GROUP BY symbol
         ),
         market_data_summary AS (
@@ -228,12 +227,11 @@ pub fn get_symbols_needing_data(
                    MIN(date) as first_activity_date,
                    MAX(date) as last_activity_date,
                    SUM(CASE
-                       WHEN activity_type IN ('BUY', 'ADD_HOLDING', 'TRANSFER_IN') THEN COALESCE(quantity, 0)
-                       WHEN activity_type IN ('SELL', 'REMOVE_HOLDING', 'TRANSFER_OUT') THEN -COALESCE(quantity, 0)
+                       WHEN activity_type = 'BUY' THEN COALESCE(quantity, 0)
+                       WHEN activity_type = 'SELL' THEN -COALESCE(quantity, 0)
                        ELSE 0
                    END) as net_quantity
             FROM trading_activities
-            WHERE symbol NOT LIKE '$CASH-%'
             GROUP BY symbol
         ),
         latest_data AS (

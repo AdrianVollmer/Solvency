@@ -175,6 +175,12 @@ pub fn parse_csv(content: &[u8]) -> Result<ParseResult, AppError> {
             .filter(|s| !s.is_empty())
             .and_then(|s| s.parse::<i64>().ok());
 
+        // Only BUY, SELL, and SPLIT use quantity - clear it for other activity types
+        let quantity = match activity_type.as_str() {
+            "BUY" | "SELL" | "SPLIT" => quantity,
+            _ => None,
+        };
+
         activities.push(ParsedTradingActivity {
             date,
             symbol,
@@ -246,7 +252,7 @@ mod tests {
 
     #[test]
     fn test_parse_simple_csv() {
-        let csv = b"date,symbol,activityType,quantity,unitPrice,currency,fee\n2024-01-15,AAPL,BUY,10,150.00,USD,5.00\n2024-01-16,$CASH-USD,DEPOSIT,,,USD,";
+        let csv = b"date,symbol,activityType,quantity,unitPrice,currency,fee\n2024-01-15,AAPL,BUY,10,150.00,USD,5.00\n2024-01-16,AAPL,DIVIDEND,100,2.50,USD,";
 
         let result = parse_csv(csv).unwrap();
         assert_eq!(result.activities.len(), 2);
@@ -258,8 +264,10 @@ mod tests {
         assert_eq!(result.activities[0].quantity, Some("10".to_string()));
         assert_eq!(result.activities[0].unit_price, Some("150.00".to_string()));
 
-        assert_eq!(result.activities[1].symbol, "$CASH-USD");
-        assert_eq!(result.activities[1].activity_type, "DEPOSIT");
+        assert_eq!(result.activities[1].symbol, "AAPL");
+        assert_eq!(result.activities[1].activity_type, "DIVIDEND");
+        // Quantity should be cleared for non-BUY/SELL/SPLIT activities
+        assert_eq!(result.activities[1].quantity, None);
     }
 
     #[test]

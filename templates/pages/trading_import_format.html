@@ -25,8 +25,8 @@
                         </tr>
                         <tr>
                             <td class="px-4 py-2 font-mono text-sm">symbol</td>
-                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Security symbol or $CASH-USD for cash</td>
-                            <td class="px-4 py-2 font-mono text-sm">AAPL, $CASH-USD</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Security symbol (ticker)</td>
+                            <td class="px-4 py-2 font-mono text-sm">AAPL, MSFT</td>
                         </tr>
                         <tr>
                             <td class="px-4 py-2 font-mono text-sm">activityType</td>
@@ -101,9 +101,9 @@
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Example CSV</h2>
             <pre class="bg-neutral-100 dark:bg-neutral-900 p-4 rounded-lg overflow-x-auto text-sm font-mono">date,symbol,activityType,quantity,unitPrice,currency,fee
 2024-01-15,AAPL,BUY,10,150.00,USD,5.00
-2024-01-20,$CASH-USD,DEPOSIT,1000,1.00,USD,0
 2024-02-01,AAPL,DIVIDEND,,0.24,USD,0
-2024-02-15,AAPL,SELL,5,160.00,USD,5.00</pre>
+2024-02-15,AAPL,SELL,5,160.00,USD,5.00
+2024-03-01,AAPL,SPLIT,4,,USD,0</pre>
         </div>
     {% endcall %}
 

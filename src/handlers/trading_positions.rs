@@ -182,7 +182,6 @@ pub struct TradingPositionsTemplate {
     pub version: &'static str,
     pub xsrf_token: String,
     pub positions: Vec<Position>,
-    pub cash_positions: Vec<Position>,
     pub security_positions: Vec<PositionWithMarketData>,
     pub total_current_value: Option<i64>,
     pub total_current_value_formatted: Option<String>,
@@ -205,13 +204,10 @@ pub async fn index(
 
     let all_positions = trading::get_positions(&conn)?;
 
-    // Separate cash and security positions
-    let (cash_positions, security_only): (Vec<_>, Vec<_>) =
-        all_positions.iter().cloned().partition(|p| p.is_cash());
-
-    // Enrich security positions with market data
-    let mut security_positions: Vec<PositionWithMarketData> = security_only
-        .into_iter()
+    // Enrich positions with market data
+    let mut security_positions: Vec<PositionWithMarketData> = all_positions
+        .iter()
+        .cloned()
         .map(|pos| {
             // First try to get actual market data
             if let Ok(Some(data)) = market_data::get_latest_price(&conn, &pos.symbol) {
@@ -280,7 +276,6 @@ pub async fn index(
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
         positions: all_positions,
-        cash_positions,
         security_positions,
         total_current_value,
         total_current_value_formatted,
@@ -562,14 +557,14 @@ fn calculate_position_xirr(
 
         let amount = match activity.activity_type {
             // Buys are cash outflows (negative)
-            TradingActivityType::Buy | TradingActivityType::AddHolding => {
+            TradingActivityType::Buy => {
                 let qty = activity.quantity.unwrap_or(0.0);
                 let price = activity.unit_price_cents.unwrap_or(0) as f64 / 100.0;
                 let fee = activity.fee_cents as f64 / 100.0;
                 -(qty * price + fee)
             }
             // Sells are cash inflows (positive)
-            TradingActivityType::Sell | TradingActivityType::RemoveHolding => {
+            TradingActivityType::Sell => {
                 let qty = activity.quantity.unwrap_or(0.0);
                 let price = activity.unit_price_cents.unwrap_or(0) as f64 / 100.0;
                 let fee = activity.fee_cents as f64 / 100.0;
@@ -646,14 +641,14 @@ fn calculate_position_totals(activities: &[TradingActivity]) -> (i64, i64, i64, 
 
         // Calculate realized gain/loss from sell activities
         match activity.activity_type {
-            TradingActivityType::Buy | TradingActivityType::AddHolding => {
+            TradingActivityType::Buy => {
                 let qty = activity.quantity.unwrap_or(0.0);
                 let price = activity.unit_price_cents.unwrap_or(0);
                 let cost = (qty * price as f64).round() as i64;
                 running_quantity += qty;
                 running_cost_cents += cost;
             }
-            TradingActivityType::Sell | TradingActivityType::RemoveHolding => {
+            TradingActivityType::Sell => {
                 let qty = activity.quantity.unwrap_or(0.0);
                 let sell_price = activity.unit_price_cents.unwrap_or(0);
                 let sell_value = (qty * sell_price as f64).round() as i64;
@@ -667,35 +662,6 @@ fn calculate_position_totals(activities: &[TradingActivity]) -> (i64, i64, i64, 
                     realized_gain_loss_cents += sell_value - cost_basis;
 
                     // Update running position
-                    running_quantity -= qty;
-                    running_cost_cents -= cost_basis;
-
-                    if running_quantity < 0.0 {
-                        running_quantity = 0.0;
-                    }
-                    if running_cost_cents < 0 {
-                        running_cost_cents = 0;
-                    }
-                }
-            }
-            TradingActivityType::TransferIn => {
-                let qty = activity.quantity.unwrap_or(0.0);
-                let price = activity.unit_price_cents.unwrap_or(0);
-                let cost = (qty * price as f64).round() as i64;
-                running_quantity += qty;
-                running_cost_cents += cost;
-            }
-            TradingActivityType::TransferOut => {
-                let qty = activity.quantity.unwrap_or(0.0);
-                let sell_price = activity.unit_price_cents.unwrap_or(0);
-                let sell_value = (qty * sell_price as f64).round() as i64;
-
-                if running_quantity > 0.0 {
-                    let avg_cost = running_cost_cents as f64 / running_quantity;
-                    let cost_basis = (qty * avg_cost).round() as i64;
-
-                    realized_gain_loss_cents += sell_value - cost_basis;
-
                     running_quantity -= qty;
                     running_cost_cents -= cost_basis;
 

@@ -10,37 +10,6 @@
     {% call ui::empty_state_action(icon="trending-up", title="No positions yet", description="Import or add trading activities to see your positions", action_url="/trading/activities", action_label="Add Activity") %}{% endcall %}
     {% else %}
 
-    {# Cash Positions #}
-    {% if !cash_positions.is_empty() %}
-    {% call ui::card(class="", overflow="overflow-hidden") %}
-        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Cash</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                <thead class="bg-neutral-50 dark:bg-neutral-900">
-                    <tr>
-                        {% call table::th(label="Currency", align="left") %}{% endcall %}
-                        {% call table::th(label="Balance", align="right") %}{% endcall %}
-                    </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {% for position in cash_positions %}
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ position.symbol }}</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(position.total_cost_cents, position.currency) }}</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endcall %}
-    {% endif %}
-
     {# Security Positions #}
     {% if !security_positions.is_empty() %}
     {% call ui::card(class="", overflow="overflow-hidden") %}

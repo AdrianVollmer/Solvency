@@ -9,13 +9,6 @@ pub enum TradingActivityType {
     Buy,
     Sell,
     Dividend,
-    Interest,
-    Deposit,
-    Withdrawal,
-    AddHolding,
-    RemoveHolding,
-    TransferIn,
-    TransferOut,
     Fee,
     Tax,
     Split,
@@ -27,13 +20,6 @@ impl TradingActivityType {
             Self::Buy => "BUY",
             Self::Sell => "SELL",
             Self::Dividend => "DIVIDEND",
-            Self::Interest => "INTEREST",
-            Self::Deposit => "DEPOSIT",
-            Self::Withdrawal => "WITHDRAWAL",
-            Self::AddHolding => "ADD_HOLDING",
-            Self::RemoveHolding => "REMOVE_HOLDING",
-            Self::TransferIn => "TRANSFER_IN",
-            Self::TransferOut => "TRANSFER_OUT",
             Self::Fee => "FEE",
             Self::Tax => "TAX",
             Self::Split => "SPLIT",
@@ -45,13 +31,6 @@ impl TradingActivityType {
             Self::Buy => "Buy",
             Self::Sell => "Sell",
             Self::Dividend => "Dividend",
-            Self::Interest => "Interest",
-            Self::Deposit => "Deposit",
-            Self::Withdrawal => "Withdrawal",
-            Self::AddHolding => "Add Holding",
-            Self::RemoveHolding => "Remove Holding",
-            Self::TransferIn => "Transfer In",
-            Self::TransferOut => "Transfer Out",
             Self::Fee => "Fee",
             Self::Tax => "Tax",
             Self::Split => "Split",
@@ -63,13 +42,6 @@ impl TradingActivityType {
             Self::Buy,
             Self::Sell,
             Self::Dividend,
-            Self::Interest,
-            Self::Deposit,
-            Self::Withdrawal,
-            Self::AddHolding,
-            Self::RemoveHolding,
-            Self::TransferIn,
-            Self::TransferOut,
             Self::Fee,
             Self::Tax,
             Self::Split,
@@ -83,21 +55,7 @@ impl TradingActivityType {
 
     /// Returns true if this activity type affects holdings
     pub fn affects_holdings(&self) -> bool {
-        matches!(
-            self,
-            Self::Buy
-                | Self::Sell
-                | Self::AddHolding
-                | Self::RemoveHolding
-                | Self::TransferIn
-                | Self::TransferOut
-                | Self::Split
-        )
-    }
-
-    /// Returns true if this is a cash-only activity (uses $CASH-<CURRENCY> symbol)
-    pub fn is_cash_only(&self) -> bool {
-        matches!(self, Self::Interest | Self::Deposit | Self::Withdrawal)
+        matches!(self, Self::Buy | Self::Sell | Self::Split)
     }
 }
 
@@ -115,13 +73,6 @@ impl FromStr for TradingActivityType {
             "BUY" => Ok(Self::Buy),
             "SELL" => Ok(Self::Sell),
             "DIVIDEND" => Ok(Self::Dividend),
-            "INTEREST" => Ok(Self::Interest),
-            "DEPOSIT" => Ok(Self::Deposit),
-            "WITHDRAWAL" => Ok(Self::Withdrawal),
-            "ADD_HOLDING" => Ok(Self::AddHolding),
-            "REMOVE_HOLDING" => Ok(Self::RemoveHolding),
-            "TRANSFER_IN" => Ok(Self::TransferIn),
-            "TRANSFER_OUT" => Ok(Self::TransferOut),
             "FEE" => Ok(Self::Fee),
             "TAX" => Ok(Self::Tax),
             "SPLIT" => Ok(Self::Split),
@@ -188,10 +139,6 @@ impl TradingActivity {
     pub fn total_value_formatted(&self) -> Option<String> {
         self.total_value_display()
             .map(|value| format!("{}{}", currency_symbol(&self.currency), value))
-    }
-
-    pub fn is_cash_symbol(&self) -> bool {
-        self.symbol.starts_with("$CASH-")
     }
 
     pub fn quantity_display(&self) -> String {
@@ -366,10 +313,6 @@ impl PositionWithMarketData {
             _ => "text-neutral-600 dark:text-neutral-400",
         }
     }
-
-    pub fn is_cash(&self) -> bool {
-        self.position.is_cash()
-    }
 }
 
 /// Represents a closed position (all securities sold)
@@ -496,10 +439,6 @@ impl Position {
             .trim_end_matches('0')
             .trim_end_matches('.')
             .to_string()
-    }
-
-    pub fn is_cash(&self) -> bool {
-        self.symbol.starts_with("$CASH-")
     }
 }
 

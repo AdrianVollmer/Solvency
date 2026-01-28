@@ -37,11 +37,6 @@ impl PriceLookup {
 
     /// Get price for a symbol on a specific date, with carry-forward
     fn get_price(&self, symbol: &str, date: &str) -> Option<i64> {
-        // Cash positions don't need market lookup
-        if symbol.starts_with("$CASH-") {
-            return None;
-        }
-
         if let Some(prices) = self.by_symbol.get(symbol) {
             // Try exact match first
             if let Some(&price) = prices.get(date) {
@@ -99,28 +94,12 @@ impl PositionState {
         let entry = self.positions.entry(symbol.to_string()).or_default();
 
         match activity_type {
-            TradingActivityType::Buy | TradingActivityType::AddHolding => {
+            TradingActivityType::Buy => {
                 let cost = (qty * price as f64).round() as i64;
                 entry.quantity += qty;
                 entry.total_cost_cents = entry.total_cost_cents.saturating_add(cost);
             }
-            TradingActivityType::Sell | TradingActivityType::RemoveHolding => {
-                if entry.quantity > 0.0 {
-                    let avg_cost = entry.total_cost_cents as f64 / entry.quantity;
-                    let cost_reduction = (qty * avg_cost).round() as i64;
-                    entry.quantity -= qty;
-                    entry.total_cost_cents = entry.total_cost_cents.saturating_sub(cost_reduction);
-                    if entry.quantity < 0.0 {
-                        entry.quantity = 0.0;
-                    }
-                }
-            }
-            TradingActivityType::TransferIn => {
-                let cost = (qty * price as f64).round() as i64;
-                entry.quantity += qty;
-                entry.total_cost_cents = entry.total_cost_cents.saturating_add(cost);
-            }
-            TradingActivityType::TransferOut => {
+            TradingActivityType::Sell => {
                 if entry.quantity > 0.0 {
                     let avg_cost = entry.total_cost_cents as f64 / entry.quantity;
                     let cost_reduction = (qty * avg_cost).round() as i64;
@@ -137,25 +116,14 @@ impl PositionState {
                     entry.quantity *= qty;
                 }
             }
-            TradingActivityType::Deposit => {
-                // Cash deposit
-                let amount = (qty * price as f64).round() as i64;
-                entry.quantity += qty;
-                entry.total_cost_cents = entry.total_cost_cents.saturating_add(amount);
+            TradingActivityType::Fee | TradingActivityType::Tax => {
+                // These are expenses associated with the position
+                entry.total_cost_cents = entry
+                    .total_cost_cents
+                    .saturating_add((qty * price as f64).round() as i64);
             }
-            TradingActivityType::Withdrawal
-            | TradingActivityType::Fee
-            | TradingActivityType::Tax => {
-                // These reduce cash
-                let amount = (qty * price as f64).round() as i64;
-                entry.quantity -= qty;
-                entry.total_cost_cents = entry.total_cost_cents.saturating_sub(amount);
-            }
-            TradingActivityType::Dividend | TradingActivityType::Interest => {
-                // These add cash
-                let amount = (qty * price as f64).round() as i64;
-                entry.quantity += qty;
-                entry.total_cost_cents = entry.total_cost_cents.saturating_add(amount);
+            TradingActivityType::Dividend => {
+                // Dividends don't affect position quantity or cost basis
             }
         }
     }
@@ -169,24 +137,19 @@ impl PositionState {
                 continue;
             }
 
-            if symbol.starts_with("$CASH-") {
-                // Cash positions: value = cost basis (it's actual cash)
-                total = total.saturating_add(pos.total_cost_cents);
-            } else {
-                // Security positions: value = qty * price
-                let value = if let Some(price) = price_lookup.get_price(symbol, date) {
-                    let calculated = pos.quantity * price as f64;
-                    if calculated.is_finite() {
-                        calculated.round() as i64
-                    } else {
-                        pos.total_cost_cents
-                    }
+            // Security positions: value = qty * price
+            let value = if let Some(price) = price_lookup.get_price(symbol, date) {
+                let calculated = pos.quantity * price as f64;
+                if calculated.is_finite() {
+                    calculated.round() as i64
                 } else {
-                    // Last resort: use cost basis
                     pos.total_cost_cents
-                };
-                total = total.saturating_add(value);
-            }
+                }
+            } else {
+                // Last resort: use cost basis
+                pos.total_cost_cents
+            };
+            total = total.saturating_add(value);
         }
 
         total

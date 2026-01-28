@@ -63,14 +63,9 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 
                 let mut total: i64 = 0;
                 for pos in positions {
-                    if pos.is_cash() {
-                        // Cash positions within securities accounts use cost basis
-                        total += pos.total_cost_cents;
-                    } else {
-                        // Try to get current market value
-                        let enriched = if let Ok(Some(data)) =
-                            market_data::get_latest_price(&conn, &pos.symbol)
-                        {
+                    // Try to get current market value
+                    let enriched =
+                        if let Ok(Some(data)) = market_data::get_latest_price(&conn, &pos.symbol) {
                             PositionWithMarketData::with_market_data(
                                 pos,
                                 data.close_price_cents,
@@ -84,10 +79,9 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
                             PositionWithMarketData::from_position(pos)
                         };
 
-                        total += enriched
-                            .current_value_cents
-                            .unwrap_or(enriched.position.total_cost_cents);
-                    }
+                    total += enriched
+                        .current_value_cents
+                        .unwrap_or(enriched.position.total_cost_cents);
                 }
                 total
             }

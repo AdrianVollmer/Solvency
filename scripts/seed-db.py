@@ -651,69 +651,6 @@ def seed_trading_activities(
     # Track positions for each account to generate realistic sells
     positions: dict[tuple[int, str], int] = {}  # (account_id, symbol) -> quantity
 
-    # Initial deposits to fund the accounts
-    initial_deposits = [
-        (start_date, brokerage_id, 5000_00, "Initial deposit"),
-        (start_date, ira_id, 6000_00, "Annual IRA contribution"),
-    ]
-
-    for deposit_date, account_id, amount, notes in initial_deposits:
-        activities.append(
-            (
-                deposit_date.isoformat(),
-                "$CASH-USD",
-                amount / 100,  # quantity (shares/dollars)
-                "DEPOSIT",
-                100,  # unit price 1.00 for cash
-                "USD",
-                0,  # no fee
-                account_id,
-                notes,
-            )
-        )
-
-    # Generate monthly contributions
-    current_date = start_date
-    while current_date <= today:
-        # Monthly brokerage contribution (varies)
-        contrib_amount = random.randint(500_00, 1500_00)
-        activities.append(
-            (
-                current_date.isoformat(),
-                "$CASH-USD",
-                contrib_amount / 100,
-                "DEPOSIT",
-                100,
-                "USD",
-                0,
-                brokerage_id,
-                "Monthly investment contribution",
-            )
-        )
-
-        # Annual IRA contribution (in January)
-        if current_date.month == 1 and current_date != start_date:
-            ira_contrib = random.randint(6000_00, 6500_00)  # Max IRA contribution
-            activities.append(
-                (
-                    current_date.isoformat(),
-                    "$CASH-USD",
-                    ira_contrib / 100,
-                    "DEPOSIT",
-                    100,
-                    "USD",
-                    0,
-                    ira_id,
-                    "Annual IRA contribution",
-                )
-            )
-
-        # Move to next month
-        if current_date.month == 12:
-            current_date = current_date.replace(year=current_date.year + 1, month=1)
-        else:
-            current_date = current_date.replace(month=current_date.month + 1)
-
     # Generate buy/sell transactions spread throughout the period
     # More buys than sells for a growing portfolio
     num_trades = days_back // 10  # About 1 trade every 10 days
