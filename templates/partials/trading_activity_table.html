@@ -1,5 +1,6 @@
 {% import "macros/table.html" as table %}
-<div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+{% import "macros/ui.html" as ui %}
+{% call ui::card(class="", overflow="overflow-hidden") %}
     {% if activities.is_empty() %}
     <div class="p-8 text-center">
         <p class="text-neutral-500 dark:text-neutral-400">No activities found.</p>
@@ -49,4 +50,4 @@
     </div>
     {% endif %}
     {% endif %}
-</div>
+{% endcall %}

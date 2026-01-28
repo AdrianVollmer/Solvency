@@ -7,12 +7,12 @@
     {% call ui::page_header(title="API Logs", back_url="/trading/market-data", back_label="Market Data", subtitle="View history of Yahoo Finance API calls") %}{% endcall %}
 
     {% if logs.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+    {% call ui::card(class="p-8 text-center") %}
         <p class="text-neutral-500 dark:text-neutral-400">No API calls logged yet.</p>
         <p class="mt-2 text-sm text-neutral-400 dark:text-neutral-500">API calls will appear here when you fetch market data.</p>
-    </div>
+    {% endcall %}
     {% else %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
@@ -53,7 +53,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 </div>
 

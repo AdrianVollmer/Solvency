@@ -16,7 +16,8 @@
     </div>
 
     {# Transactions import form #}
-    <div id="panel-transactions" class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl">
+    <div id="panel-transactions">
+    {% call ui::card(class="p-6 max-w-2xl") %}
         <form action="/import/upload" method="post" enctype="multipart/form-data" class="space-y-4">
             <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-8 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors drop-zone" data-target="transactions">
                 <span class="icon-xl mx-auto text-neutral-400 mb-4" aria-hidden="true">{{ icons.get("upload-cloud")|safe }}</span>
@@ -38,10 +39,12 @@
                 Upload and Preview
             </button>
         </form>
+    {% endcall %}
     </div>
 
     {# Trading activities import form #}
-    <div id="panel-activities" class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl hidden">
+    <div id="panel-activities" class="hidden">
+    {% call ui::card(class="p-6 max-w-2xl") %}
         <form action="/trading/import/upload" method="post" enctype="multipart/form-data" class="space-y-4">
             <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-8 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors drop-zone" data-target="activities">
                 <span class="icon-xl mx-auto text-neutral-400 mb-4" aria-hidden="true">{{ icons.get("upload-cloud")|safe }}</span>
@@ -63,6 +66,7 @@
                 Upload and Preview
             </button>
         </form>
+    {% endcall %}
     </div>
 </div>
 {% endblock %}

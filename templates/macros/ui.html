@@ -4,6 +4,25 @@
     Usage:
     {% import "macros/ui.html" as ui %}
 
+    Card (container with consistent styling):
+    {% call ui::card() %}
+        <p>Card content here</p>
+    {% endcall %}
+    {% call ui::card(class="p-4") %}
+        <p>Card with custom padding</p>
+    {% endcall %}
+    {% call ui::card(class="p-6", overflow="overflow-hidden") %}
+        <table>...</table>
+    {% endcall %}
+
+    Form field (label + input wrapper):
+    {% call ui::field(label="Email") %}
+        <input type="email" name="email" class="input w-full">
+    {% endcall %}
+    {% call ui::field(label="Username", id="username-input") %}
+        <input type="text" id="username-input" name="username" class="input w-full">
+    {% endcall %}
+
     Page header (detail pages with back link, title, optional metadata):
     {% call ui::page_header(title="Apple Inc.", back_url="/trading/positions", back_label="Positions") %}
     {% call ui::page_header(
@@ -55,7 +74,39 @@
         add_url="/tags/new",
         add_label="Add Tag"
     ) %}{% endcall %}
+
+    Detail field (for dt/dd definition lists in detail pages):
+    {% call ui::detail_field(label="Date") %}{{ transaction.date }}{% endcall %}
+    {% call ui::detail_field(label="IBAN", mono=true) %}{{ iban }}{% endcall %}
+    {% call ui::detail_field(label="Creditor ID", mono=true, small=true) %}{{ cid }}{% endcall %}
+
+    Section with title and card container:
+    {% call ui::section(title="Appearance") %}
+        <fieldset>...</fieldset>
+    {% endcall %}
+    {% call ui::section(title="Regional", card_class="p-6 space-y-6") %}...{% endcall %}
+    {% call ui::section(title="Database", class="max-w-2xl", card_class="p-6 space-y-6") %}...{% endcall %}
 #}
+
+{# Card container - the most common UI pattern #}
+{# class: Additional classes (typically padding like "p-4" or "p-6", default: "p-6") #}
+{# overflow: Overflow behavior (default: "" for normal, use "overflow-hidden" for tables) #}
+{% macro card(class="p-6", overflow="") %}
+<div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 {{ class }} {{ overflow }}">
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+{# Form field wrapper with label #}
+{# label: The label text (required) #}
+{# id: The id for the for attribute (optional, omit if input has no id) #}
+{# Body should contain the input, select, or textarea element #}
+{% macro field(label, id="") %}
+<div>
+    <label {% if id != "" %}for="{{ id }}"{% endif %} class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">{{ label }}</label>
+    {{ caller() }}
+</div>
+{% endmacro %}
 
 {# Page header for detail pages #}
 {# title: Main heading (required) #}
@@ -360,5 +411,29 @@
         {{ add_label }}
     </a>
 </div>
+{% endmacro %}
+
+{# Detail field for definition lists (dt/dd pattern) #}
+{# label: The field label #}
+{# mono: Add monospace font to value (for IBANs, codes, etc.) #}
+{# small: Use smaller text size (for dense layouts like SEPA details) #}
+{% macro detail_field(label, mono=false, small=false) %}
+<div>
+    <dt class="{% if small %}text-xs{% else %}text-sm{% endif %} font-medium text-neutral-500 dark:text-neutral-400">{{ label }}</dt>
+    <dd class="mt-1 {% if small %}text-sm {% endif %}text-neutral-900 dark:text-white{% if mono %} font-mono{% if !small %} text-sm{% endif %}{% endif %}">{{ caller() }}</dd>
+</div>
+{% endmacro %}
+
+{# Section with title and card container #}
+{# title: Section heading #}
+{# class: Additional classes for the section element (e.g., "max-w-2xl") #}
+{# card_class: Classes for the card (default "p-6", use "p-6 space-y-6" for spaced content) #}
+{% macro section(title, class="", card_class="p-6") %}
+<section{% if class != "" %} class="{{ class }}"{% endif %}>
+    <h2 class="section-title mb-4">{{ title }}</h2>
+    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 {{ card_class }}">
+        {{ caller() }}
+    </div>
+</section>
 {% endmacro %}
 

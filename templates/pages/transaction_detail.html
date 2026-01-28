@@ -16,20 +16,20 @@
     </div>
 
     {# Main Info Card #}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+    {% call ui::card(class="") %}
+        <div class="p-6 border-b border-neutral-200 dark:border-neutral-700">
             <div class="flex items-start justify-between">
                 <div>
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ transaction.description }}</h2>
+                    <h2 class="text-xl font-semibold text-neutral-900 dark:text-white">{{ transaction.description }}</h2>
                     {% if transaction.has_notes() %}
-                    <p class="mt-1 text-gray-600 dark:text-gray-400">{{ transaction.notes_text() }}</p>
+                    <p class="mt-1 text-neutral-600 dark:text-neutral-400">{{ transaction.notes_text() }}</p>
                     {% endif %}
                 </div>
                 <div class="text-right">
                     <div class="text-2xl font-bold">
                         {{ settings.format_money(transaction.amount_cents)|safe }}
                     </div>
-                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                    <div class="text-sm text-neutral-500 dark:text-neutral-400">
                         {% if transaction.is_income() %}Income{% else %}Expense{% endif %}
                     </div>
                 </div>
@@ -39,43 +39,31 @@
         <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             {# Left Column #}
             <div class="space-y-4">
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ transaction.date }}</dd>
-                </div>
+                {% call ui::detail_field(label="Date") %}{{ transaction.date }}{% endcall %}
 
                 {% match transaction.value_date %}
                 {% when Some with (vd) %}
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Value Date</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ vd }}</dd>
-                </div>
+                {% call ui::detail_field(label="Value Date") %}{{ vd }}{% endcall %}
                 {% when None %}
                 {% endmatch %}
 
                 <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</dt>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Category</dt>
                     <dd class="mt-1">
                         {% if transaction.has_category() %}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium"
-                            style="background-color: {{ transaction.category_color_or_default() }}20; color: {{ transaction.category_color_or_default() }};">
-                            {{ transaction.category_name_or_default() }}
-                        </span>
+                        {% call ui::category_badge(color=transaction.category_color_or_default(), name=transaction.category_name_or_default()) %}{% endcall %}
                         {% else %}
-                        <span class="text-gray-400">Uncategorized</span>
+                        <span class="text-neutral-400">Uncategorized</span>
                         {% endif %}
                     </dd>
                 </div>
 
                 {% if !transaction.tags.is_empty() %}
                 <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tags</dt>
+                    <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Tags</dt>
                     <dd class="mt-1 flex flex-wrap gap-1">
                         {% for tag in transaction.tags %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                            style="background-color: {{ tag.color }}20; color: {{ tag.color }};">
-                            {{ tag.name }}
-                        </span>
+                        {% call ui::tag_badge(color=tag.color, name=tag.name) %}{% endcall %}
                         {% endfor %}
                     </dd>
                 </div>
@@ -86,90 +74,69 @@
             <div class="space-y-4">
                 {% match transaction.payer %}
                 {% when Some with (p) %}
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payer</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ p }}</dd>
-                </div>
+                {% call ui::detail_field(label="Payer") %}{{ p }}{% endcall %}
                 {% when None %}
                 {% endmatch %}
 
                 {% match transaction.payee %}
                 {% when Some with (p) %}
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payee</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ p }}</dd>
-                </div>
+                {% call ui::detail_field(label="Payee") %}{{ p }}{% endcall %}
                 {% when None %}
                 {% endmatch %}
 
                 {% match transaction.transaction_type %}
                 {% when Some with (t) %}
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Transaction Type</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ t }}</dd>
-                </div>
+                {% call ui::detail_field(label="Transaction Type") %}{{ t }}{% endcall %}
                 {% when None %}
                 {% endmatch %}
 
                 {% match transaction.counterparty_iban %}
                 {% when Some with (iban) %}
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">IBAN</dt>
-                    <dd class="mt-1 text-gray-900 dark:text-gray-100 font-mono text-sm">{{ iban }}</dd>
-                </div>
+                {% call ui::detail_field(label="IBAN", mono=true) %}{{ iban }}{% endcall %}
                 {% when None %}
                 {% endmatch %}
             </div>
         </div>
-    </div>
+    {% endcall %}
 
     {# Reference/Purpose Section #}
     {% match transaction.reference %}
     {% when Some with (reference) %}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Reference / Purpose</h3>
-        <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ reference }}</p>
-    </div>
+    {% call ui::card() %}
+        <h3 class="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-2">Reference / Purpose</h3>
+        <p class="text-neutral-900 dark:text-white whitespace-pre-wrap">{{ reference }}</p>
+    {% endcall %}
     {% when None %}
     {% endmatch %}
 
     {# SEPA Details Section #}
     {% if transaction.creditor_id.is_some() || transaction.mandate_reference.is_some() || transaction.customer_reference.is_some() %}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">SEPA Details</h3>
+    {% call ui::card() %}
+        <h3 class="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-4">SEPA Details</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {% match transaction.creditor_id %}
             {% when Some with (cid) %}
-            <div>
-                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Creditor ID</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 font-mono">{{ cid }}</dd>
-            </div>
+            {% call ui::detail_field(label="Creditor ID", mono=true, small=true) %}{{ cid }}{% endcall %}
             {% when None %}
             {% endmatch %}
 
             {% match transaction.mandate_reference %}
             {% when Some with (mr) %}
-            <div>
-                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Mandate Reference</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 font-mono">{{ mr }}</dd>
-            </div>
+            {% call ui::detail_field(label="Mandate Reference", mono=true, small=true) %}{{ mr }}{% endcall %}
             {% when None %}
             {% endmatch %}
 
             {% match transaction.customer_reference %}
             {% when Some with (cr) %}
-            <div>
-                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Customer Reference</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 font-mono">{{ cr }}</dd>
-            </div>
+            {% call ui::detail_field(label="Customer Reference", mono=true, small=true) %}{{ cr }}{% endcall %}
             {% when None %}
             {% endmatch %}
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 
     {# Metadata Section #}
-    <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-6">
+    <div class="text-sm text-neutral-500 dark:text-neutral-400 flex gap-6">
         <span>Created: {{ transaction.created_at }}</span>
         <span>Updated: {{ transaction.updated_at }}</span>
     </div>

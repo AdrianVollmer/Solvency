@@ -65,7 +65,7 @@
     </div>
 
     {# Price Chart #}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+    {% call ui::card() %}
         <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Price History</h2>
         {% if data_points.is_empty() %}
         <div class="h-80 flex items-center justify-center text-neutral-500">
@@ -79,11 +79,11 @@
         {% else %}
         <div id="price-chart" class="h-80" data-symbol="{{ symbol }}" role="img" aria-label="Price chart for {{ symbol }}"></div>
         {% endif %}
-    </div>
+    {% endcall %}
 
     {# Missing Data Ranges #}
     {% if !missing_ranges.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
             <div>
                 <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Missing Data</h2>
@@ -119,7 +119,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 
     {# Coverage Details #}

@@ -45,28 +45,28 @@
 
     {# Summary Stats #}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+        {% call ui::card(class="p-4") %}
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Total Data Points</p>
             <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ total_data_points }}</p>
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+        {% endcall %}
+        {% call ui::card(class="p-4") %}
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Tracked Symbols</p>
             <p class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ coverage.len() }}</p>
-        </div>
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+        {% endcall %}
+        {% call ui::card(class="p-4") %}
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Symbols Without Data</p>
             <p class="text-2xl font-semibold {% if symbols_needing_data > 0 %}text-yellow-600 dark:text-yellow-400{% else %}text-green-600 dark:text-green-400{% endif %}">{{ symbols_needing_data }}</p>
-        </div>
+        {% endcall %}
     </div>
 
     {# Coverage Table #}
     {% if coverage.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+    {% call ui::card(class="p-8 text-center") %}
         <p class="text-neutral-500 dark:text-neutral-400">No positions to track. Add trading activities to see market data coverage.</p>
         <a href="/trading/activities" class="mt-4 inline-block btn btn-primary">Add Activity</a>
-    </div>
+    {% endcall %}
     {% else %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Data Coverage by Symbol</h2>
         </div>
@@ -138,7 +138,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 
     {# Help Text #}

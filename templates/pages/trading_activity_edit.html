@@ -6,7 +6,7 @@
     {% let back_url = format!("/trading/activities/{}", self.activity.id) %}
     {% call ui::page_header(title="Edit Activity", back_url=back_url.as_str(), back_label="Details") %}{% endcall %}
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+    {% call ui::card() %}
         <form action="/trading/activities/{{ activity.id }}/update" method="post" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -68,6 +68,6 @@
                 <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </form>
-    </div>
+    {% endcall %}
 </div>
 {% endblock %}

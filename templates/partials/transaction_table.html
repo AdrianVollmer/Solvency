@@ -1,5 +1,6 @@
 {% import "macros/table.html" as table %}
-<div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+{% import "macros/ui.html" as ui %}
+{% call ui::card(class="", overflow="overflow-hidden") %}
     <div class="overflow-x-auto">
         <table class="w-full">
             <caption class="sr-only">Transactions list</caption>
@@ -50,4 +51,4 @@
         </div>
     </nav>
     {% endif %}
-</div>
+{% endcall %}

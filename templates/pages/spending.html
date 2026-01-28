@@ -11,7 +11,7 @@
     {% call ui::page_header(title="Spending", subtitle="Visualize your spending patterns") %}{% endcall %}
 
     {# Date filters #}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+    {% call ui::card(class="p-4") %}
         <div class="flex flex-wrap items-center gap-2">
             <a href="/spending"
                 data-nav="from_date={{ date_range.prev().from_str() }}&amp;to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&amp;preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
@@ -52,7 +52,7 @@
 
         <input type="hidden" id="from_date" value="{{ date_range.from_str() }}">
         <input type="hidden" id="to_date" value="{{ date_range.to_str() }}">
-    </div>
+    {% endcall %}
 
     {# Chart tabs #}
     <div class="flex flex-wrap gap-2">
@@ -94,7 +94,8 @@
     </div>
 
     {# Active chart #}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6" data-active-tab="{{ active_tab }}">
+    {% call ui::card() %}
+    <div data-active-tab="{{ active_tab }}">
         {% if active_tab == "category" %}
         <h2 class="section-title mb-4">Spending by Category</h2>
         <div id="category-chart" class="aspect-square max-h-[750px] mx-auto" role="img" aria-label="Sunburst chart showing spending by category"></div>
@@ -137,5 +138,6 @@
         <div id="monthly-chart" class="aspect-[2/1]" role="img" aria-label="Bar chart showing monthly spending summary"></div>
         {% endif %}
     </div>
+    {% endcall %}
 </div>
 {% endblock %}

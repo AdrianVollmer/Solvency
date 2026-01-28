@@ -14,7 +14,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {# Request Info #}
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        {% call ui::card() %}
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Request</h2>
             <dl class="space-y-4">
                 <div>
@@ -47,10 +47,10 @@
                     <dd class="mt-1 text-sm text-neutral-900 dark:text-white">{{ log.created_at }}</dd>
                 </div>
             </dl>
-        </div>
+        {% endcall %}
 
         {# Response Info #}
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+        {% call ui::card() %}
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Response</h2>
             <dl class="space-y-4">
                 <div>
@@ -81,7 +81,7 @@
                 </div>
                 {% when None %}{% endmatch %}
             </dl>
-        </div>
+        {% endcall %}
     </div>
 </div>
 {% endblock %}

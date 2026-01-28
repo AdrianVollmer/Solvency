@@ -32,7 +32,7 @@
             <a href="/transactions" class="text-sm text-primary-600 dark:text-primary-400 hover:underline">View all</a>
         </div>
 
-        <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 divide-y divide-neutral-100 dark:divide-neutral-700">
+        {% call ui::card(class="divide-y divide-neutral-100 dark:divide-neutral-700") %}
             {% for transaction in recent_transactions %}
             <a href="/transactions/{{ transaction.id }}" class="flex items-center justify-between p-4 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 row-hover">
                 <div class="min-w-0 flex-1">
@@ -51,7 +51,7 @@
                 <a href="/transactions" class="mt-2 inline-block text-primary-600 dark:text-primary-400 hover:underline">Add your first transaction</a>
             </div>
             {% endfor %}
-        </div>
+        {% endcall %}
     </section>
 </div>
 {% endblock %}

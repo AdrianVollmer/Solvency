@@ -5,7 +5,7 @@
 <div class="space-y-6 max-w-2xl mx-auto">
     {% call ui::page_header(title="Add Activity", back_url="/trading/activities", back_label="Activities", subtitle="Record a new trading activity") %}{% endcall %}
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+    {% call ui::card() %}
         <form method="POST" action="/trading/activities/create" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -82,6 +82,6 @@
                 </button>
             </div>
         </form>
-    </div>
+    {% endcall %}
 </div>
 {% endblock %}

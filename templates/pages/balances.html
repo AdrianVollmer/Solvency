@@ -6,14 +6,14 @@
     {% call ui::page_header(title="Balances", subtitle="Account balances overview") %}{% endcall %}
 
     {% if accounts.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+    {% call ui::card(class="p-8 text-center") %}
         <p class="text-neutral-500 dark:text-neutral-400">No accounts yet. Create an account to start tracking balances.</p>
         <div class="mt-4">
             <a href="/accounts/new" class="btn btn-primary">Add Account</a>
         </div>
-    </div>
+    {% endcall %}
     {% else %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
@@ -40,7 +40,7 @@
                 </tfoot>
             </table>
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 </div>
 {% endblock %}

@@ -15,7 +15,7 @@
         ) %}{% endcall %}
     </div>
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+    {% call ui::card() %}
         <h2 class="section-title mb-4">All Tags</h2>
         <div id="tags-container" class="flex flex-wrap gap-2">
             {% for tag in tags %}
@@ -24,7 +24,7 @@
             <p class="text-neutral-500 dark:text-neutral-400">No tags yet. Click "Add Tag" to create one.</p>
             {% endfor %}
         </div>
-    </div>
+    {% endcall %}
 </div>
 
 {% endblock %}

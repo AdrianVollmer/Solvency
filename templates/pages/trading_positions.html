@@ -12,7 +12,7 @@
 
     {# Cash Positions #}
     {% if !cash_positions.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Cash</h2>
         </div>
@@ -38,12 +38,12 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 
     {# Security Positions #}
     {% if !security_positions.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Securities</h2>
             <div class="flex items-center gap-4">
@@ -152,7 +152,7 @@
                 {% endif %}
             </table>
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 
     {% endif %}

@@ -5,33 +5,31 @@
 <div class="space-y-6">
     {% call ui::page_header(title="Add Rule", back_url="/rules", back_label="Rules", subtitle="Create a rule to automatically categorize transactions") %}{% endcall %}
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-2xl">
+    {% call ui::card(class="p-6 max-w-2xl") %}
         <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
             Rules automatically assign categories or tags to transactions based on description patterns.
             Use regular expressions for flexible matching.
         </p>
 
         <form action="/rules/create" method="POST" class="space-y-4">
-            <div>
-                <label for="rule-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
+            {% call ui::field(label="Name", id="rule-name") %}
                 <input type="text" id="rule-name" name="name" required placeholder="e.g., Grocery stores"
                     class="input w-full">
-            </div>
+            {% endcall %}
 
-            <div>
-                <label for="rule-pattern" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Pattern (regex)</label>
+            {% call ui::field(label="Pattern (regex)", id="rule-pattern") %}
                 <input type="text" id="rule-pattern" name="pattern" required placeholder="e.g., walmart|costco|kroger"
                     class="input w-full font-mono text-sm">
-            </div>
+            {% endcall %}
 
             <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="action-type-select" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Action</label>
+                {% call ui::field(label="Action", id="action-type-select") %}
                     <select name="action_type" id="action-type-select" class="input w-full" onchange="toggleActionValue(this)">
                         <option value="assign_category">Assign Category</option>
                         <option value="assign_tag">Assign Tag</option>
                     </select>
-                </div>
+                {% endcall %}
+                {# Value field has two selects (category/tag), keep as-is for JS toggling #}
                 <div>
                     <label for="action-value-category" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Value</label>
                     <select name="action_value" id="action-value-category" class="input w-full">
@@ -56,7 +54,7 @@
                 </button>
             </div>
         </form>
-    </div>
+    {% endcall %}
 </div>
 
 <script>

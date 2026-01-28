@@ -6,7 +6,7 @@
     {% let back_url = format!("/transactions/{}", self.transaction.id) %}
     {% call ui::page_header(title="Edit Transaction", back_url=back_url.as_str(), back_label="Details") %}{% endcall %}
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700 p-6">
+    {% call ui::card() %}
         <form method="POST" action="/transactions/{{ transaction.id }}/update" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -97,6 +97,6 @@
                 </button>
             </div>
         </form>
-    </div>
+    {% endcall %}
 </div>
 {% endblock %}

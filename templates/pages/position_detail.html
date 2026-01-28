@@ -134,18 +134,18 @@
     {% endmatch %}
 
     {# Price Chart #}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+    {% call ui::card() %}
         <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Price History</h2>
         <div id="position-chart" class="h-80" data-symbol="{{ symbol }}" role="img" aria-label="Price chart for {{ symbol }} with buy/sell markers"></div>
         <p class="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
             <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span> Buy
             <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1 ml-3"></span> Sell
         </p>
-    </div>
+    {% endcall %}
 
     {# Recent Activities #}
     {% if !activities.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Recent Activity</h2>
         </div>
@@ -200,7 +200,7 @@
             </a>
         </div>
         {% endif %}
-    </div>
+    {% endcall %}
     {% endif %}
 </div>
 {% endblock %}

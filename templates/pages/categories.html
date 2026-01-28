@@ -135,7 +135,7 @@
         ) %}{% endcall %}
     </div>
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700">
+    {% call ui::card(class="") %}
         <div id="categories-tree" class="p-4">
             {# Tree is built by JavaScript #}
         </div>
@@ -144,7 +144,7 @@
             <p class="font-medium">No categories yet</p>
             <p class="text-sm mt-1">Create one to get started</p>
         </div>
-    </div>
+    {% endcall %}
 </div>
 
 {# Add/Edit Modal #}

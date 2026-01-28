@@ -8,14 +8,14 @@
     {% call ui::page_header(title="Closed Positions", back_url="/trading/positions", back_label="Positions", subtitle="Securities that have been fully sold") %}{% endcall %}
 
     {% if positions.is_empty() %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+    {% call ui::card(class="p-8 text-center") %}
         <p class="text-neutral-500 dark:text-neutral-400">No closed positions yet.</p>
         <a href="/trading/positions" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline">Back to Positions</a>
-    </div>
+    {% endcall %}
     {% else %}
 
     {# Closed Positions Table #}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-900">
@@ -69,7 +69,7 @@
                 </tfoot>
             </table>
         </div>
-    </div>
+    {% endcall %}
 
     {% endif %}
 </div>

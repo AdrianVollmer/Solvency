@@ -11,13 +11,13 @@
     {% call ui::page_header(title="Net Worth", subtitle="Combining account balances and portfolio holdings") %}{% endcall %}
 
     {% if !has_data %}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8 text-center">
+    {% call ui::card(class="p-8 text-center") %}
         <p class="text-neutral-500 dark:text-neutral-400">No data yet. Add transactions or trading activities to see your net worth.</p>
         <div class="mt-4 flex gap-3 justify-center">
             <a href="/transactions" class="btn btn-primary">Add Transaction</a>
             <a href="/trading/activities" class="btn btn-secondary">Add Activity</a>
         </div>
-    </div>
+    {% endcall %}
     {% else %}
 
     {# Hero Net Worth Display #}
@@ -45,7 +45,7 @@
     </div>
 
     {# Chart #}
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="p-4">
             <div id="net-worth-chart" style="height: 500px;" data-currency="{{ settings.currency }}" data-locale="{{ settings.locale }}"></div>
         </div>
@@ -55,10 +55,11 @@
                 Use the slider below to zoom. Hold <kbd class="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">Shift</kbd> and drag to select a period and see the largest transactions.
             </p>
         </div>
-    </div>
+    {% endcall %}
 
     {# Top Transactions (shown when shift+dragging on chart) #}
-    <div id="top-transactions-container" class="hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    <div id="top-transactions-container" class="hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
             <div>
                 <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Largest Transactions</h2>
@@ -82,6 +83,7 @@
                 </tbody>
             </table>
         </div>
+    {% endcall %}
     </div>
 
     {% endif %}

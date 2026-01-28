@@ -15,7 +15,7 @@
         ) %}{% endcall %}
     </div>
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+    {% call ui::card() %}
         <h2 class="section-title mb-4">All Accounts</h2>
         {% if accounts.is_empty() %}
         <p class="text-neutral-500 dark:text-neutral-400">No accounts yet. Click "Add Account" to create one.</p>
@@ -49,7 +49,7 @@
             {% endfor %}
         </div>
         {% endif %}
-    </div>
+    {% endcall %}
 </div>
 
 {% endblock %}

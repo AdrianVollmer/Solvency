@@ -9,7 +9,7 @@
     {% call ui::page_header(title=title.as_str(), back_url="/accounts", back_label="Accounts", subtitle="Create a new account to track") %}{% endcall %}
     {% endif %}
 
-    <div class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 max-w-lg">
+    {% call ui::card(class="p-6 max-w-lg") %}
         <form action="{% if let Some(acc) = account %}/accounts/{{ acc.id }}/update{% else %}/accounts/create{% endif %}" method="POST" class="space-y-4">
             {% if let Some(acc) = account %}
             <div class="mb-4 p-3 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
@@ -64,7 +64,7 @@
             </p>
         </div>
         {% endif %}
-    </div>
+    {% endcall %}
 </div>
 
 {% if account.is_some() %}

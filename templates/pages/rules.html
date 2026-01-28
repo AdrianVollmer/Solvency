@@ -15,7 +15,8 @@
         ) %}{% endcall %}
     </div>
 
-    <div id="rules-table" class="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+    {% call ui::card(class="", overflow="overflow-hidden") %}
+    <div id="rules-table">
         <table class="w-full">
             <caption class="sr-only">Rules list</caption>
             <thead class="bg-neutral-50 dark:bg-neutral-900">
@@ -39,6 +40,7 @@
             </tbody>
         </table>
     </div>
+    {% endcall %}
 </div>
 
 {% endblock %}
