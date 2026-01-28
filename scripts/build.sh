@@ -28,6 +28,8 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+DOCKER="${DOCKER:-docker}"
+
 cd "$PROJECT_ROOT"
 
 log_info() {
@@ -98,7 +100,7 @@ build_rust_release() {
 
 build_docker() {
     log_info "Building Docker image..."
-    docker build -t solvency:latest .
+    $(DOCKER) build -t solvency:latest .
 }
 
 build_all() {
