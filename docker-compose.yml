@@ -12,9 +12,10 @@ services:
     volumes:
       - solvency-data:/app/data
     environment:
-      - DATABASE_URL=sqlite:///app/data/solvency.db
-      - PORT=7070
-      - HOST=0.0.0.0
+      - SOLVENCY_DATABASE_URL=sqlite:///app/data/solvency.db
+      - SOLVENCY_PORT=7070
+      - SOLVENCY_HOST=0.0.0.0
+      - SOLVENCY_PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS
       - RUST_LOG=info
     restart: unless-stopped
 

@@ -35,7 +35,7 @@ Try it out with Docker (or Podman):
 
 ``` bash
 docker run --rm --init -p 7070:7070 \
-    -e PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS \
+    -e SOLVENCY_PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS \
     ghcr.io/adrianvollmer/solvency:latest
 ```
 
@@ -43,7 +43,7 @@ To spin up an instance with some demo data:
 
 ``` bash
 docker run --rm --init -p 7070:7070 \
-    -e PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS \
+    -e SOLVENCY_PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS \
     ghcr.io/adrianvollmer/solvency-demo:latest
 ```
 
@@ -111,20 +111,20 @@ sqlx migrate run
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and customize:
+All environment variables are prefixed with `SOLVENCY_`. Create a `.env` file:
 
 ``` bash
-DATABASE_URL=sqlite://solvency.db
-PORT=7070
-HOST=0.0.0.0
+SOLVENCY_DATABASE_URL=sqlite://solvency.db
+SOLVENCY_PORT=7070
+SOLVENCY_HOST=0.0.0.0
+SOLVENCY_PASSWORD_HASH=<argon2-hash>
 RUST_LOG=info
-PASSWORD_HASH=<argon2-hash>
 ```
 
 #### Password Authentication
 
-The `PASSWORD_HASH` environment variable is **required**. Set it to an Argon2
-hash of your password:
+The `SOLVENCY_PASSWORD_HASH` environment variable is **required**. Set it to an
+Argon2 hash of your password:
 
 ``` bash
 # Using argon2 CLI tool
@@ -135,10 +135,11 @@ To explicitly allow unauthenticated access (e.g., for local-only deployments),
 set:
 
 ``` bash
-PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS
+SOLVENCY_PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS
 ```
 
-The app will refuse to start if `PASSWORD_HASH` is unset, empty, or invalid.
+The app will refuse to start if `SOLVENCY_PASSWORD_HASH` is unset, empty, or
+invalid.
 
 ## Docker Deployment
 
@@ -170,23 +171,23 @@ Run the container:
 docker run --rm -d \
   -p 7070:7070 \
   -v solvency-data:/app/data \
-  -e DATABASE_URL=sqlite:///app/data/solvency.db \
-  -e PASSWORD_HASH='$argon2id$...' \
-  -e PORT=7070 \
-  -e HOST=0.0.0.0 \
+  -e SOLVENCY_DATABASE_URL=sqlite:///app/data/solvency.db \
+  -e SOLVENCY_PASSWORD_HASH='$argon2id$...' \
+  -e SOLVENCY_PORT=7070 \
+  -e SOLVENCY_HOST=0.0.0.0 \
   --name solvency \
   solvency
 ```
 
 ### Environment Variables for Docker
 
-- `DATABASE_URL`: Path to SQLite database (default:
+- `SOLVENCY_DATABASE_URL`: Path to SQLite database (default:
   `sqlite:///app/data/solvency.db`)
-- `PORT`: Port to listen on (default: `7070`)
-- `HOST`: IP address to bind to (default: `0.0.0.0`)
-- `RUST_LOG`: Log level (default: `info`)
-- `PASSWORD_HASH`: **Required.** Argon2 hash for authentication, or
+- `SOLVENCY_PORT`: Port to listen on (default: `7070`)
+- `SOLVENCY_HOST`: IP address to bind to (default: `0.0.0.0`)
+- `SOLVENCY_PASSWORD_HASH`: **Required.** Argon2 hash for authentication, or
   `DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS` to disable auth
+- `RUST_LOG`: Log level (default: `info`)
 
 ## License
 

@@ -58,9 +58,10 @@ COPY migrations ./migrations
 COPY scripts/seed-db.py /build/seed-db.py
 
 # Initialize database (run app briefly to apply migrations) and seed it
-ENV DATABASE_URL=sqlite:///build/demo.db
-ENV HOST=127.0.0.1
-ENV PORT=9999
+ENV SOLVENCY_DATABASE_URL=sqlite:///build/demo.db
+ENV SOLVENCY_HOST=127.0.0.1
+ENV SOLVENCY_PORT=9999
+ENV SOLVENCY_PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS
 RUN timeout 5 /build/solvency || true
 RUN python3 /build/seed-db.py --clear /build/demo.db
 
@@ -98,10 +99,11 @@ RUN if [ "$DEMO" = "true" ]; then \
     fi
 
 # Set environment defaults
-ENV DATABASE_URL=sqlite:///app/data/solvency.db
-ENV PORT=7070
-ENV HOST=0.0.0.0
+ENV SOLVENCY_DATABASE_URL=sqlite:///app/data/solvency.db
+ENV SOLVENCY_PORT=7070
+ENV SOLVENCY_HOST=0.0.0.0
 ENV RUST_LOG=info
+# Note: SOLVENCY_PASSWORD_HASH must be set at runtime
 
 EXPOSE 7070
 
