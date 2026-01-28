@@ -3,18 +3,6 @@
 A modern, resource-efficient app for analyzing your personal finances
 built with Rust.
 
-<p align="center">
-  <a href="docs/articles-desktop-collage.png"><img src="docs/articles-desktop-collage.png" width="45%"></a>
-  <a href="docs/articles-desktop-list-collage.png"><img src="docs/articles-desktop-list-collage.png" width="45%"></a>
-</p>
-<p align="center">
-  <a href="docs/articles-desktop-fullscreen-collage.png"><img src="docs/articles-desktop-fullscreen-collage.png" width="60%"></a>
-</p>
-<p align="center">
-  <a href="docs/articles-mobile-collage.png"><img src="docs/articles-mobile-collage.png" width="20%"></a>
-  <a href="docs/articles-mobile-list-collage.png"><img src="docs/articles-mobile-list-collage.png" width="20%"></a>
-</p>
-
 > [!IMPORTANT]
 > **Disclaimer**: This was entirely vibe-coded as part of some personal
 > experimentation with this new technology. I know neither Rust nor more
