@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build script for MoneyMapper
+# Build script for Solvency
 #
 # Usage:
 #   ./scripts/build.sh [target]
@@ -98,7 +98,7 @@ build_rust_release() {
 
 build_docker() {
     log_info "Building Docker image..."
-    docker build -t moneymapper:latest .
+    docker build -t solvency:latest .
 }
 
 build_all() {

@@ -1,4 +1,4 @@
-# MoneyMapper
+# Solvency
 
 A modern, resource-efficient app for analyzing your personal finances
 built with Rust.
@@ -35,14 +35,14 @@ Try it out with Docker (or Podman):
 
 ``` bash
 docker run --rm --init -p 7070:7070 \
-    ghcr.io/adrianvollmer/moneymapper:latest
+    ghcr.io/adrianvollmer/solvency:latest
 ```
 
 To spin up an instance with some demo data:
 
 ``` bash
 docker run --rm --init -p 7070:7070 \
-    ghcr.io/adrianvollmer/moneymapper-demo:latest
+    ghcr.io/adrianvollmer/solvency-demo:latest
 ```
 
 ## Tech Stack
@@ -92,7 +92,7 @@ cargo build --release
 Run the application:
 
 ``` bash
-./target/release/moneymapper
+./target/release/solvency
 ```
 
 The server will start on <http://localhost:7070>.
@@ -112,7 +112,7 @@ sqlx migrate run
 Copy `.env.example` to `.env` and customize:
 
 ``` bash
-DATABASE_URL=sqlite://moneymapper.db
+DATABASE_URL=sqlite://solvency.db
 PORT=7070
 HOST=0.0.0.0
 RUST_LOG=info
@@ -120,7 +120,7 @@ RUST_LOG=info
 
 ## Docker Deployment
 
-The easiest way to run MoneyMapper is with Docker.
+The easiest way to run Solvency is with Docker.
 
 ### Using Docker Compose (Recommended)
 
@@ -134,12 +134,12 @@ storage.
 ### Using Docker directly
 
 There is a publicly available Docker image:
-`ghcr.io/adrianvollmer/moneymapper:latest`
+`ghcr.io/adrianvollmer/solvency:latest`
 
 To build the image:
 
 ``` bash
-docker build -t moneymapper .
+docker build -t solvency .
 ```
 
 Run the container:
@@ -147,18 +147,18 @@ Run the container:
 ``` bash
 docker run --rm -d \
   -p 7070:7070 \
-  -v moneymapper-data:/app/data \
-  -e DATABASE_URL=sqlite:///app/data/moneymapper.db \
+  -v solvency-data:/app/data \
+  -e DATABASE_URL=sqlite:///app/data/solvency.db \
   -e PORT=7070 \
   -e HOST=0.0.0.0 \
-  --name moneymapper \
-  moneymapper
+  --name solvency \
+  solvency
 ```
 
 ### Environment Variables for Docker
 
 - `DATABASE_URL`: Path to SQLite database (default:
-  `sqlite:///app/data/moneymapper.db`)
+  `sqlite:///app/data/solvency.db`)
 - `PORT`: Port to listen on (default: `7070`)
 - `HOST`: IP address to bind to (default: `0.0.0.0`)
 - `RUST_LOG`: Log level (default: `info`)

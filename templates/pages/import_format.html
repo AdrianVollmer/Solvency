@@ -9,7 +9,7 @@
         <section>
             <h2 class="text-lg font-semibold mb-3">Overview</h2>
             <p class="text-gray-600 dark:text-gray-400">
-                MoneyMapper accepts CSV files with a header row. Column names must match exactly
+                Solvency accepts CSV files with a header row. Column names must match exactly
                 (case-insensitive).
             </p>
         </section>
@@ -59,7 +59,7 @@
                         </tr>
                         <tr class="border-b border-gray-100 dark:border-gray-700/50">
                             <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">category</td>
-                            <td class="py-2">Category name (must exist in MoneyMapper)</td>
+                            <td class="py-2">Category name (must exist in Solvency)</td>
                         </tr>
                         <tr class="border-b border-gray-100 dark:border-gray-700/50">
                             <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">tags</td>
@@ -139,7 +139,7 @@
                 <li>Thousand separators are handled (e.g., <code>1,234.56</code> becomes <code>1234.56</code>)</li>
                 <li>Use negative amounts for transactions, positive for income</li>
                 <li>Tags that don't exist will be created automatically on import</li>
-                <li>Categories must be created beforehand in MoneyMapper</li>
+                <li>Categories must be created beforehand in Solvency</li>
                 <li>Empty optional columns are ignored</li>
             </ul>
         </section>
@@ -148,7 +148,7 @@
             <h2 class="text-lg font-semibold mb-3">Converting Bank Exports</h2>
             <p class="text-gray-600 dark:text-gray-400">
                 Bank exports often use different formats. We recommend using external tools to convert
-                your bank's export to this canonical format before importing. This keeps MoneyMapper
+                your bank's export to this canonical format before importing. This keeps Solvency
                 focused on transaction tracking rather than parsing hundreds of bank-specific formats.
             </p>
         </section>

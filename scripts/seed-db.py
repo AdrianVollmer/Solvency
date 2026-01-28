@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Seed the MoneyMapper database with realistic test data.
+Seed the Solvency database with realistic test data.
 
 Usage:
     python scripts/seed-db.py [database_path]
 
-If no path is provided, defaults to 'moneymapper.db' in the current directory.
+If no path is provided, defaults to 'solvency.db' in the current directory.
 
 This script generates 3 years of demo data including:
 - Multiple accounts (Cash and Securities)
@@ -902,7 +902,7 @@ def print_summary(conn: sqlite3.Connection) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Seed the MoneyMapper database with realistic demo data."
+        description="Seed the Solvency database with realistic demo data."
     )
     parser.add_argument(
         "database",

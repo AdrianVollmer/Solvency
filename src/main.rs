@@ -1,11 +1,11 @@
 use axum::middleware;
 use axum::Router;
-use moneymapper::config::Config;
-use moneymapper::db::{create_pool, migrations};
-use moneymapper::error_pages::{error_page_middleware, fallback_handler};
-use moneymapper::handlers;
-use moneymapper::state::{AppState, JsManifest, MarketDataRefreshState};
-use moneymapper::xsrf::{xsrf_middleware, XsrfToken};
+use solvency::config::Config;
+use solvency::db::{create_pool, migrations};
+use solvency::error_pages::{error_page_middleware, fallback_handler};
+use solvency::handlers;
+use solvency::state::{AppState, JsManifest, MarketDataRefreshState};
+use solvency::xsrf::{xsrf_middleware, XsrfToken};
 use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
 use tower_http::compression::CompressionLayer;
@@ -19,13 +19,13 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "moneymapper=debug,tower_http=debug".into()),
+                .unwrap_or_else(|_| "solvency=debug,tower_http=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
     let config = Config::from_env();
-    tracing::info!("Starting MoneyMapper on {}", config.address());
+    tracing::info!("Starting Solvency on {}", config.address());
 
     let db = create_pool(&config.database_path).expect("Failed to create database pool");
 

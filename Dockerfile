@@ -52,7 +52,7 @@ FROM python:3.12-slim AS demo-builder
 WORKDIR /build
 
 # Copy binary and assets needed to initialize DB
-COPY --from=rust-builder /build/target/release/moneymapper /build/moneymapper
+COPY --from=rust-builder /build/target/release/solvency /build/solvency
 COPY --from=frontend-builder /build/static /build/static
 COPY migrations ./migrations
 COPY scripts/seed-db.py /build/seed-db.py
@@ -61,7 +61,7 @@ COPY scripts/seed-db.py /build/seed-db.py
 ENV DATABASE_URL=sqlite:///build/demo.db
 ENV HOST=127.0.0.1
 ENV PORT=9999
-RUN timeout 5 /build/moneymapper || true
+RUN timeout 5 /build/solvency || true
 RUN python3 /build/seed-db.py --clear /build/demo.db
 
 # Final runtime stage
@@ -77,7 +77,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binary from rust builder
-COPY --from=rust-builder /build/target/release/moneymapper /app/moneymapper
+COPY --from=rust-builder /build/target/release/solvency /app/solvency
 
 # Copy static assets from frontend builder
 COPY --from=frontend-builder /build/static /app/static
@@ -92,17 +92,17 @@ RUN mkdir -p /app/data
 # Using a shell trick: copy to real path or /dev/null based on DEMO arg
 COPY --from=demo-builder /build/demo.db /tmp/demo.db
 RUN if [ "$DEMO" = "true" ]; then \
-        mv /tmp/demo.db /app/data/moneymapper.db; \
+        mv /tmp/demo.db /app/data/solvency.db; \
     else \
         rm /tmp/demo.db; \
     fi
 
 # Set environment defaults
-ENV DATABASE_URL=sqlite:///app/data/moneymapper.db
+ENV DATABASE_URL=sqlite:///app/data/solvency.db
 ENV PORT=7070
 ENV HOST=0.0.0.0
 ENV RUST_LOG=info
 
 EXPOSE 7070
 
-CMD ["/app/moneymapper"]
+CMD ["/app/solvency"]

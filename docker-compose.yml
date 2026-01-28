@@ -1,22 +1,22 @@
 services:
-  moneymapper:
+  solvency:
     build:
       context: .
       dockerfile: Dockerfile
       # Set DEMO=true to include demo data in the image
       # args:
       #   DEMO: "true"
-    container_name: moneymapper
+    container_name: solvency
     ports:
       - "7070:7070"
     volumes:
-      - moneymapper-data:/app/data
+      - solvency-data:/app/data
     environment:
-      - DATABASE_URL=sqlite:///app/data/moneymapper.db
+      - DATABASE_URL=sqlite:///app/data/solvency.db
       - PORT=7070
       - HOST=0.0.0.0
       - RUST_LOG=info
     restart: unless-stopped
 
 volumes:
-  moneymapper-data:
+  solvency-data:

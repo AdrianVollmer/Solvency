@@ -134,7 +134,7 @@ pub async fn export_database(State(state): State<AppState>) -> AppResult<impl In
             (header::CONTENT_TYPE, "application/sql"),
             (
                 header::CONTENT_DISPOSITION,
-                "attachment; filename=\"moneymapper-backup.sql\"",
+                "attachment; filename=\"solvency-backup.sql\"",
             ),
         ],
         sql,
@@ -144,7 +144,7 @@ pub async fn export_database(State(state): State<AppState>) -> AppResult<impl In
 fn generate_sql_dump(conn: &rusqlite::Connection) -> AppResult<String> {
     let mut sql = String::new();
 
-    sql.push_str("-- MoneyMapper Database Backup\n");
+    sql.push_str("-- Solvency Database Backup\n");
     sql.push_str(&format!(
         "-- Generated at: {}\n\n",
         chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")

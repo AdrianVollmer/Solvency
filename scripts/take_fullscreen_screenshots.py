@@ -5,7 +5,7 @@
 # ]
 # ///
 """
-Take screenshots of MoneyMapper fullscreen view for documentation.
+Take screenshots of Solvency fullscreen view for documentation.
 
 This script:
 1. Starts the server with a temporary database
@@ -38,7 +38,7 @@ FEEDS = [
 
 
 class ServerManager:
-    """Manage the MoneyMapper server process."""
+    """Manage the Solvency server process."""
 
     def __init__(self, db_path: str):
         self.db_path = db_path
@@ -50,7 +50,7 @@ class ServerManager:
         env["DATABASE_URL"] = f"sqlite://{self.db_path}"
         env["SQLX_OFFLINE"] = "true"
 
-        binary = WORKSPACE / "target" / "release" / "moneymapper"
+        binary = WORKSPACE / "target" / "release" / "solvency"
         if not binary.exists():
             print("Building release binary...")
             subprocess.run(

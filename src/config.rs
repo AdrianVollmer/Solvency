@@ -28,7 +28,7 @@ impl Config {
                             .unwrap_or(&v),
                     )
                 })
-                .unwrap_or_else(|_| PathBuf::from("data/moneymapper.db")),
+                .unwrap_or_else(|_| PathBuf::from("data/solvency.db")),
             migrations_path: env::var("MIGRATIONS_PATH")
                 .map(PathBuf::from)
                 .unwrap_or_else(|_| PathBuf::from("migrations")),

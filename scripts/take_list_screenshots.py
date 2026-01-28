@@ -4,7 +4,7 @@
 #     "playwright",
 # ]
 # ///
-"""Take screenshots of MoneyMapper articles page in list mode."""
+"""Take screenshots of Solvency articles page in list mode."""
 
 import asyncio
 from playwright.async_api import async_playwright

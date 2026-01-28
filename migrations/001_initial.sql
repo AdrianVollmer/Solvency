@@ -1,4 +1,4 @@
--- MoneyMapper Initial Schema
+-- Solvency Initial Schema
 -- Categories with hierarchical support (adjacency list)
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

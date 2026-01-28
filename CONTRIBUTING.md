@@ -1,6 +1,6 @@
-# MoneyMapper Contributors
+# Solvency Contributors
 
-MoneyMapper is a web-based expense tracker with a focus on visualizing
+Solvency is a web-based expense tracker with a focus on visualizing
 spending habits.
 
 We are still in "greenfield project mode", as there is no release yet,
