@@ -51,6 +51,12 @@ uuid = { version = "1", features = ["v4"] }
 # Configuration
 dotenvy = "0.15"
 
+# Password hashing
+argon2 = "0.5"
+
+# Session cookies
+tower-cookies = "0.10"
+
 # Icons (generated at compile time)
 phf = "0.11"
 

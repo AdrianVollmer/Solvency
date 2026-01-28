@@ -1,6 +1,15 @@
 use std::env;
 use std::path::PathBuf;
 
+/// Authentication mode for the application.
+#[derive(Debug, Clone)]
+pub enum AuthMode {
+    /// No authentication required - all users can access the app.
+    Unauthenticated,
+    /// Password authentication with an Argon2 hash.
+    Password(String),
+}
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub host: String,
@@ -8,11 +17,42 @@ pub struct Config {
     pub database_path: PathBuf,
     pub migrations_path: PathBuf,
     pub static_path: PathBuf,
+    pub auth_mode: AuthMode,
 }
+
+/// The magic value that disables authentication.
+pub const UNAUTHENTICATED_MAGIC: &str = "DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS";
 
 impl Config {
     pub fn from_env() -> Self {
         dotenvy::dotenv().ok();
+
+        let auth_mode = match env::var("PASSWORD_HASH") {
+            Ok(hash) if hash == UNAUTHENTICATED_MAGIC => AuthMode::Unauthenticated,
+            Ok(hash) if hash.starts_with("$argon2id$") => AuthMode::Password(hash),
+            Ok(hash) if hash.is_empty() => {
+                panic!(
+                    "PASSWORD_HASH is empty. Set a valid Argon2 hash or '{}' to explicitly \
+                     allow unauthenticated access.",
+                    UNAUTHENTICATED_MAGIC
+                );
+            }
+            Ok(hash) => {
+                panic!(
+                    "Invalid PASSWORD_HASH: must start with '$argon2id$' or be set to '{}'. \
+                     Got: {}...",
+                    UNAUTHENTICATED_MAGIC,
+                    &hash[..hash.len().min(20)]
+                );
+            }
+            Err(_) => {
+                panic!(
+                    "PASSWORD_HASH environment variable is not set. Set a valid Argon2 hash \
+                     or '{}' to explicitly allow unauthenticated access.",
+                    UNAUTHENTICATED_MAGIC
+                );
+            }
+        };
 
         Self {
             host: env::var("HOST").unwrap_or_else(|_| "0.0.0.0".into()),
@@ -35,6 +75,7 @@ impl Config {
             static_path: env::var("STATIC_PATH")
                 .map(PathBuf::from)
                 .unwrap_or_else(|_| PathBuf::from("static")),
+            auth_mode,
         }
     }
 

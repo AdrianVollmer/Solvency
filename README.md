@@ -35,6 +35,7 @@ Try it out with Docker (or Podman):
 
 ``` bash
 docker run --rm --init -p 7070:7070 \
+    -e PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS \
     ghcr.io/adrianvollmer/solvency:latest
 ```
 
@@ -42,6 +43,7 @@ To spin up an instance with some demo data:
 
 ``` bash
 docker run --rm --init -p 7070:7070 \
+    -e PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS \
     ghcr.io/adrianvollmer/solvency-demo:latest
 ```
 
@@ -116,7 +118,27 @@ DATABASE_URL=sqlite://solvency.db
 PORT=7070
 HOST=0.0.0.0
 RUST_LOG=info
+PASSWORD_HASH=<argon2-hash>
 ```
+
+#### Password Authentication
+
+The `PASSWORD_HASH` environment variable is **required**. Set it to an Argon2
+hash of your password:
+
+``` bash
+# Using argon2 CLI tool
+echo -n "your-password" | argon2 $(openssl rand -base64 16) -id -e
+```
+
+To explicitly allow unauthenticated access (e.g., for local-only deployments),
+set:
+
+``` bash
+PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS
+```
+
+The app will refuse to start if `PASSWORD_HASH` is unset, empty, or invalid.
 
 ## Docker Deployment
 
@@ -149,6 +171,7 @@ docker run --rm -d \
   -p 7070:7070 \
   -v solvency-data:/app/data \
   -e DATABASE_URL=sqlite:///app/data/solvency.db \
+  -e PASSWORD_HASH='$argon2id$...' \
   -e PORT=7070 \
   -e HOST=0.0.0.0 \
   --name solvency \
@@ -162,6 +185,8 @@ docker run --rm -d \
 - `PORT`: Port to listen on (default: `7070`)
 - `HOST`: IP address to bind to (default: `0.0.0.0`)
 - `RUST_LOG`: Log level (default: `info`)
+- `PASSWORD_HASH`: **Required.** Argon2 hash for authentication, or
+  `DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS` to disable auth
 
 ## License
 
