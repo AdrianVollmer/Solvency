@@ -58,7 +58,15 @@ fn main() {
     .unwrap();
 
     // Tell Cargo to rerun if icons change
+    // We must track individual files, not just the directory, so that
+    // adding files triggers a rebuild (important for Docker layer caching)
     println!("cargo:rerun-if-changed=node_modules/lucide-static/icons");
+    for (name, _) in &icons {
+        println!(
+            "cargo:rerun-if-changed=node_modules/lucide-static/icons/{}.svg",
+            name
+        );
+    }
 }
 
 /// Process an SVG string: remove license comment and clean up attributes.

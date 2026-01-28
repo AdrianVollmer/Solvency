@@ -44,7 +44,8 @@ COPY --from=frontend-builder /build/node_modules/lucide-static/icons ./node_modu
 COPY src ./src
 COPY migrations ./migrations
 COPY templates ./templates
-RUN touch src/main.rs && cargo build --release
+# Touch build.rs to force icon regeneration (icons were empty during dep caching)
+RUN touch build.rs src/main.rs && cargo build --release
 
 # Build stage for demo database
 FROM python:3.12-slim AS demo-builder
