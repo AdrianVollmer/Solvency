@@ -26,3 +26,25 @@ pub fn create_pool(database_path: &Path) -> Result<DbPool, r2d2::Error> {
     tracing::info!(max_size = 10, "Database connection pool created");
     Ok(pool)
 }
+
+/// Create an in-memory database pool for testing.
+/// Each call creates a unique in-memory database that can be shared across connections.
+pub fn create_in_memory_pool() -> Result<DbPool, r2d2::Error> {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+
+    // Use a unique name for each test to avoid conflicts when tests run in parallel
+    let db_name = format!(
+        "file:test_db_{}?mode=memory&cache=shared",
+        COUNTER.fetch_add(1, Ordering::SeqCst)
+    );
+
+    let manager = SqliteConnectionManager::file(&db_name).with_init(|conn| {
+        conn.execute_batch(
+            "PRAGMA foreign_keys = ON;
+             PRAGMA busy_timeout = 5000;",
+        )
+    });
+
+    Pool::builder().max_size(5).build(manager)
+}
