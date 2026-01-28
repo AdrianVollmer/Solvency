@@ -164,6 +164,16 @@ function initSidebar(): void {
   backdrop.addEventListener("click", closeSidebar);
 }
 
+function registerServiceWorker(): void {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/static/service-worker.js")
+      .catch((error) => {
+        console.error("Service Worker registration failed:", error);
+      });
+  }
+}
+
 function initHtmx(): void {
   // Configure HTMX to include XSRF token in all requests
   document.body.addEventListener("htmx:configRequest", (event: Event) => {
@@ -192,6 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initSidebar();
   initHtmx();
+  registerServiceWorker();
 
   // Initialize XSRF protection
   injectXsrfTokenToAllForms();
