@@ -381,11 +381,11 @@ def generate_salary_schedule(
             )
             salaries.append((bonus_date, bonus, bonus_desc))
 
-        # Move to next month
+        # Move to next month (use day=1 to avoid "day out of range" errors)
         if current_date.month == 12:
-            current_date = current_date.replace(year=current_date.year + 1, month=1)
+            current_date = current_date.replace(year=current_date.year + 1, month=1, day=1)
         else:
-            current_date = current_date.replace(month=current_date.month + 1)
+            current_date = current_date.replace(month=current_date.month + 1, day=1)
 
     return salaries
 
@@ -731,6 +731,59 @@ def seed_trading_activities(
                 )
             )
 
+    # Generate a few explicitly closed positions (bought and fully sold)
+    closed_position_symbols = [
+        ("GME", "GameStop Corp", 2500, 80),  # Meme stock - bought and sold
+        ("COIN", "Coinbase Global", 8000, 60),  # Crypto exchange - took profits
+        ("NKLA", "Nikola Corp", 1500, 70),  # Speculative - cut losses
+    ]
+
+    for symbol, name, base_price, volatility in closed_position_symbols:
+        # Buy 1-2 years ago
+        buy_days_ago = random.randint(365, min(days_back, 730))
+        buy_date = today - timedelta(days=buy_days_ago)
+
+        # Sell 1-6 months ago (after the buy)
+        sell_days_ago = random.randint(30, min(buy_days_ago - 30, 180))
+        sell_date = today - timedelta(days=sell_days_ago)
+
+        quantity = random.randint(10, 50)
+
+        # Buy price with some variance
+        buy_price = int(base_price * random.uniform(0.8, 1.2))
+        # Sell price - sometimes profit, sometimes loss
+        sell_price = int(buy_price * random.uniform(0.5, 1.8))
+
+        # Add buy
+        activities.append(
+            (
+                buy_date.isoformat(),
+                symbol,
+                quantity,
+                "BUY",
+                buy_price,
+                "USD",
+                0,
+                brokerage_id,
+                f"Buy {quantity} shares of {symbol}",
+            )
+        )
+
+        # Add sell (close entire position)
+        activities.append(
+            (
+                sell_date.isoformat(),
+                symbol,
+                quantity,
+                "SELL",
+                sell_price,
+                "USD",
+                0,
+                brokerage_id,
+                f"Sell {quantity} shares of {symbol} - closing position",
+            )
+        )
+
     # Generate dividends for dividend-paying stocks
     dividend_symbols = ["AAPL", "MSFT", "SCHD", "VTI", "VOO"]
 
@@ -764,11 +817,11 @@ def seed_trading_activities(
                                 )
                             )
 
-        # Move to next month
+        # Move to next month (use day=1 to avoid "day out of range" errors)
         if current_date.month == 12:
-            current_date = current_date.replace(year=current_date.year + 1, month=1)
+            current_date = current_date.replace(year=current_date.year + 1, month=1, day=1)
         else:
-            current_date = current_date.replace(month=current_date.month + 1)
+            current_date = current_date.replace(month=current_date.month + 1, day=1)
 
     # Insert all trading activities
     conn.executemany(
