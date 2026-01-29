@@ -437,32 +437,65 @@
 {% endmacro %}
 
 {# Page action bar for resource listing pages #}
-{# Provides consistent Export, Import, Delete All, Add buttons #}
+{# Primary "Add" button always visible; secondary actions in overflow menu on mobile #}
 {% macro page_action_bar(export_url, import_url, delete_endpoint, delete_confirm, add_url, add_label) %}
-<div class="flex flex-wrap items-center gap-2">
-    <a href="{{ export_url }}" class="btn btn-secondary flex items-center gap-2">
+<div class="flex items-center gap-2">
+    {# Desktop: inline secondary actions (hidden on mobile) #}
+    <a href="{{ export_url }}" class="hidden md:inline-flex btn btn-secondary items-center gap-2">
         <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
         Export
     </a>
-    <button onclick="this.nextElementSibling.click()" class="btn btn-secondary flex items-center gap-2">
+    <button onclick="document.getElementById('import-file').click()" class="hidden md:inline-flex btn btn-secondary items-center gap-2">
         <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
         Import
     </button>
-    <input type="file" accept=".json" class="hidden" onchange="importResource(this.files[0], '{{ import_url }}')" aria-label="Import from JSON file">
     <button
         hx-delete="{{ delete_endpoint }}"
         hx-confirm="{{ delete_confirm }}"
         hx-target="body"
         hx-swap="none"
         hx-on::after-request="if(event.detail.successful) window.location.reload()"
-        class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
-        <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+        class="hidden md:inline-flex btn btn-danger-outline items-center gap-2">
+        <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
         Delete All
     </button>
+
+    {# Mobile: overflow menu for secondary actions (hidden on desktop) #}
+    <div class="relative md:hidden" data-dropdown>
+        <button type="button" class="btn btn-secondary flex items-center justify-center !px-2.5" aria-haspopup="true" data-dropdown-toggle aria-label="More actions">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("ellipsis-vertical")|safe }}</span>
+        </button>
+        <div class="dropdown-menu hidden absolute right-0 top-full mt-1 w-48 py-1 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-lg z-20" role="menu">
+            <a href="{{ export_url }}" class="dropdown-item" role="menuitem">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
+                Export
+            </a>
+            <button type="button" onclick="document.getElementById('import-file').click()" class="dropdown-item w-full" role="menuitem">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
+                Import
+            </button>
+            <hr class="my-1 border-neutral-200 dark:border-neutral-700">
+            <button type="button"
+                hx-delete="{{ delete_endpoint }}"
+                hx-confirm="{{ delete_confirm }}"
+                hx-target="body"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) window.location.reload()"
+                class="dropdown-item w-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" role="menuitem">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+                Delete All
+            </button>
+        </div>
+    </div>
+
+    {# Primary action: always visible #}
     <a href="{{ add_url }}" class="btn btn-primary flex items-center gap-2">
         <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
         {{ add_label }}
     </a>
+
+    {# Shared hidden file input for import #}
+    <input type="file" id="import-file" accept=".json" class="hidden" onchange="importResource(this.files[0], '{{ import_url }}')" aria-label="Import from JSON file">
 </div>
 {% endmacro %}
 

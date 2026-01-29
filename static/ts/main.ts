@@ -136,6 +136,48 @@ function toggleTheme(): void {
   }).catch(() => {});
 }
 
+function initDropdowns(): void {
+  document.addEventListener("click", (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+    const toggle = target.closest("[data-dropdown-toggle]");
+
+    if (toggle) {
+      const dropdown = toggle.closest("[data-dropdown]");
+      const menu = dropdown?.querySelector(".dropdown-menu");
+      if (menu) {
+        const isOpen = !menu.classList.contains("hidden");
+        closeAllDropdowns();
+        if (!isOpen) {
+          menu.classList.remove("hidden");
+          toggle.setAttribute("aria-expanded", "true");
+        }
+      }
+      return;
+    }
+
+    // Click outside any dropdown: close all
+    if (!target.closest("[data-dropdown]")) {
+      closeAllDropdowns();
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      closeAllDropdowns();
+    }
+  });
+}
+
+function closeAllDropdowns(): void {
+  for (const menu of document.querySelectorAll("[data-dropdown] .dropdown-menu")) {
+    menu.classList.add("hidden");
+  }
+  for (const toggle of document.querySelectorAll("[data-dropdown-toggle]")) {
+    toggle.setAttribute("aria-expanded", "false");
+  }
+}
+
 function initSidebar(): void {
   const toggle = document.getElementById("sidebar-toggle");
   const sidebar = document.getElementById("sidebar");
@@ -201,6 +243,7 @@ function initHtmx(): void {
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initSidebar();
+  initDropdowns();
   initHtmx();
   registerServiceWorker();
 
