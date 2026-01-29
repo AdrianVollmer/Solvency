@@ -5,7 +5,7 @@ use axum::Json;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::{market_data, settings, trading};
+use crate::db::queries::{market_data, trading};
 use crate::error::{AppResult, RenderHtml};
 use crate::filters;
 use crate::models::trading::{
@@ -199,7 +199,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let sort: TableSort<PositionSortColumn> = params.resolve_sort();
 
     let all_positions = trading::get_positions(&conn)?;
@@ -318,7 +318,7 @@ pub async fn closed_positions(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let sort: TableSort<ClosedPositionSortColumn> = params.resolve_sort();
 
     let mut positions = trading::get_closed_positions(&conn)?;
@@ -425,7 +425,7 @@ pub async fn detail(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     // Get cached symbol metadata from DB
     let symbol_info = match market_data::get_symbol_metadata(&conn, &symbol) {

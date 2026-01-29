@@ -9,6 +9,9 @@ pub struct Settings {
     pub date_format: String,
     pub page_size: i64,
     pub locale: String,
+    /// Whether password authentication is active (runtime-only, not persisted).
+    #[serde(skip)]
+    pub is_authenticated: bool,
 }
 
 impl Settings {
@@ -25,6 +28,7 @@ impl Settings {
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(25),
             locale: map.get("locale").cloned().unwrap_or_else(|| "en-US".into()),
+            is_authenticated: false,
         }
     }
 

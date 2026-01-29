@@ -4,7 +4,7 @@ use axum::response::{Html, Redirect};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::db::queries::{settings, trading};
+use crate::db::queries::trading;
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{
     NewTradingActivity, Settings, TradingActivityType, TradingImportSession, TradingImportStatus,
@@ -99,9 +99,7 @@ pub struct StatusResponse {
 // Handlers
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let template = TradingImportTemplate {
         title: "Import Trading Activities".into(),
@@ -116,9 +114,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 }
 
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let template = TradingImportFormatTemplate {
         title: "Trading CSV Format".into(),
@@ -270,7 +266,7 @@ pub async fn wizard(
     let conn = state.db.get()?;
 
     let session = trading::get_import_session(&conn, &session_id)?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let template = TradingImportWizardTemplate {
         title: "Import Trading Activities".into(),

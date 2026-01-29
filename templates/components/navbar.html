@@ -9,10 +9,19 @@
             </a>
         </div>
 
-        <button id="theme-toggle" class="p-2.5 -mr-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400 transition-colors" aria-label="Toggle dark mode">
-            <span class="icon-sm hidden dark:block" aria-hidden="true">{{ icons.get("sun")|safe }}</span>
-            <span class="icon-sm block dark:hidden" aria-hidden="true">{{ icons.get("moon")|safe }}</span>
-        </button>
+        <div class="flex items-center gap-1">
+            <button id="theme-toggle" class="p-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400 transition-colors" aria-label="Toggle dark mode">
+                <span class="icon-sm hidden dark:block" aria-hidden="true">{{ icons.get("sun")|safe }}</span>
+                <span class="icon-sm block dark:hidden" aria-hidden="true">{{ icons.get("moon")|safe }}</span>
+            </button>
+            {% if settings.is_authenticated %}
+            <form method="POST" action="/logout">
+                <button type="submit" class="p-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400 transition-colors" aria-label="Log out">
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("log-out")|safe }}</span>
+                </button>
+            </form>
+            {% endif %}
+        </div>
     </div>
 </nav>
 <div class="h-14"></div>

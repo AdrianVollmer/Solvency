@@ -5,7 +5,7 @@ use axum::response::{Html, IntoResponse, Json, Redirect};
 use axum::Form;
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::{settings, tags};
+use crate::db::queries::tags;
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{NewTag, Settings, Tag, TagStyle};
 use crate::state::{AppState, JsManifest};
@@ -56,7 +56,7 @@ pub struct TagSearchParams {
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let tag_list = tags::list_tags(&conn)?;
 
@@ -74,8 +74,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let template = TagFormTemplate {
         title: "Add Tag".into(),

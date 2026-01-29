@@ -6,7 +6,7 @@ use axum::{Form, Json};
 use serde::{Deserialize, Serialize};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
-use crate::db::queries::{accounts, settings, trading};
+use crate::db::queries::{accounts, trading};
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{NewTradingActivity, Settings, TradingActivity, TradingActivityType};
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
@@ -318,7 +318,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
@@ -373,7 +373,7 @@ pub async fn table_partial(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
@@ -420,7 +420,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let template = TradingActivityDetailTemplate {
         title: format!("{} - {}", activity.symbol, activity.activity_type.label()),
@@ -438,7 +438,7 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let symbols = trading::get_unique_symbols(&conn)?;
 
     let template = TradingActivityNewTemplate {
@@ -464,7 +464,7 @@ pub async fn edit_form(
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let symbols = trading::get_unique_symbols(&conn)?;
 

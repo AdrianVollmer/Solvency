@@ -2,7 +2,7 @@ use askama::Template;
 use axum::extract::State;
 use axum::response::Html;
 
-use crate::db::queries::{accounts, balances, market_data, settings, trading};
+use crate::db::queries::{accounts, balances, market_data, trading};
 use crate::error::{AppResult, RenderHtml};
 use crate::filters;
 use crate::models::account::{Account, AccountType};
@@ -45,7 +45,7 @@ fn gain_loss_color(cents: i64) -> &'static str {
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let all_accounts = accounts::list_accounts(&conn)?;
     let cash_balances = balances::get_cash_account_balances(&conn)?;

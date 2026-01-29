@@ -3,7 +3,7 @@ use axum::extract::{Path, Query, State};
 use axum::response::{Html, Json};
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::{api_logs, settings};
+use crate::db::queries::api_logs;
 use crate::error::{AppResult, RenderHtml};
 use crate::models::{ApiLog, Settings};
 use crate::state::{AppState, JsManifest};
@@ -24,7 +24,7 @@ pub struct ApiLogsTemplate {
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let logs = api_logs::get_all_logs(&conn, 100)?;
     let latest_log_id = api_logs::get_latest_log_id(&conn)?;
 
@@ -56,7 +56,7 @@ pub struct ApiLogDetailTemplate {
 
 pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let log = api_logs::get_log_by_id(&conn, id)?
         .ok_or_else(|| crate::error::AppError::NotFound("API log not found".into()))?;
 

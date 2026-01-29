@@ -1,5 +1,8 @@
-use crate::config::Config;
+use crate::config::{AuthMode, Config};
+use crate::db::queries::settings as db_settings;
 use crate::db::DbPool;
+use crate::error::AppResult;
+use crate::models::Settings;
 use crate::xsrf::XsrfToken;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -31,6 +34,16 @@ pub struct AppState {
     pub manifest: JsManifest,
     pub xsrf_token: XsrfToken,
     pub market_data_refresh: Arc<Mutex<MarketDataRefreshState>>,
+}
+
+impl AppState {
+    /// Load settings from the database with runtime auth state populated.
+    pub fn load_settings(&self) -> AppResult<Settings> {
+        let conn = self.db.get()?;
+        let mut settings = db_settings::get_settings(&conn)?;
+        settings.is_authenticated = matches!(self.config.auth_mode, AuthMode::Password(_));
+        Ok(settings)
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

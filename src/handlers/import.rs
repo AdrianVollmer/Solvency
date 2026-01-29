@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
-use crate::db::queries::{categories, import, settings, tags, transactions};
+use crate::db::queries::{categories, import, tags, transactions};
 use crate::error::{html_escape, AppError, AppResult, RenderHtml};
 use crate::models::{CategoryWithPath, ImportSession, ImportStatus, NewTransaction, Settings};
 use crate::services::csv_parser::parse_csv;
@@ -106,9 +106,7 @@ pub struct StatusResponse {
 // Handlers
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let template = ImportTemplate {
         title: "Import".into(),
@@ -123,9 +121,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 }
 
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let template = ImportFormatTemplate {
         title: "CSV Import Format".into(),
@@ -280,7 +276,7 @@ pub async fn wizard(
     let conn = state.db.get()?;
 
     let session = import::get_session(&conn, &session_id)?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let cats = categories::list_categories_with_path(&conn)?;
 
     let template = ImportWizardTemplate {

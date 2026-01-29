@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use chrono::Datelike;
 
-use crate::db::queries::{api_logs, market_data, settings};
+use crate::db::queries::{api_logs, market_data};
 use crate::error::{AppResult, RenderHtml};
 use crate::models::{MarketData, NewApiLog, Settings, SymbolDataCoverage};
 use crate::services::market_data as market_data_service;
@@ -118,7 +118,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let sort: TableSort<MarketDataSortColumn> = params.resolve_sort();
 
     let mut coverage = market_data::get_symbol_coverage(&conn)?;
@@ -560,7 +560,7 @@ pub async fn symbol_detail(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     // Get cached symbol metadata from DB
     let symbol_info = match market_data::get_symbol_metadata(&conn, &symbol) {

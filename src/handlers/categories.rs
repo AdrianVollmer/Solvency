@@ -6,7 +6,7 @@ use axum::Form;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::db::queries::{categories, settings};
+use crate::db::queries::categories;
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{CategoryWithPath, NewCategory, Settings};
 use crate::state::{AppState, JsManifest};
@@ -53,7 +53,7 @@ pub struct CategoryFormData {
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let cats = categories::list_categories_with_path(&conn)?;
 
     let template = CategoryFormTemplate {
@@ -72,7 +72,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let cats = categories::list_categories_with_path(&conn)?;
 

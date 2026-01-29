@@ -5,7 +5,7 @@ use axum::response::{Html, IntoResponse, Json, Redirect};
 use axum::Form;
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::{accounts, settings};
+use crate::db::queries::accounts;
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{Account, AccountType, NewAccount, Settings};
 use crate::state::{AppState, JsManifest};
@@ -44,7 +44,7 @@ pub struct AccountFormData {
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let account_list = accounts::list_accounts(&conn)?;
 
     let template = AccountsTemplate {
@@ -61,8 +61,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let template = AccountFormTemplate {
         title: "Add Account".into(),
@@ -82,7 +81,7 @@ pub async fn edit_form(
     Path(id): Path<i64>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let account = accounts::get_account(&conn, id)?
         .ok_or_else(|| AppError::NotFound("Account not found".into()))?;

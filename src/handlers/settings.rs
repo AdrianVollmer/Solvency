@@ -48,9 +48,7 @@ pub struct ThemeFormData {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let database_size = get_database_size(&state.config.database_path);
 

@@ -6,7 +6,7 @@ use axum::Form;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::db::queries::{categories, rules, settings, tags};
+use crate::db::queries::{categories, rules, tags};
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{CategoryWithPath, NewRule, Rule, RuleActionType, Settings, Tag};
 use crate::state::{AppState, JsManifest};
@@ -59,7 +59,7 @@ pub struct RuleFormData {
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let rule_list = rules::list_rules(&conn)?;
     let category_list = categories::list_categories_with_path(&conn)?;
@@ -82,7 +82,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let category_list = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
 

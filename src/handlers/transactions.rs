@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
-use crate::db::queries::{accounts, categories, settings, tags, transactions};
+use crate::db::queries::{accounts, categories, tags, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{
     Account, AccountType, CategoryWithPath, NewTransaction, Settings, Tag, TransactionWithRelations,
@@ -298,7 +298,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
@@ -350,7 +350,7 @@ pub async fn table_partial(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
@@ -393,7 +393,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     let transaction = transactions::get_transaction(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Transaction {} not found", id)))?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
@@ -418,7 +418,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
     let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
@@ -447,7 +447,7 @@ pub async fn edit_form(
     let transaction = transactions::get_transaction(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Transaction {} not found", id)))?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;

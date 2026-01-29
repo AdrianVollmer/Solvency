@@ -4,7 +4,7 @@ use axum::response::Html;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::{settings, transactions};
+use crate::db::queries::transactions;
 use crate::error::{AppResult, RenderHtml};
 use crate::filters;
 use crate::models::net_worth::NetWorthDataPoint;
@@ -40,7 +40,7 @@ pub struct NetWorthTemplate {
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let summary = calculate_net_worth_history(&conn)?;
 

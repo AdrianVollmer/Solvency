@@ -3,7 +3,7 @@ use axum::extract::State;
 use axum::response::Html;
 use tracing::debug;
 
-use crate::db::queries::{settings, transactions};
+use crate::db::queries::transactions;
 use crate::error::{AppResult, RenderHtml};
 use crate::models::{Settings, TransactionWithRelations};
 use crate::state::{AppState, JsManifest};
@@ -28,7 +28,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     debug!("Loading dashboard");
     let conn = state.db.get()?;
 
-    let settings = settings::get_settings(&conn)?;
+    let settings = state.load_settings()?;
 
     let now = chrono::Local::now();
     let this_month_start = now.format("%Y-%m-01").to_string();

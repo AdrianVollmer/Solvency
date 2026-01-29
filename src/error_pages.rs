@@ -6,6 +6,7 @@ use axum::http::StatusCode;
 use axum::middleware::Next;
 use axum::response::{Html, IntoResponse, Response};
 
+use crate::config::AuthMode;
 use crate::db::queries::settings;
 use crate::filters::Icons;
 use crate::models::Settings;
@@ -76,12 +77,13 @@ fn render_error_page(state: &AppState, status: StatusCode, response: &Response) 
 
     let (status_text, _) = status_info(status);
 
-    let settings = state
+    let mut settings = state
         .db
         .get()
         .ok()
         .and_then(|conn| settings::get_settings(&conn).ok())
         .unwrap_or_default();
+    settings.is_authenticated = matches!(state.config.auth_mode, AuthMode::Password(_));
 
     let template = ErrorPageTemplate {
         title: status_text.to_string(),

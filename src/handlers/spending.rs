@@ -5,7 +5,7 @@ use chrono::NaiveDate;
 use serde::Deserialize;
 
 use crate::date_utils::{DatePreset, DateRange};
-use crate::db::queries::{categories, settings};
+use crate::db::queries::categories;
 use crate::error::{AppResult, RenderHtml};
 use crate::models::category::CategoryWithPath;
 use crate::models::Settings;
@@ -64,7 +64,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = settings::get_settings(&conn)?;
+    let app_settings = state.load_settings()?;
 
     let date_range = params.resolve_date_range();
 
