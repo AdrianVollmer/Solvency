@@ -293,12 +293,97 @@ function initHtmx(): void {
   });
 }
 
+// Keyboard shortcuts
+function initKeyboardShortcuts(): void {
+  let pendingKey: string | null = null;
+  let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const navShortcuts: Record<string, string> = {
+    d: "/",
+    e: "/transactions",
+    a: "/spending",
+    i: "/import",
+    s: "/settings",
+  };
+
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    // Don't trigger in inputs, textareas, or selects
+    const tag = (e.target as HTMLElement).tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+    // Don't trigger when modifier keys are held (except Shift for ?)
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+    const helpModal = document.getElementById("keyboard-shortcuts-modal");
+
+    // Escape: close help modal or sidebar
+    if (e.key === "Escape") {
+      if (helpModal && !helpModal.classList.contains("hidden")) {
+        helpModal.classList.add("hidden");
+        return;
+      }
+      return;
+    }
+
+    // ? : toggle help modal
+    if (e.key === "?") {
+      if (helpModal) {
+        helpModal.classList.toggle("hidden");
+      }
+      return;
+    }
+
+    // If help modal is open, don't process other shortcuts
+    if (helpModal && !helpModal.classList.contains("hidden")) return;
+
+    // Two-key "g" sequences for navigation
+    if (pendingKey === "g") {
+      pendingKey = null;
+      if (pendingTimer !== null) {
+        clearTimeout(pendingTimer);
+        pendingTimer = null;
+      }
+      const dest = navShortcuts[e.key];
+      if (dest) {
+        window.location.href = dest;
+      }
+      return;
+    }
+
+    if (e.key === "g") {
+      pendingKey = "g";
+      pendingTimer = setTimeout(() => {
+        pendingKey = null;
+        pendingTimer = null;
+      }, 1000);
+      return;
+    }
+
+    // n: new expense (navigate to new transaction page)
+    if (e.key === "n") {
+      window.location.href = "/transactions/new";
+      return;
+    }
+
+    // /: focus search input
+    if (e.key === "/") {
+      const searchInput = document.getElementById("search") as HTMLInputElement | null;
+      if (searchInput) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+      return;
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initSidebar();
   initDropdowns();
   initHtmx();
   initConfirmModal();
+  initKeyboardShortcuts();
   registerServiceWorker();
 
   // Initialize XSRF protection
