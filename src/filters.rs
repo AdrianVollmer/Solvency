@@ -66,6 +66,24 @@ pub fn format_money_plain(cents: i64, currency: &str, locale: &str) -> String {
     formatted
 }
 
+/// Format cents for balance display: shows "-" for negative, no sign for positive/zero.
+/// Suitable for account balances where "+" is not expected.
+pub fn format_money_balance(cents: i64, currency: &str, locale: &str) -> String {
+    let abs_cents = cents.abs();
+    let whole = abs_cents / 100;
+    let fractional = abs_cents % 100;
+
+    let (thousands_sep, decimal_sep) = locale_separators(locale);
+    let whole_str = format_with_thousands(whole, thousands_sep);
+    let symbol = currency_symbol(currency);
+
+    if cents < 0 {
+        format!("-{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+    } else {
+        format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+    }
+}
+
 /// Format cents as plain text without sign prefix, useful for prices/fees.
 /// This is "neutral" formatting - no +/- sign, no color coding.
 pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String {
@@ -256,6 +274,24 @@ mod tests {
     fn test_color_class_zero() {
         let result = format_money(0, "USD", "en-US");
         assert!(result.contains("text-gray-900"));
+    }
+
+    #[test]
+    fn test_balance_positive() {
+        let result = format_money_balance(12345, "USD", "en-US");
+        assert_eq!(result, "$123.45");
+    }
+
+    #[test]
+    fn test_balance_negative() {
+        let result = format_money_balance(-12345, "USD", "en-US");
+        assert_eq!(result, "-$123.45");
+    }
+
+    #[test]
+    fn test_balance_zero() {
+        let result = format_money_balance(0, "USD", "en-US");
+        assert_eq!(result, "$0.00");
     }
 
     #[test]

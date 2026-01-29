@@ -88,7 +88,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         };
 
         account_balances.push(AccountBalance {
-            balance_formatted: filters::format_money_plain(balance_cents, currency, locale),
+            balance_formatted: filters::format_money_balance(balance_cents, currency, locale),
             balance_color: gain_loss_color(balance_cents),
             account,
             balance_cents,
@@ -105,7 +105,11 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
         accounts: account_balances,
-        total_balance_formatted: filters::format_money_plain(total_balance_cents, currency, locale),
+        total_balance_formatted: filters::format_money_balance(
+            total_balance_cents,
+            currency,
+            locale,
+        ),
         total_balance_color: gain_loss_color(total_balance_cents),
         total_balance_cents,
     };
