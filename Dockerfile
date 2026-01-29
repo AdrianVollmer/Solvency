@@ -30,6 +30,9 @@ RUN apt-get update && apt-get install -y \
 COPY Cargo.toml Cargo.lock ./
 COPY build.rs ./
 
+# Remove src-tauri workspace member (desktop app not needed in Docker)
+RUN sed -i 's/members = \[".", "src-tauri"\]/members = ["."]/' Cargo.toml
+
 # Create dummy src to build dependencies (build.rs needs the icons dir
 # to exist but an empty dir is fine for the dependency-caching step)
 RUN mkdir -p src node_modules/lucide-static/icons \
