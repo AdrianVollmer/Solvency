@@ -87,9 +87,12 @@
         try {
             var text = await file.text();
             var data = JSON.parse(text);
+            var headers = { 'Content-Type': 'application/json' };
+            var meta = document.querySelector('meta[name="xsrf-token"]');
+            if (meta) headers['X-XSRF-Token'] = meta.getAttribute('content');
             var response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 body: JSON.stringify(data)
             });
             var result = await response.json();

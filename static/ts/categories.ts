@@ -2,6 +2,11 @@
 
 declare const Sortable: any;
 
+function getXsrfToken(): string | null {
+  const meta = document.querySelector('meta[name="xsrf-token"]');
+  return meta ? meta.getAttribute("content") : null;
+}
+
 interface Category {
   id: number;
   name: string;
@@ -153,8 +158,13 @@ async function deleteCategory(id: number, name: string): Promise<void> {
   if (!confirm(`Delete "${name}"? This will also delete all subcategories.`)) return;
 
   try {
+    const headers: Record<string, string> = {};
+    const token = getXsrfToken();
+    if (token) headers['X-XSRF-Token'] = token;
+
     const response = await fetch(`/categories/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers,
     });
 
     if (response.ok) {
@@ -196,10 +206,16 @@ async function updateCategoryParent(id: number, parentId: number | null): Promis
   params.append('icon', cat.icon);
 
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    const token = getXsrfToken();
+    if (token) headers['X-XSRF-Token'] = token;
+
     const response = await fetch(`/categories/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
+      headers,
+      body: params,
     });
     if (!response.ok) {
       console.error('Failed to update category:', response.status);
