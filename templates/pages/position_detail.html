@@ -72,14 +72,14 @@
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Value</p>
             <p class="text-xl font-semibold tabular-nums text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
-                {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
+                {{ settings.format_money_balance_with_currency(cents, pos.position.currency) }}
                 <span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
             </p>
         </div>
         {% else %}
         <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-3">
             <p class="text-xs text-neutral-500 dark:text-neutral-400">Current Value</p>
-            <p class="text-xl font-semibold tabular-nums text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</p>
+            <p class="text-xl font-semibold tabular-nums {{ pos.value_color() }}">{{ settings.format_money_balance_with_currency(cents, pos.position.currency) }}</p>
         </div>
         {% endif %}
         {% when None %}

@@ -185,6 +185,7 @@ pub struct TradingPositionsTemplate {
     pub security_positions: Vec<PositionWithMarketData>,
     pub total_current_value: Option<i64>,
     pub total_current_value_formatted: Option<String>,
+    pub total_current_value_color: &'static str,
     pub total_cost: i64,
     pub total_cost_formatted: String,
     pub total_gain_loss: Option<i64>,
@@ -261,12 +262,18 @@ pub async fn index(
     let locale = &app_settings.locale;
 
     let total_gain_loss_formatted =
-        total_gain_loss.map(|gl| filters::format_money_neutral(gl, currency, locale));
+        total_gain_loss.map(|gl| filters::format_money_plain(gl, currency, locale));
 
     let total_cost_formatted = filters::format_money_neutral(total_cost, currency, locale);
 
     let total_current_value_formatted =
-        total_current_value.map(|val| filters::format_money_neutral(val, currency, locale));
+        total_current_value.map(|val| filters::format_money_balance(val, currency, locale));
+
+    let total_current_value_color = match total_current_value {
+        Some(v) if v > 0 => "text-green-600 dark:text-green-400",
+        Some(v) if v < 0 => "text-red-600 dark:text-red-400",
+        _ => "text-neutral-600 dark:text-neutral-400",
+    };
 
     let template = TradingPositionsTemplate {
         title: "Positions".into(),
@@ -279,6 +286,7 @@ pub async fn index(
         security_positions,
         total_current_value,
         total_current_value_formatted,
+        total_current_value_color,
         total_cost,
         total_cost_formatted,
         total_gain_loss,
@@ -343,7 +351,7 @@ pub async fn closed_positions(
         filters::format_money_neutral(total_cost, &app_settings.currency, &app_settings.locale);
     let total_proceeds_formatted =
         filters::format_money_neutral(total_proceeds, &app_settings.currency, &app_settings.locale);
-    let total_gain_loss_formatted = filters::format_money_neutral(
+    let total_gain_loss_formatted = filters::format_money_plain(
         total_gain_loss,
         &app_settings.currency,
         &app_settings.locale,

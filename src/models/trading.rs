@@ -313,6 +313,15 @@ impl PositionWithMarketData {
             _ => "text-neutral-600 dark:text-neutral-400",
         }
     }
+
+    /// Color class for current value display (green positive, red negative).
+    pub fn value_color(&self) -> &'static str {
+        match self.current_value_cents {
+            Some(cents) if cents > 0 => "text-green-600 dark:text-green-400",
+            Some(cents) if cents < 0 => "text-red-600 dark:text-red-400",
+            _ => "text-neutral-600 dark:text-neutral-400",
+        }
+    }
 }
 
 /// Represents a closed position (all securities sold)

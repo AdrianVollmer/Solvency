@@ -71,11 +71,11 @@
                             {% when Some with (cents) %}
                             {% if pos.price_is_approximated %}
                             <span class="text-sm font-medium text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Approximated from last BUY/SELL activity (no market data available)">
-                                {{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}
+                                {{ settings.format_money_balance_with_currency(cents, pos.position.currency) }}
                                 <span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
                             </span>
                             {% else %}
-                            <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</span>
+                            <span class="text-sm font-medium {{ pos.value_color() }}">{{ settings.format_money_balance_with_currency(cents, pos.position.currency) }}</span>
                             {% endif %}
                             {% when None %}
                             <span class="text-sm text-neutral-400 dark:text-neutral-500 italic">-</span>
@@ -85,7 +85,7 @@
                             {% match pos.gain_loss_cents %}
                             {% when Some with (cents) %}
                             <div class="flex flex-col items-end">
-                                <span class="text-sm font-medium {{ pos.gain_loss_color() }}">{{ settings.format_money_neutral_with_currency(cents, pos.position.currency) }}</span>
+                                <span class="text-sm font-medium {{ pos.gain_loss_color() }}">{{ settings.format_money_plain_with_currency(cents, pos.position.currency) }}</span>
                                 {% match pos.gain_loss_percent %}
                                 {% when Some with (pct) %}
                                 <span class="text-xs {{ pos.gain_loss_color() }}">{{ settings.format_percent(pct) }}</span>
@@ -105,7 +105,7 @@
                         <td class="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
                             {{ total_cost_formatted }}
                         </td>
-                        <td class="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
+                        <td class="px-6 py-3 text-right text-sm font-semibold {{ total_current_value_color }}">
                             {% match total_current_value_formatted %}
                             {% when Some with (val) %}{{ val }}
                             {% when None %}-{% endmatch %}

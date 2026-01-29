@@ -106,6 +106,13 @@ impl Settings {
         filters::format_money_plain(*cents, currency, &self.locale)
     }
 
+    /// Format a monetary amount (in cents) for balance/value display with a specific currency.
+    /// Shows "-" for negative values, no sign for positive/zero.
+    /// Suitable for balances, position values, and totals.
+    pub fn format_money_balance_with_currency(&self, cents: &i64, currency: &str) -> String {
+        filters::format_money_balance(*cents, currency, &self.locale)
+    }
+
     /// Format a percentage value with locale-aware decimal separator.
     /// Shows sign (+/-) and two decimal places.
     pub fn format_percent(&self, value: &f64) -> String {

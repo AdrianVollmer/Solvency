@@ -2,12 +2,23 @@
 //!
 //! ## Money Formatting
 //!
-//! Format: sign + currency symbol + number with thousands separator
+//! Format order: `<sign> <currency> <amount>`. For percentages: `<sign><value>%`.
 //!
-//! Color coding:
-//! - Positive amounts (> 0): green
-//! - Negative amounts (< 0): red
-//! - Zero (= 0): default text color (black in light mode, white in dark mode)
+//! Four formatter categories:
+//!
+//! 1. **Differences in %** (`format_percent`): always green/red, always with sign (+/-).
+//!    Applies to G/L percentages.
+//!
+//! 2. **Differences in absolute** (`format_money_plain`): always green/red, always with
+//!    sign (+/-). Applies to G/L amounts.
+//!
+//! 3. **Neutral amounts** (`format_money_neutral`): positive = white (no plus sign),
+//!    negative = red (with minus sign). Applies to transactions, min/max, prices.
+//!
+//! 4. **Other amounts** (`format_money_balance`): positive = green (no plus sign),
+//!    negative = red (with minus sign). Applies to balances, position values, totals.
+//!
+//! Colors are applied via CSS classes in templates; the text formatters handle signs only.
 //!
 //! ## Icons
 //!
@@ -84,8 +95,9 @@ pub fn format_money_balance(cents: i64, currency: &str, locale: &str) -> String 
     }
 }
 
-/// Format cents as plain text without sign prefix, useful for prices/fees.
-/// This is "neutral" formatting - no +/- sign, no color coding.
+/// Format cents as plain text without plus prefix, useful for prices/fees.
+/// This is "neutral" formatting - no color coding.
+/// Positive values have no sign, negative values show "-".
 pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String {
     let abs_cents = cents.abs();
     let whole = abs_cents / 100;
@@ -95,7 +107,11 @@ pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String 
     let whole_str = format_with_thousands(whole, thousands_sep);
     let symbol = currency_symbol(currency);
 
-    format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+    if cents < 0 {
+        format!("-{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+    } else {
+        format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+    }
 }
 
 /// Format a percentage value with locale-aware decimal and thousands separators.
@@ -295,9 +311,21 @@ mod tests {
     }
 
     #[test]
-    fn test_neutral_no_sign() {
+    fn test_neutral_positive_no_sign() {
         let result = format_money_neutral(12345, "USD", "en-US");
         assert_eq!(result, "$123.45");
+    }
+
+    #[test]
+    fn test_neutral_negative_with_minus() {
+        let result = format_money_neutral(-12345, "USD", "en-US");
+        assert_eq!(result, "-$123.45");
+    }
+
+    #[test]
+    fn test_neutral_zero() {
+        let result = format_money_neutral(0, "USD", "en-US");
+        assert_eq!(result, "$0.00");
     }
 
     #[test]
