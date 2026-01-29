@@ -270,4 +270,296 @@ mod tests {
         assert_eq!(clean_amount("1,234.56"), "1234.56");
         assert_eq!(clean_amount("€100"), "100");
     }
+
+    // --- Empty / header-only files ---
+
+    #[test]
+    fn test_parse_empty_file() {
+        let result = parse_csv(b"");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_headers_only() {
+        let csv = b"date,amount,description";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 0);
+        assert_eq!(result.errors.len(), 0);
+    }
+
+    // --- Missing required columns ---
+
+    #[test]
+    fn test_parse_missing_date_column() {
+        let csv = b"amount,description\n50.00,Groceries";
+        let result = parse_csv(csv);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_missing_amount_column() {
+        let csv = b"date,description\n2024-01-15,Groceries";
+        let result = parse_csv(csv);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_missing_description_column() {
+        let csv = b"date,amount\n2024-01-15,50.00";
+        let result = parse_csv(csv);
+        assert!(result.is_err());
+    }
+
+    // --- Extra / inconsistent columns ---
+
+    #[test]
+    fn test_parse_extra_columns() {
+        let csv = b"date,amount,description,extra1,extra2\n2024-01-15,50.00,Groceries,foo,bar";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 1);
+        assert_eq!(result.errors.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_row_longer_than_header() {
+        let csv =
+            b"date,amount,description\n2024-01-15,50.00,Groceries,extra\n2024-01-16,25.50,Coffee";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_row_shorter_than_header() {
+        let csv = b"date,amount,description\n2024-01-15,50.00";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 1);
+        assert_eq!(result.transactions[0].description, "");
+    }
+
+    // --- Special characters in descriptions ---
+
+    #[test]
+    fn test_parse_quoted_field_with_commas() {
+        let csv = b"date,amount,description\n2024-01-15,50.00,\"Coffee, tea, and snacks\"";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 1);
+        assert_eq!(
+            result.transactions[0].description,
+            "Coffee, tea, and snacks"
+        );
+    }
+
+    #[test]
+    fn test_parse_quoted_field_with_escaped_quotes() {
+        let csv = b"date,amount,description\n2024-01-15,50.00,\"The \"\"best\"\" coffee\"";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions[0].description, "The \"best\" coffee");
+    }
+
+    #[test]
+    fn test_parse_quoted_field_with_newlines() {
+        let csv = b"date,amount,description\n2024-01-15,50.00,\"Multi\nline\ndescription\"";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 1);
+        assert_eq!(
+            result.transactions[0].description,
+            "Multi\nline\ndescription"
+        );
+    }
+
+    // --- Unicode ---
+
+    #[test]
+    fn test_parse_unicode_descriptions() {
+        let csv =
+            "date,amount,description\n2024-01-15,50.00,Café résumé\n2024-01-16,25.00,日本語テスト";
+        let result = parse_csv(csv.as_bytes()).unwrap();
+        assert_eq!(result.transactions.len(), 2);
+        assert_eq!(result.transactions[0].description, "Café résumé");
+        assert_eq!(result.transactions[1].description, "日本語テスト");
+    }
+
+    #[test]
+    fn test_parse_unicode_emoji() {
+        let csv = "date,amount,description\n2024-01-15,50.00,Coffee ☕";
+        let result = parse_csv(csv.as_bytes()).unwrap();
+        assert_eq!(result.transactions[0].description, "Coffee ☕");
+    }
+
+    #[test]
+    fn test_parse_invalid_utf8() {
+        let csv: &[u8] = &[0xFF, 0xFE, b',', b'a'];
+        let result = parse_csv(csv);
+        assert!(result.is_err());
+    }
+
+    // --- Missing values in rows ---
+
+    #[test]
+    fn test_parse_empty_date_in_row() {
+        let csv = b"date,amount,description\n,50.00,Groceries";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 0);
+        assert_eq!(result.errors.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_empty_amount_in_row() {
+        let csv = b"date,amount,description\n2024-01-15,,Groceries";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 0);
+        assert_eq!(result.errors.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_invalid_amount_in_row() {
+        let csv = b"date,amount,description\n2024-01-15,abc,Groceries";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 0);
+        assert_eq!(result.errors.len(), 1);
+    }
+
+    // --- Various date formats (parser passes them through) ---
+
+    #[test]
+    fn test_parse_various_date_formats() {
+        let csv =
+            b"date,amount,description\n01/15/2024,50.00,A\n15.01.2024,25.00,B\n2024-01-15,10.00,C";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 3);
+        assert_eq!(result.transactions[0].date, "01/15/2024");
+        assert_eq!(result.transactions[1].date, "15.01.2024");
+        assert_eq!(result.transactions[2].date, "2024-01-15");
+    }
+
+    // --- Negative amounts ---
+
+    #[test]
+    fn test_clean_amount_negative_with_currency() {
+        assert_eq!(clean_amount("-$50.00"), "-50.00");
+        assert_eq!(clean_amount("-€1.234,56"), "-1234.56");
+    }
+
+    #[test]
+    fn test_clean_amount_negative_plain() {
+        assert_eq!(clean_amount("-50.00"), "-50.00");
+        assert_eq!(clean_amount("-1234"), "-1234");
+    }
+
+    // --- European number formats ---
+
+    #[test]
+    fn test_clean_amount_european_format() {
+        assert_eq!(clean_amount("1.234,56"), "1234.56");
+        assert_eq!(clean_amount("1.234.567,89"), "1234567.89");
+    }
+
+    #[test]
+    fn test_clean_amount_comma_only_decimal() {
+        assert_eq!(clean_amount("50,00"), "50.00");
+    }
+
+    #[test]
+    fn test_parse_european_amount_in_csv() {
+        let csv = b"date,amount,description\n2024-01-15,\"1.234,56\",Test";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 1);
+        assert_eq!(result.transactions[0].amount, "1234.56");
+    }
+
+    // --- clean_amount edge cases ---
+
+    #[test]
+    fn test_clean_amount_no_decimal() {
+        assert_eq!(clean_amount("100"), "100");
+        assert_eq!(clean_amount("$100"), "100");
+    }
+
+    #[test]
+    fn test_clean_amount_whitespace_and_symbols() {
+        assert_eq!(clean_amount("£ 99.99"), "99.99");
+        assert_eq!(clean_amount("CHF 1,250.00"), "1250.00");
+    }
+
+    // --- Optional columns ---
+
+    #[test]
+    fn test_parse_all_optional_columns() {
+        let csv = b"date,amount,description,currency,category,tags,notes\n\
+                     2024-01-15,50.00,Test,EUR,Food,\"groceries,weekly\",A note";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 1);
+        let t = &result.transactions[0];
+        assert_eq!(t.currency, "EUR");
+        assert_eq!(t.category.as_deref(), Some("Food"));
+        assert_eq!(t.tags, vec!["groceries", "weekly"]);
+        assert_eq!(t.notes.as_deref(), Some("A note"));
+    }
+
+    #[test]
+    fn test_parse_default_currency() {
+        let csv = b"date,amount,description\n2024-01-15,50.00,Test";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions[0].currency, "USD");
+    }
+
+    // --- Case-insensitive headers ---
+
+    #[test]
+    fn test_parse_case_insensitive_headers() {
+        let csv = b"Date,Amount,Description\n2024-01-15,50.00,Test";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 1);
+    }
+
+    // --- Whitespace trimming ---
+
+    #[test]
+    fn test_parse_whitespace_in_headers_and_values() {
+        let csv = b"  date , amount , description  \n 2024-01-15 , 50.00 , Groceries ";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 1);
+        assert_eq!(result.transactions[0].date, "2024-01-15");
+        assert_eq!(result.transactions[0].amount, "50.00");
+        assert_eq!(result.transactions[0].description, "Groceries");
+    }
+
+    // --- Row numbering ---
+
+    #[test]
+    fn test_parse_row_numbers() {
+        let csv = b"date,amount,description\n2024-01-15,50.00,First\n2024-01-16,25.00,Second";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions[0].row_number, 2);
+        assert_eq!(result.transactions[1].row_number, 3);
+    }
+
+    // --- Mixed valid and invalid rows ---
+
+    #[test]
+    fn test_parse_mixed_valid_and_invalid_rows() {
+        let csv = b"date,amount,description\n\
+                     2024-01-15,50.00,Valid\n\
+                     ,25.00,Missing date\n\
+                     2024-01-17,abc,Bad amount\n\
+                     2024-01-18,10.00,Also valid";
+        let result = parse_csv(csv).unwrap();
+        assert_eq!(result.transactions.len(), 2);
+        assert_eq!(result.errors.len(), 2);
+        assert_eq!(result.transactions[0].description, "Valid");
+        assert_eq!(result.transactions[1].description, "Also valid");
+    }
+
+    // --- Large file ---
+
+    #[test]
+    fn test_parse_large_csv() {
+        let mut csv = String::from("date,amount,description\n");
+        for i in 0..1000 {
+            csv.push_str(&format!("2024-01-15,{}.00,Item {}\n", i, i));
+        }
+        let result = parse_csv(csv.as_bytes()).unwrap();
+        assert_eq!(result.transactions.len(), 1000);
+        assert_eq!(result.errors.len(), 0);
+    }
 }
