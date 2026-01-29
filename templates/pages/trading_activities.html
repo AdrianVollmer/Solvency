@@ -16,84 +16,47 @@
     </div>
 
     {# Filters #}
-    {% call ui::card(class="p-4") %}
-        <div class="flex flex-col gap-4">
-            {# Date range navigation #}
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}from_date={{ date_range.prev().from_str() }}&to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
-                    class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
-                    aria-label="Previous period">
-                    <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-left")|safe }}</span>
-                </a>
-                <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}from_date={{ date_range.next().from_str() }}&to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
-                    class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
-                    aria-label="Next period">
-                    <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-right")|safe }}</span>
-                </a>
-
-                <div class="flex flex-wrap gap-1.5 ml-2">
-                    {% for preset in presets %}
-                    <a href="/trading/activities?{{ filter.base_query_string() }}{% if filter.base_query_string() != "" %}&{% endif %}preset={{ preset.as_str() }}"
-                        class="chip {% if date_range.is_preset(preset) %}chip-active{% else %}chip-inactive{% endif %}">
-                        {{ preset.label() }}
-                    </a>
-                    {% endfor %}
-                </div>
-
-                <form action="/trading/activities" method="get" class="flex items-center gap-2 ml-auto">
-                    {% if filter.symbol.is_some() %}
-                    <input type="hidden" name="symbol" value="{{ filter.symbol.as_deref().unwrap_or("") }}">
-                    {% endif %}
-                    {% if filter.activity_type.is_some() %}
-                    <input type="hidden" name="activity_type" value="{{ filter.activity_type.as_deref().unwrap_or("") }}">
-                    {% endif %}
-                    <label for="from_date" class="sr-only">From date</label>
-                    <input type="date" id="from_date" name="from_date" value="{{ date_range.from_str() }}"
-                        class="input text-sm">
-                    <span class="text-neutral-500 text-sm">to</span>
-                    <label for="to_date" class="sr-only">To date</label>
-                    <input type="date" id="to_date" name="to_date" value="{{ date_range.to_str() }}"
-                        class="input text-sm">
-                    <button type="submit" class="btn-ghost px-3 py-2 text-sm rounded-lg">
-                        Apply
-                    </button>
-                </form>
-            </div>
-
-            {# Symbol and type filter #}
-            <form hx-get="/trading/activities/table" hx-target="#activity-table" hx-trigger="change" class="flex flex-wrap gap-4">
-                <input type="hidden" name="from_date" value="{{ date_range.from_str() }}">
-                <input type="hidden" name="to_date" value="{{ date_range.to_str() }}">
-                {% if date_range.preset.is_some() %}
-                <input type="hidden" name="preset" value="{{ date_range.preset.unwrap().as_str() }}">
-                {% endif %}
-
-                <div>
-                    <label for="symbol_filter" class="sr-only">Filter by symbol</label>
-                    <select id="symbol_filter" name="symbol" class="input">
-                        <option value="">All Symbols</option>
-                        {% for sym in symbols %}
-                        <option value="{{ sym }}" {% if filter.matches_symbol(sym) %}selected{% endif %}>
-                            {{ sym }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div>
-                    <label for="type_filter" class="sr-only">Filter by type</label>
-                    <select id="type_filter" name="activity_type" class="input">
-                        <option value="">All Types</option>
-                        {% for at in activity_types %}
-                        <option value="{{ at.as_str() }}" {% if filter.matches_activity_type(at) %}selected{% endif %}>
-                            {{ at.label() }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </form>
-        </div>
+    {% call ui::date_filter(page_url="/trading/activities", date_range=date_range, presets=presets, base_qs=filter.base_query_string()) %}
+        {% if filter.symbol.is_some() %}
+        <input type="hidden" name="symbol" value="{{ filter.symbol.as_deref().unwrap_or("") }}">
+        {% endif %}
+        {% if filter.activity_type.is_some() %}
+        <input type="hidden" name="activity_type" value="{{ filter.activity_type.as_deref().unwrap_or("") }}">
+        {% endif %}
     {% endcall %}
+
+    {# Symbol and type filter #}
+    <form hx-get="/trading/activities/table" hx-target="#activity-table" hx-trigger="change" class="flex flex-wrap gap-4">
+        <input type="hidden" name="from_date" value="{{ date_range.from_str() }}">
+        <input type="hidden" name="to_date" value="{{ date_range.to_str() }}">
+        {% if date_range.preset.is_some() %}
+        <input type="hidden" name="preset" value="{{ date_range.preset.unwrap().as_str() }}">
+        {% endif %}
+
+        <div>
+            <label for="symbol_filter" class="sr-only">Filter by symbol</label>
+            <select id="symbol_filter" name="symbol" class="input">
+                <option value="">All Symbols</option>
+                {% for sym in symbols %}
+                <option value="{{ sym }}" {% if filter.matches_symbol(sym) %}selected{% endif %}>
+                    {{ sym }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="type_filter" class="sr-only">Filter by type</label>
+            <select id="type_filter" name="activity_type" class="input">
+                <option value="">All Types</option>
+                {% for at in activity_types %}
+                <option value="{{ at.as_str() }}" {% if filter.matches_activity_type(at) %}selected{% endif %}>
+                    {{ at.label() }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
 
     <div id="activity-table">
         {% include "partials/trading_activity_table.html" %}

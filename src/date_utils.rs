@@ -234,6 +234,67 @@ impl DateRange {
         PeriodType::Custom
     }
 
+    /// Human-readable label for the current range, e.g. "January 2026", "Q1 2026",
+    /// "2025", "Jan 27 – Feb 2, 2026", or "Jan 1 – Mar 15, 2026".
+    pub fn display_label(&self) -> String {
+        let period = self.detect_period_type();
+        match period {
+            PeriodType::Week => {
+                let from_fmt = self.from.format("%b %-d");
+                if self.from.year() == self.to.year() {
+                    if self.from.month() == self.to.month() {
+                        format!(
+                            "{} – {}, {}",
+                            from_fmt,
+                            self.to.format("%-d"),
+                            self.to.format("%Y")
+                        )
+                    } else {
+                        format!(
+                            "{} – {}, {}",
+                            from_fmt,
+                            self.to.format("%b %-d"),
+                            self.to.format("%Y")
+                        )
+                    }
+                } else {
+                    format!(
+                        "{}, {} – {}, {}",
+                        from_fmt,
+                        self.from.format("%Y"),
+                        self.to.format("%b %-d"),
+                        self.to.format("%Y")
+                    )
+                }
+            }
+            PeriodType::Month => self.from.format("%B %Y").to_string(),
+            PeriodType::Quarter => {
+                let q = (self.from.month() - 1) / 3 + 1;
+                format!("Q{} {}", q, self.from.year())
+            }
+            PeriodType::Year => self.from.format("%Y").to_string(),
+            PeriodType::Custom => {
+                let from_fmt = self.from.format("%b %-d");
+                if self.from.year() == self.to.year() {
+                    format!(
+                        "{} – {}, {}",
+                        from_fmt,
+                        self.to.format("%b %-d"),
+                        self.to.format("%Y")
+                    )
+                } else {
+                    format!(
+                        "{}, {} – {}, {}",
+                        from_fmt,
+                        self.from.format("%Y"),
+                        self.to.format("%b %-d"),
+                        self.to.format("%Y")
+                    )
+                }
+            }
+        }
+    }
+
     pub fn from_str(&self) -> String {
         self.from.format("%Y-%m-%d").to_string()
     }

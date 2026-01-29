@@ -11,48 +11,11 @@
     {% call ui::page_header(title="Spending", subtitle="Visualize your spending patterns") %}{% endcall %}
 
     {# Date filters #}
-    {% call ui::card(class="p-4") %}
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="/spending"
-                data-nav="from_date={{ date_range.prev().from_str() }}&amp;to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&amp;preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
-                class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
-                aria-label="Previous period">
-                <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-left")|safe }}</span>
-            </a>
-            <a href="/spending"
-                data-nav="from_date={{ date_range.next().from_str() }}&amp;to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&amp;preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
-                class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-700"
-                aria-label="Next period">
-                <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-right")|safe }}</span>
-            </a>
-
-            <div class="flex flex-wrap gap-1.5 ml-2">
-                {% for preset in presets %}
-                <a href="/spending" data-nav="preset={{ preset.as_str() }}"
-                    class="chip {% if date_range.is_preset(preset) %}chip-active{% else %}chip-inactive{% endif %}">
-                    {{ preset.label() }}
-                </a>
-                {% endfor %}
-            </div>
-
-            <form action="/spending" method="get" class="flex items-center gap-2 ml-auto">
-                <input type="hidden" name="tab" value="{{ active_tab }}">
-                <label for="analytics_from_date" class="sr-only">From date</label>
-                <input type="date" id="analytics_from_date" name="from_date" value="{{ date_range.from_str() }}"
-                    class="input text-sm">
-                <span class="text-neutral-500 text-sm">to</span>
-                <label for="analytics_to_date" class="sr-only">To date</label>
-                <input type="date" id="analytics_to_date" name="to_date" value="{{ date_range.to_str() }}"
-                    class="input text-sm">
-                <button type="submit" class="btn-ghost px-3 py-2 text-sm rounded-lg">
-                    Apply
-                </button>
-            </form>
-        </div>
-
-        <input type="hidden" id="from_date" value="{{ date_range.from_str() }}">
-        <input type="hidden" id="to_date" value="{{ date_range.to_str() }}">
+    {% call ui::date_filter(page_url="/spending", date_range=date_range, presets=presets, base_qs=base_qs) %}
+        <input type="hidden" name="tab" value="{{ active_tab }}">
     {% endcall %}
+    <input type="hidden" id="from_date" value="{{ date_range.from_str() }}">
+    <input type="hidden" id="to_date" value="{{ date_range.to_str() }}">
 
     {# Chart tabs #}
     <div class="flex flex-wrap gap-2">

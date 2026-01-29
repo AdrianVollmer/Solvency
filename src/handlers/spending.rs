@@ -54,6 +54,7 @@ pub struct SpendingTemplate {
     pub date_range: DateRange,
     pub presets: &'static [DatePreset],
     pub active_tab: String,
+    pub base_qs: String,
     pub categories: Vec<CategoryWithPath>,
 }
 
@@ -76,6 +77,8 @@ pub async fn index(
 
     let cats = categories::list_categories_with_path(&conn)?;
 
+    let base_qs = format!("tab={}", active_tab);
+
     let template = SpendingTemplate {
         title: "Spending".into(),
         settings: app_settings,
@@ -86,6 +89,7 @@ pub async fn index(
         date_range,
         presets: DatePreset::all(),
         active_tab,
+        base_qs,
         categories: cats,
     };
 
