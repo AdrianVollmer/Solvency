@@ -50,6 +50,7 @@ jobs:
 
       - name: Build frontend assets
         run: |
+          npm run build:static
           npm run build:css
           npm run build:ts
           npm run generate:icons

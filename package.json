@@ -3,9 +3,10 @@
   "version": "0.2.1",
   "private": true,
   "scripts": {
-    "build:css": "npx tailwindcss -i static/css/input.css -o static/css/tailwind.css --minify",
+    "build:static": "node scripts/copy-static.js",
+    "build:css": "npx tailwindcss -i src-frontend/css/input.css -o static/css/tailwind.css --minify",
     "build:ts": "node scripts/build-ts.js",
-    "watch:css": "npx tailwindcss -i static/css/input.css -o static/css/tailwind.css --watch",
+    "watch:css": "npx tailwindcss -i src-frontend/css/input.css -o static/css/tailwind.css --watch",
     "watch:ts": "node scripts/build-ts.js --watch",
     "generate:icons": "node scripts/generate-icons.js"
   },

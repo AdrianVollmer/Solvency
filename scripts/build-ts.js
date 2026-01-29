@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const isWatch = process.argv.includes('--watch');
-const srcDir = 'static/ts';
+const srcDir = 'src-frontend/ts';
 const outDir = 'static/js/dist';
 const manifestPath = 'static/js/dist/manifest.json';
 

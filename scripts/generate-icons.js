@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
-const inputSvg = 'static/favicon.svg';
+const inputSvg = 'src-frontend/favicon.svg';
 const outputDir = 'static/icons';
 
 async function generateIcons() {

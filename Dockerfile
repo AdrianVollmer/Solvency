@@ -7,14 +7,14 @@ WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copy frontend source files
-COPY scripts/build-ts.js scripts/generate-icons.js ./scripts/
-COPY static ./static
+# Copy frontend source files and build scripts
+COPY scripts/build-ts.js scripts/copy-static.js ./scripts/
+COPY src-frontend ./src-frontend
 COPY tailwind.config.js ./
 COPY templates ./templates
 
-# Build CSS and JS
-RUN npm run build:css && npm run build:ts
+# Copy static assets and build CSS and JS
+RUN npm run build:static && npm run build:css && npm run build:ts
 
 # Build stage for Rust binary
 FROM rust:1.92-slim-bookworm AS rust-builder

@@ -52,6 +52,12 @@ check_npm() {
     fi
 }
 
+copy_static() {
+    log_info "Copying static assets..."
+    check_npm
+    npm run build:static
+}
+
 build_css() {
     log_info "Building Tailwind CSS..."
     check_npm
@@ -73,6 +79,7 @@ build_icons() {
 build_frontend() {
     log_info "Building all frontend assets..."
     check_npm
+    copy_static
     build_css
     build_js
     build_icons
@@ -113,10 +120,8 @@ build_all() {
 clean() {
     log_info "Cleaning build artifacts..."
 
-    # Frontend artifacts
-    rm -rf static/css/tailwind.css
-    rm -rf static/js/dist
-    rm -rf static/icons
+    # Frontend build output
+    rm -rf static
 
     # Rust artifacts
     cargo clean 2>/dev/null || true
