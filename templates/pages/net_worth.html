@@ -44,7 +44,22 @@
         </div>
     </div>
 
-    {# Chart #}
+    {# Chart tabs #}
+    <div class="flex flex-wrap gap-2">
+        <a href="/trading/net-worth?tab=overview"
+            class="tab {% if active_tab == "overview" %}tab-active{% else %}tab-inactive{% endif %}">
+            <span class="icon-xs" aria-hidden="true">{{ icons.get("chart-line")|safe }}</span>
+            Overview
+        </a>
+        <a href="/trading/net-worth?tab=allocation"
+            class="tab {% if active_tab == "allocation" %}tab-active{% else %}tab-inactive{% endif %}">
+            <span class="icon-xs" aria-hidden="true">{{ icons.get("chart-pie")|safe }}</span>
+            Allocation
+        </a>
+    </div>
+
+    {% if active_tab == "overview" %}
+    {# Line Chart #}
     {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="p-4">
             <div id="net-worth-chart" style="height: 500px;" data-currency="{{ settings.currency }}" data-locale="{{ settings.locale }}"></div>
@@ -85,6 +100,14 @@
         </div>
     {% endcall %}
     </div>
+
+    {% else if active_tab == "allocation" %}
+    {# Sunburst Allocation Chart #}
+    {% call ui::card() %}
+    <h2 class="section-title mb-4">Account Allocation</h2>
+    <div id="allocation-chart" class="aspect-square max-h-[750px] mx-auto" data-currency="{{ settings.currency }}" data-locale="{{ settings.locale }}" role="img" aria-label="Sunburst chart showing net worth allocation by account"></div>
+    {% endcall %}
+    {% endif %}
 
     {% endif %}
 </div>

@@ -23,7 +23,15 @@ interface TopTransactionsResponse {
   to_date: string;
 }
 
+interface AllocationNode {
+  name: string;
+  color: string;
+  amount_cents?: number;
+  children: AllocationNode[];
+}
+
 let netWorthChart: any = null;
+let allocationChart: any = null;
 let chartLabels: string[] = [];
 let isShiftPressed = false;
 
@@ -99,14 +107,21 @@ function updateBrushMode(): void {
   }
 }
 
-async function fetchTopTransactions(fromDate: string, toDate: string): Promise<TopTransactionsResponse> {
+async function fetchTopTransactions(
+  fromDate: string,
+  toDate: string,
+): Promise<TopTransactionsResponse> {
   const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
   const response = await fetch(`/api/net-worth/top-transactions?${params}`);
   if (!response.ok) throw new Error("Failed to fetch transactions");
   return response.json();
 }
 
-function showTopTransactions(data: TopTransactionsResponse, currency: string, locale: string): void {
+function showTopTransactions(
+  data: TopTransactionsResponse,
+  currency: string,
+  locale: string,
+): void {
   const container = document.getElementById("top-transactions-container");
   const periodEl = document.getElementById("top-transactions-period");
   const tbody = document.getElementById("top-transactions-body");
@@ -230,7 +245,9 @@ async function loadNetWorthChart(): Promise<void> {
           bottom: 10,
           borderColor: isDarkMode() ? "#374151" : "#e5e7eb",
           backgroundColor: isDarkMode() ? "#1f2937" : "#f9fafb",
-          fillerColor: isDarkMode() ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.1)",
+          fillerColor: isDarkMode()
+            ? "rgba(59, 130, 246, 0.2)"
+            : "rgba(59, 130, 246, 0.1)",
           handleStyle: {
             color: "#3b82f6",
           },
@@ -256,7 +273,8 @@ async function loadNetWorthChart(): Promise<void> {
       yAxis: {
         type: "value",
         axisLabel: {
-          formatter: (value: number) => formatMoney(value * 100, currency, locale),
+          formatter: (value: number) =>
+            formatMoney(value * 100, currency, locale),
         },
       },
       series: [
@@ -325,7 +343,8 @@ async function loadNetWorthChart(): Promise<void> {
 
       const [startIdx, endIdx] = area.coordRange;
       const fromDate = chartLabels[Math.floor(startIdx)];
-      const toDate = chartLabels[Math.min(Math.ceil(endIdx), chartLabels.length - 1)];
+      const toDate =
+        chartLabels[Math.min(Math.ceil(endIdx), chartLabels.length - 1)];
 
       if (fromDate && toDate) {
         try {
@@ -377,9 +396,123 @@ async function loadNetWorthChart(): Promise<void> {
   }
 }
 
+function mapAllocationToSunburst(nodes: AllocationNode[]): any[] {
+  return nodes.map((node) => {
+    if (node.children.length > 0) {
+      return {
+        name: node.name,
+        itemStyle: { color: node.color },
+        children: mapAllocationToSunburst(node.children),
+      };
+    }
+    return {
+      name: node.name,
+      value: (node.amount_cents || 0) / 100,
+      itemStyle: { color: node.color },
+    };
+  });
+}
+
+async function loadAllocationChart(): Promise<void> {
+  const container = document.getElementById("allocation-chart");
+  if (!container) return;
+
+  const currency = container.dataset.currency || "USD";
+  const locale = container.dataset.locale || "en-US";
+
+  try {
+    const response = await fetch("/api/net-worth/account-allocation");
+    if (!response.ok) throw new Error("Failed to fetch data");
+
+    const data: AllocationNode[] = await response.json();
+
+    if (data.length === 0) {
+      container.innerHTML =
+        '<div class="flex items-center justify-center h-full min-h-[200px] text-neutral-400 dark:text-neutral-500 text-sm">' +
+        "No account data available" +
+        "</div>";
+      return;
+    }
+
+    if (allocationChart) {
+      allocationChart.dispose();
+    }
+
+    const dark = isDarkMode();
+    allocationChart = echarts.init(container, getTheme());
+    const borderColor = dark ? "#262626" : "#ffffff";
+
+    const option = {
+      backgroundColor: "transparent",
+      tooltip: {
+        trigger: "item",
+        formatter: (params: any) => {
+          const value = params.value;
+          if (value == null) {
+            return `<strong>${params.name}</strong>`;
+          }
+          return `${params.name}: ${formatMoney(value * 100, currency, locale)}`;
+        },
+      },
+      series: [
+        {
+          type: "sunburst",
+          radius: ["0%", "90%"],
+          data: mapAllocationToSunburst(data),
+          sort: "desc",
+          itemStyle: {
+            borderRadius: 4,
+            borderWidth: 2,
+            borderColor: borderColor,
+          },
+          levels: [
+            {},
+            {
+              r0: "10%",
+              r: "50%",
+              itemStyle: { opacity: 1 },
+              label: { rotate: "radial", fontSize: 12 },
+            },
+            {
+              r0: "50%",
+              r: "90%",
+              itemStyle: { opacity: 0.75 },
+              label: { align: "right", fontSize: 10 },
+            },
+          ],
+          label: {
+            show: true,
+            color: dark ? "#e5e5e5" : "#262626",
+          },
+          emphasis: {
+            focus: "ancestor",
+          },
+        },
+      ],
+    };
+
+    allocationChart.setOption(option);
+
+    window.addEventListener("resize", () => {
+      if (allocationChart) allocationChart.resize();
+    });
+  } catch (error) {
+    console.error("Failed to load allocation chart:", error);
+    container.innerHTML =
+      '<div class="flex items-center justify-center h-full text-neutral-500">' +
+      "Failed to load allocation data." +
+      "</div>";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const chartElement = document.getElementById("net-worth-chart");
   if (chartElement) {
     loadNetWorthChart();
+  }
+
+  const allocationElement = document.getElementById("allocation-chart");
+  if (allocationElement) {
+    loadAllocationChart();
   }
 });
