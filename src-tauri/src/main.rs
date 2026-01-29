@@ -43,8 +43,7 @@ fn main() {
             let data_dir = dirs::data_dir()
                 .expect("Failed to resolve data directory")
                 .join("solvency");
-            std::fs::create_dir_all(&data_dir)
-                .expect("Failed to create data directory");
+            std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
             let database_path = data_dir.join("solvency.db");
 
             let config = Config {

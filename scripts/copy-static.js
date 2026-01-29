@@ -1,18 +1,13 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const srcDir = 'src-frontend';
-const destDir = 'static';
+const srcDir = "src-frontend";
+const destDir = "static";
 
 // Files and directories to copy from src-frontend/ to static/
-const entries = [
-  'favicon.svg',
-  'manifest.json',
-  'service-worker.js',
-  'vendor',
-];
+const entries = ["favicon.svg", "manifest.json", "service-worker.js", "vendor"];
 
 fs.mkdirSync(destDir, { recursive: true });
 
@@ -29,4 +24,4 @@ for (const entry of entries) {
   console.log(`Copied: ${src} -> ${dest}`);
 }
 
-console.log('Static assets copied.');
+console.log("Static assets copied.");

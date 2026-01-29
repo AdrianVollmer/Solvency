@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 
-const esbuild = require('esbuild');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+const esbuild = require("esbuild");
+const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 
-const isWatch = process.argv.includes('--watch');
-const srcDir = 'src-frontend/ts';
-const outDir = 'static/js/dist';
-const manifestPath = 'static/js/dist/manifest.json';
+const isWatch = process.argv.includes("--watch");
+const srcDir = "src-frontend/ts";
+const outDir = "static/js/dist";
+const manifestPath = "static/js/dist/manifest.json";
 
 // Get all TypeScript entry points
 function getEntryPoints() {
   const entries = [];
   const files = fs.readdirSync(srcDir);
   for (const file of files) {
-    if (file.endsWith('.ts') && !file.endsWith('.d.ts')) {
+    if (file.endsWith(".ts") && !file.endsWith(".d.ts")) {
       entries.push(path.join(srcDir, file));
     }
   }
@@ -24,7 +24,7 @@ function getEntryPoints() {
 
 // Generate hash from file contents
 function hashContent(content) {
-  return crypto.createHash('md5').update(content).digest('hex').slice(0, 8);
+  return crypto.createHash("md5").update(content).digest("hex").slice(0, 8);
 }
 
 // Clean old hashed files
@@ -47,7 +47,7 @@ async function build() {
   const entryPoints = getEntryPoints();
 
   if (entryPoints.length === 0) {
-    console.log('No TypeScript files found in', srcDir);
+    console.log("No TypeScript files found in", srcDir);
     return;
   }
 
@@ -56,7 +56,7 @@ async function build() {
   const manifest = {};
 
   for (const entry of entryPoints) {
-    const baseName = path.basename(entry, '.ts');
+    const baseName = path.basename(entry, ".ts");
 
     try {
       const result = await esbuild.build({
@@ -64,8 +64,8 @@ async function build() {
         bundle: true,
         minify: true,
         sourcemap: false,
-        target: ['es2020'],
-        format: 'iife',
+        target: ["es2020"],
+        format: "iife",
         write: false,
       });
 
@@ -90,12 +90,12 @@ async function build() {
 
 // Watch mode
 async function watch() {
-  console.log('Watching for changes...');
+  console.log("Watching for changes...");
 
   const entryPoints = getEntryPoints();
 
   if (entryPoints.length === 0) {
-    console.log('No TypeScript files found in', srcDir);
+    console.log("No TypeScript files found in", srcDir);
     return;
   }
 
@@ -103,7 +103,7 @@ async function watch() {
   await build();
 
   // Watch for changes
-  const chokidar = require('chokidar') || null;
+  const chokidar = require("chokidar") || null;
 
   // Simple polling-based watch if chokidar not available
   let lastModified = {};
@@ -113,7 +113,7 @@ async function watch() {
     let changed = false;
 
     for (const file of files) {
-      if (file.endsWith('.ts')) {
+      if (file.endsWith(".ts")) {
         const filePath = path.join(srcDir, file);
         const stat = fs.statSync(filePath);
         const mtime = stat.mtimeMs;
@@ -126,7 +126,7 @@ async function watch() {
     }
 
     if (changed) {
-      console.log('\nChange detected, rebuilding...');
+      console.log("\nChange detected, rebuilding...");
       await build();
     }
   };
@@ -138,7 +138,7 @@ async function watch() {
 if (isWatch) {
   watch().catch(console.error);
 } else {
-  build().catch(err => {
+  build().catch((err) => {
     console.error(err);
     process.exit(1);
   });
