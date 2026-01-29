@@ -11,7 +11,7 @@
     {% call table::th_sort(label="Date", url="/transactions", sort_qs=sort.query_string_for_str("date"), indicator=sort.indicator_str("date"), align="left", extra=date_range.query_string()) %}
 
     For sortable headers with HTMX:
-    {% call table::th_sort_htmx(label="Date", url="/transactions/table", target="#transaction-table", sort_qs=sort.query_string_for_str("date"), indicator=sort.indicator_str("date"), align="left", extra=filter.preserve_query_string(date_range)) %}
+    {% call table::th_sort_htmx(label="Date", url="/transactions/table", page_url="/transactions", target="#transaction-table", sort_qs=sort.query_string_for_str("date"), indicator=sort.indicator_str("date"), align="left", extra=filter.preserve_query_string(date_range)) %}
 #}
 
 {# Non-sortable table header cell #}
@@ -30,11 +30,13 @@
 {% endmacro %}
 
 {# Sortable table header cell with HTMX partial update #}
-{% macro th_sort_htmx(label, url, target, sort_qs, indicator, align, extra) %}
+{# page_url: Full page URL for progressive enhancement fallback (no-JS) #}
+{% macro th_sort_htmx(label, url, page_url, target, sort_qs, indicator, align, extra) %}
 <th scope="col" class="px-6 py-3 text-{{ align }} text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-    <a href="{{ url }}?{{ sort_qs }}{% if extra != "" %}&{{ extra }}{% endif %}"
+    <a href="{{ page_url }}?{{ sort_qs }}{% if extra != "" %}&{{ extra }}{% endif %}"
        hx-get="{{ url }}?{{ sort_qs }}{% if extra != "" %}&{{ extra }}{% endif %}"
        hx-target="{{ target }}"
+       hx-push-url="{{ page_url }}?{{ sort_qs }}{% if extra != "" %}&{{ extra }}{% endif %}"
        class="flex items-center{% if align == "right" %} justify-end{% endif %}{% if align == "center" %} justify-center{% endif %} gap-1 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
         {{ label }} <span>{{ indicator }}</span>
     </a>
