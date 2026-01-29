@@ -96,9 +96,9 @@
 {# Body (caller): Extra hidden inputs for the custom date form #}
 {% macro date_filter(page_url, date_range, presets, base_qs="") %}
 <div role="group" aria-label="Date range filter" class="space-y-2">
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <a href="{{ page_url }}?{% if base_qs != "" %}{{ base_qs }}&amp;{% endif %}from_date={{ date_range.prev().from_str() }}&amp;to_date={{ date_range.prev().to_str() }}{% if date_range.prev().preset.is_some() %}&amp;preset={{ date_range.prev().preset.unwrap().as_str() }}{% endif %}"
-            class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+            class="p-3 sm:p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
             aria-label="Previous period">
             <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-left")|safe }}</span>
         </a>
@@ -106,14 +106,14 @@
             {{ date_range.display_label() }}
         </span>
         <a href="{{ page_url }}?{% if base_qs != "" %}{{ base_qs }}&amp;{% endif %}from_date={{ date_range.next().from_str() }}&amp;to_date={{ date_range.next().to_str() }}{% if date_range.next().preset.is_some() %}&amp;preset={{ date_range.next().preset.unwrap().as_str() }}{% endif %}"
-            class="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+            class="p-3 sm:p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
             aria-label="Next period">
             <span class="icon-xs" aria-hidden="true">{{ icons.get("chevron-right")|safe }}</span>
         </a>
 
         <div class="flex items-center gap-2 ml-auto">
             <label for="date-preset-select" class="sr-only">Date range preset</label>
-            <select id="date-preset-select" class="select text-sm py-2"
+            <select id="date-preset-select" class="select text-sm py-2.5"
                 onchange="if(this.value==='custom'){document.getElementById('custom-date-row').classList.remove('hidden')}else{window.location.href='{{ page_url }}?{% if base_qs != "" %}{{ base_qs }}&amp;{% endif %}preset='+this.value}">
                 {% for preset in presets %}
                 <option value="{{ preset.as_str() }}"{% if date_range.is_preset(preset) %} selected{% endif %}>{{ preset.label() }}</option>
@@ -129,12 +129,12 @@
         {{ caller() }}
         <label for="filter_from_date" class="sr-only">From date</label>
         <input type="date" id="filter_from_date" name="from_date" value="{{ date_range.from_str() }}"
-            class="input text-sm py-2">
+            class="input text-sm py-2.5">
         <span class="text-neutral-500 dark:text-neutral-400 text-sm">to</span>
         <label for="filter_to_date" class="sr-only">To date</label>
         <input type="date" id="filter_to_date" name="to_date" value="{{ date_range.to_str() }}"
-            class="input text-sm py-2">
-        <button type="submit" class="btn-secondary px-3 py-2 text-sm rounded-lg">
+            class="input text-sm py-2.5">
+        <button type="submit" class="btn-secondary px-3 py-2.5 text-sm rounded-lg">
             Apply
         </button>
     </form>
