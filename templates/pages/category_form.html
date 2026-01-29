@@ -3,15 +3,21 @@
 
 {% block content %}
 <div class="space-y-6">
+    {% match editing %}
+    {% when Some with (cat) %}
+    {% call ui::page_header(title="Edit Category", back_url="/categories", back_label="Categories", subtitle="Update category details") %}{% endcall %}
+    {% when None %}
     {% call ui::page_header(title="Add Category", back_url="/categories", back_label="Categories", subtitle="Create a new category to organize transactions") %}{% endcall %}
+    {% endmatch %}
 
     {% call ui::card(class="p-6 max-w-lg") %}
-        <form action="/categories/create" method="POST" class="space-y-4">
+        <form action="{% match editing %}{% when Some with (cat) %}/categories/{{ cat.id }}/update{% when None %}/categories/create{% endmatch %}" method="POST" class="space-y-4">
             <div>
                 <label for="category-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
                 <input type="text" id="category-name" name="name" required
                     class="input w-full"
-                    placeholder="e.g., Food, Transport, Entertainment">
+                    placeholder="e.g., Food, Transport, Entertainment"
+                    value="{% match editing %}{% when Some with (cat) %}{{ cat.name }}{% when None %}{% endmatch %}">
             </div>
 
             <div>
@@ -19,7 +25,14 @@
                 <select id="category-parent" name="parent_id" class="input w-full">
                     <option value="">None (Root Level)</option>
                     {% for cat in categories %}
+                    {% match editing %}
+                    {% when Some with (editing_cat) %}
+                    {% if cat.category.id != editing_cat.id %}
+                    <option value="{{ cat.category.id }}" {% match editing_cat.parent_id %}{% when Some with (pid) %}{% if *pid == cat.category.id %}selected{% endif %}{% when None %}{% endmatch %}>{{ cat.path }}</option>
+                    {% endif %}
+                    {% when None %}
                     <option value="{{ cat.category.id }}">{{ cat.path }}</option>
+                    {% endmatch %}
                     {% endfor %}
                 </select>
             </div>
@@ -27,12 +40,12 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="category-color" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Color</label>
-                    <input type="color" id="category-color" name="color" value="#6b7280"
+                    <input type="color" id="category-color" name="color" value="{% match editing %}{% when Some with (cat) %}{{ cat.color }}{% when None %}#6b7280{% endmatch %}"
                         class="h-10 w-20 rounded border border-neutral-200 dark:border-neutral-700 cursor-pointer">
                 </div>
                 <div>
                     <label for="category-icon" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Icon</label>
-                    <input type="text" id="category-icon" name="icon" value="folder"
+                    <input type="text" id="category-icon" name="icon" value="{% match editing %}{% when Some with (cat) %}{{ cat.icon }}{% when None %}folder{% endmatch %}"
                         class="input w-full"
                         placeholder="e.g., folder, shopping-cart">
                 </div>
@@ -43,7 +56,7 @@
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary flex-1">
-                    Add Category
+                    {% match editing %}{% when Some with (cat) %}Save Changes{% when None %}Add Category{% endmatch %}
                 </button>
             </div>
         </form>

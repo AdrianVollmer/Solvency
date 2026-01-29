@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use crate::db::queries::categories;
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{CategoryWithPath, NewCategory, Settings};
+use crate::models::{Category, CategoryWithPath, NewCategory, Settings};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -25,13 +25,6 @@ pub struct CategoriesTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "components/category_row.html")]
-pub struct CategoryRowTemplate {
-    pub icons: crate::filters::Icons,
-    pub category: CategoryWithPath,
-}
-
-#[derive(Template)]
 #[template(path = "pages/category_form.html")]
 pub struct CategoryFormTemplate {
     pub title: String,
@@ -41,6 +34,7 @@ pub struct CategoryFormTemplate {
     pub version: &'static str,
     pub xsrf_token: String,
     pub categories: Vec<CategoryWithPath>,
+    pub editing: Option<Category>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -64,6 +58,33 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
         categories: cats,
+        editing: None,
+    };
+
+    template.render_html()
+}
+
+pub async fn edit_form(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let category = categories::get_category(&conn, id)?
+        .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
+
+    let cats = categories::list_categories_with_path(&conn)?;
+
+    let template = CategoryFormTemplate {
+        title: "Edit Category".into(),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        categories: cats,
+        editing: Some(category),
     };
 
     template.render_html()
@@ -123,23 +144,26 @@ pub async fn update(
 
     categories::update_category(&conn, id, &new_category)?;
 
-    let cat = categories::get_category(&conn, id)?
-        .ok_or_else(|| AppError::NotFound(format!("Category {} not found", id)))?;
+    Ok(Html(String::new()))
+}
 
-    let template = CategoryRowTemplate {
-        icons: crate::filters::Icons,
-        category: CategoryWithPath {
-            category: cat,
-            path: new_category.name,
-            depth: if new_category.parent_id.is_some() {
-                1
-            } else {
-                0
-            },
-        },
+pub async fn update_form(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Form(form): Form<CategoryFormData>,
+) -> AppResult<Redirect> {
+    let conn = state.db.get()?;
+
+    let new_category = NewCategory {
+        name: form.name,
+        parent_id: form.parent_id,
+        color: form.color.unwrap_or_else(|| "#6b7280".into()),
+        icon: form.icon.unwrap_or_else(|| "folder".into()),
     };
 
-    template.render_html()
+    categories::update_category(&conn, id, &new_category)?;
+
+    Ok(Redirect::to("/categories"))
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
