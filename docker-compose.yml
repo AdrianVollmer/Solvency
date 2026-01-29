@@ -2,6 +2,7 @@ services:
   solvency:
     image: ghcr.io/adrianvollmer/solvency:latest
     container_name: solvency
+    init: true
     ports:
       - "7070:7070"
     volumes:
