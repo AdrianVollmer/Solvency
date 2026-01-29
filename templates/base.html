@@ -63,15 +63,20 @@
     <script>
     async function importResource(file, url) {
         if (!file) return;
+        var fileInput = document.getElementById('import-file');
+        if (fileInput) fileInput.disabled = true;
+        if (typeof showToast === 'function') {
+            showToast('Importing\u2026', { type: 'info', duration: 0 });
+        }
         try {
-            const text = await file.text();
-            const data = JSON.parse(text);
-            const response = await fetch(url, {
+            var text = await file.text();
+            var data = JSON.parse(text);
+            var response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            const result = await response.json();
+            var result = await response.json();
             if (typeof showToast === 'function') {
                 showToast(result.message, { type: result.imported > 0 ? 'success' : 'info' });
             } else {
@@ -87,7 +92,10 @@
                 alert('Import failed: ' + e.message);
             }
         }
-        document.querySelector('input[type="file"]').value = '';
+        if (fileInput) {
+            fileInput.value = '';
+            fileInput.disabled = false;
+        }
     }
     </script>
     {% block scripts %}{% endblock %}

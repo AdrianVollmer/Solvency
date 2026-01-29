@@ -1,33 +1,18 @@
-# Improve Delete All safety: XSRF and confirmation UX
+# Improve Delete All confirmation UX
 
-The Delete All button performs an irreversible destructive action but has two
-safety gaps.
+## Resolved: XSRF
 
-## Problems
+The XSRF token is already attached to all HTMX requests globally via
+`initHtmx()` in `static/ts/main.ts` (the `htmx:configRequest` listener).
+No action needed.
 
-1. **XSRF token may not be sent** (High). The button uses `hx-delete` but
-   doesn't explicitly include the XSRF token from `<meta name="xsrf-token">`.
-   If HTMX isn't globally configured to attach it to DELETE requests, this
-   endpoint could be vulnerable to CSRF. Needs verification -- if HTMX is
-   already configured globally (e.g., via `htmx.config` or a request header
-   hook in main.js), this is a non-issue.
-2. **Native confirm() dialog for nuclear action** (Medium). `hx-confirm` uses
-   the browser's `window.confirm()` which is not styleable, looks different
-   across browsers, and provides no friction for an action that deletes ALL
-   records. On mobile, the small touch targets combined with a quick-dismiss
-   native dialog make accidental confirmation easy.
+## Remaining: native confirm() dialog for nuclear action
 
-## Suggested fixes
+`hx-confirm` uses the browser's `window.confirm()` which is not styleable,
+looks different across browsers, and provides no friction for an action that
+deletes ALL records.
 
-### XSRF
-
-- Verify whether `main.js` or HTMX config already attaches the token
-  globally. If not, either:
-  - Configure HTMX globally:
-    `document.body.addEventListener('htmx:configRequest', ...)`
-  - Or add `hx-headers` to the button.
-
-### Confirmation UX
+### Suggested fix
 
 - Replace `hx-confirm` with a custom modal (the `#modal-container` in
   `base.html` already exists but is unused).
@@ -37,10 +22,9 @@ safety gaps.
   use a two-button modal where the destructive button is not the default
   focus.
 - See also `issues/new/delete-undo-pattern.md` for the broader undo pattern
-  proposal.
+  proposal, which may supersede this.
 
 ## Relevant files
 
-- `templates/macros/ui.html` (lines 452-461)
-- `templates/base.html` (lines 16, 61)
-- `static/js/dist/` (main.js -- check for HTMX global config)
+- `templates/macros/ui.html` (`page_action_bar` macro)
+- `templates/base.html` (`#modal-container`)
