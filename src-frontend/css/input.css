@@ -384,4 +384,26 @@
   .row-hover {
     transition: background-color 100ms var(--ease-out-quart);
   }
+
+  /* Scroll overflow hints - inset shadows on scrollable containers */
+  .scroll-hint-right {
+    box-shadow: inset -12px 0 8px -8px rgba(0, 0, 0, 0.08);
+  }
+  .scroll-hint-left {
+    box-shadow: inset 12px 0 8px -8px rgba(0, 0, 0, 0.08);
+  }
+  .scroll-hint-both {
+    box-shadow: inset 12px 0 8px -8px rgba(0, 0, 0, 0.08),
+                inset -12px 0 8px -8px rgba(0, 0, 0, 0.08);
+  }
+  .dark .scroll-hint-right {
+    box-shadow: inset -12px 0 8px -8px rgba(0, 0, 0, 0.3);
+  }
+  .dark .scroll-hint-left {
+    box-shadow: inset 12px 0 8px -8px rgba(0, 0, 0, 0.3);
+  }
+  .dark .scroll-hint-both {
+    box-shadow: inset 12px 0 8px -8px rgba(0, 0, 0, 0.3),
+                inset -12px 0 8px -8px rgba(0, 0, 0, 0.3);
+  }
 }

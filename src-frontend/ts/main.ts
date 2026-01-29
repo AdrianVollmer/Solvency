@@ -377,6 +377,34 @@ function initKeyboardShortcuts(): void {
   });
 }
 
+function initScrollHints(): void {
+  function updateHint(el: HTMLElement): void {
+    const hasOverflow = el.scrollWidth > el.clientWidth + 1;
+    if (!hasOverflow) {
+      el.classList.remove("scroll-hint-right", "scroll-hint-left", "scroll-hint-both");
+      return;
+    }
+    const atLeft = el.scrollLeft <= 1;
+    const atRight = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1;
+
+    el.classList.toggle("scroll-hint-right", atLeft && !atRight);
+    el.classList.toggle("scroll-hint-left", atRight && !atLeft);
+    el.classList.toggle("scroll-hint-both", !atLeft && !atRight);
+  }
+
+  const containers = document.querySelectorAll<HTMLElement>(".overflow-x-auto");
+  for (const el of containers) {
+    updateHint(el);
+    el.addEventListener("scroll", () => updateHint(el), { passive: true });
+  }
+
+  window.addEventListener("resize", () => {
+    for (const el of containers) {
+      updateHint(el);
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initSidebar();
@@ -384,6 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initHtmx();
   initConfirmModal();
   initKeyboardShortcuts();
+  initScrollHints();
   registerServiceWorker();
 
   // Initialize XSRF protection

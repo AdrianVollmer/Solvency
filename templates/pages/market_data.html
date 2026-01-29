@@ -11,12 +11,12 @@
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         {% call ui::page_header(title="Market Data", subtitle="Track and manage market price data for your positions") %}{% endcall %}
         <div class="flex flex-wrap gap-2">
-            <a href="/trading/api-logs" class="btn btn-secondary">
-                <span class="icon-xs mr-2" aria-hidden="true">{{ icons.get("file-text")|safe }}</span>
-                API Logs
+            <a href="/trading/api-logs" class="btn btn-secondary" title="API Logs">
+                <span class="icon-xs sm:mr-2" aria-hidden="true">{{ icons.get("file-text")|safe }}</span>
+                <span class="hidden sm:inline">API Logs</span>
             </a>
             {% if total_data_points > 0 && !is_refreshing %}
-            {% call ui::delete_action_reload(endpoint="/trading/market-data/delete-all", confirm="Are you sure you want to delete ALL market data? This cannot be undone.", label="Delete All") %}{% endcall %}
+            {% call ui::delete_action_reload(endpoint="/trading/market-data/delete-all", confirm="Are you sure you want to delete ALL market data? This cannot be undone.", label="Delete All", label_class="hidden sm:inline") %}{% endcall %}
             {% endif %}
             {% if is_refreshing %}
             <button type="button" class="btn btn-primary opacity-75 cursor-not-allowed min-w-[10rem]" disabled>

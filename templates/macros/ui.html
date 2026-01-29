@@ -366,7 +366,7 @@
 {% endmacro %}
 
 {# Delete action button with reload #}
-{% macro delete_action_reload(endpoint, confirm, label) %}
+{% macro delete_action_reload(endpoint, confirm, label, label_class="") %}
 <button
     hx-delete="{{ endpoint }}"
     hx-confirm="{{ confirm }}"
@@ -374,9 +374,10 @@
     hx-swap="none"
     hx-on::after-request="if(event.detail.successful) window.location.reload()"
     hx-disabled-elt="this"
+    title="{{ label }}"
     class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
     <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
-    {{ label }}
+    <span class="{{ label_class }}">{{ label }}</span>
 </button>
 {% endmacro %}
 
