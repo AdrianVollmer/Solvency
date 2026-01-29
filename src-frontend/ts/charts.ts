@@ -408,6 +408,7 @@ async function updateFlowChart(params: URLSearchParams): Promise<void> {
   activeChart = echarts.init(container, getTheme(), { renderer: "canvas" });
 
   const dark = isDarkMode();
+  const compact = container.clientWidth < 500;
 
   const option = {
     backgroundColor: "transparent",
@@ -425,8 +426,8 @@ async function updateFlowChart(params: URLSearchParams): Promise<void> {
         type: "sankey",
         top: 20,
         bottom: 20,
-        left: 20,
-        right: 240,
+        left: compact ? 10 : 20,
+        right: compact ? 80 : 240,
         emphasis: {
           focus: "adjacency",
         },
