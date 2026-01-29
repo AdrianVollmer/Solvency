@@ -1,7 +1,7 @@
 <h2 id="modal-title" class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
     {% if is_edit %}Edit Activity{% else %}Add Activity{% endif %}
 </h2>
-<form hx-post="/trading/activities/create" hx-target="#activities-list" hx-swap="afterbegin" class="space-y-4">
+<form hx-post="/trading/activities/create" hx-target="#activities-list" hx-swap="afterbegin" hx-disabled-elt="find button[type='submit']" class="space-y-4">
     <div class="grid grid-cols-2 gap-4">
         <div>
             <label for="date" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Date</label>
@@ -68,7 +68,8 @@
             class="btn-ghost px-4 py-2 rounded-lg">Cancel</button>
         <button type="submit" class="btn btn-primary"
             onclick="document.getElementById('activity-modal').classList.add('hidden')">
-            {% if is_edit %}Save Changes{% else %}Add Activity{% endif %}
+            <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+            <span class="btn-label">{% if is_edit %}Save Changes{% else %}Add Activity{% endif %}</span>
         </button>
     </div>
 </form>

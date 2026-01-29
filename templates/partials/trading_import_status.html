@@ -28,9 +28,10 @@
                     <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Preview</h2>
                     <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ session.total_rows }} activities ready to import</p>
                 </div>
-                <form hx-post="/trading/import/{{ session.id }}/confirm" hx-target="#import-status" hx-swap="outerHTML">
+                <form hx-post="/trading/import/{{ session.id }}/confirm" hx-target="#import-status" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
                     <button type="submit" class="btn btn-primary">
-                        Confirm Import
+                        <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+                        <span class="btn-label">Confirm Import</span>
                     </button>
                 </form>
             </div>

@@ -104,6 +104,7 @@ pub struct TradingActivityTableTemplate {
 #[derive(Template)]
 #[template(path = "components/trading_activity_form.html")]
 pub struct TradingActivityFormTemplate {
+    pub icons: crate::filters::Icons,
     pub activity: Option<TradingActivity>,
     pub symbols: Vec<String>,
     pub activity_types: &'static [TradingActivityType],

@@ -73,8 +73,10 @@
                 <button hx-post="/import/{{ session.id }}/confirm"
                         hx-target="#wizard-content"
                         hx-swap="outerHTML"
-                        class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
-                    Import {{ session.total_rows }} Transaction{% if session.total_rows != 1 %}s{% endif %}
+                        hx-disabled-elt="this"
+                        class="btn btn-primary px-6">
+                    <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+                    <span class="btn-label">Import {{ session.total_rows }} Transaction{% if session.total_rows != 1 %}s{% endif %}</span>
                 </button>
             </div>
         </div>

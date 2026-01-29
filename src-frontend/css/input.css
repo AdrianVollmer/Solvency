@@ -82,7 +82,25 @@
   /* Buttons - refined micro-interactions */
   .btn {
     @apply px-4 py-2.5 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2;
+    position: relative;
     transition: background-color 150ms var(--ease-out-quart), transform 100ms var(--ease-out-quart), box-shadow 150ms var(--ease-out-quart);
+  }
+
+  /* Button loading spinner (shown when button is disabled by hx-disabled-elt) */
+  .btn-spinner {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn:disabled .btn-spinner {
+    display: flex;
+  }
+
+  .btn:disabled .btn-label {
+    visibility: hidden;
   }
 
   .btn:hover:not(:disabled) {

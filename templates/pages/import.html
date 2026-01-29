@@ -36,7 +36,8 @@
             </div>
 
             <button type="submit" class="w-full btn btn-primary py-3">
-                Upload and Preview
+                <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+                <span class="btn-label">Upload and Preview</span>
             </button>
         </form>
     {% endcall %}
@@ -63,7 +64,8 @@
             </div>
 
             <button type="submit" class="w-full btn btn-primary py-3">
-                Upload and Preview
+                <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+                <span class="btn-label">Upload and Preview</span>
             </button>
         </form>
     {% endcall %}
@@ -91,6 +93,15 @@ function switchTab(tab) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Disable upload buttons on form submit for loading feedback
+    const uploadForms = document.querySelectorAll('form[enctype="multipart/form-data"]');
+    for (const form of uploadForms) {
+        form.addEventListener('submit', function() {
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+        });
+    }
+
     const dropZones = document.querySelectorAll('.drop-zone');
 
     for (const dropZone of dropZones) {

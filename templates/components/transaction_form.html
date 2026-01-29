@@ -10,6 +10,7 @@
     {% if let Some(exp) = transaction %}
     <form hx-post="/transactions/{{ exp.transaction.id }}/update" hx-target="#transaction-{{ exp.transaction.id }}" hx-swap="outerHTML"
         hx-on::after-request="if(event.detail.successful) document.getElementById('transaction-modal').classList.add('hidden')"
+        hx-disabled-elt="find button[type='submit']"
         class="space-y-4">
 
         <div class="grid grid-cols-2 gap-4">
@@ -81,13 +82,15 @@
                 Cancel
             </button>
             <button type="submit" class="btn btn-primary flex-1">
-                Update
+                <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+                <span class="btn-label">Update</span>
             </button>
         </div>
     </form>
     {% else %}
     <form hx-post="/transactions/create" hx-target="#transaction-table tbody" hx-swap="afterbegin"
         hx-on::after-request="if(event.detail.successful) document.getElementById('transaction-modal').classList.add('hidden')"
+        hx-disabled-elt="find button[type='submit']"
         class="space-y-4">
 
         <div class="grid grid-cols-2 gap-4">
@@ -157,7 +160,8 @@
                 Cancel
             </button>
             <button type="submit" class="btn btn-primary flex-1">
-                Add
+                <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+                <span class="btn-label">Add</span>
             </button>
         </div>
     </form>
