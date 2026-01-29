@@ -19,7 +19,7 @@ jobs:
           - platform: windows-latest
             args: ""
             rust-targets: ""
-          - platform: macos-13
+          - platform: macos-latest
             args: "--target x86_64-apple-darwin"
             rust-targets: "x86_64-apple-darwin"
 
@@ -93,7 +93,7 @@ jobs:
             --clobber
 
       - name: Upload release assets (macOS)
-        if: matrix.platform == 'macos-13'
+        if: matrix.platform == 'macos-latest'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
