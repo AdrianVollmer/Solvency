@@ -7,6 +7,7 @@ pub mod error_pages;
 pub mod filters;
 pub mod handlers;
 pub mod models;
+pub mod server;
 pub mod services;
 pub mod sort_utils;
 pub mod state;

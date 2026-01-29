@@ -1,0 +1,18 @@
+[package]
+name = "solvency-desktop"
+version = "0.1.1"
+edition = "2021"
+rust-version = "1.92"
+description = "Solvency desktop application"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+solvency = { path = ".." }
+tauri = { version = "2", features = [] }
+tokio = { version = "1", features = ["full"] }
+dirs = "6"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

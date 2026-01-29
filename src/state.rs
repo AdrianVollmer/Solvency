@@ -7,6 +7,7 @@ use crate::xsrf::XsrfToken;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 /// State for tracking market data refresh operations
@@ -50,12 +51,15 @@ impl AppState {
 pub struct JsManifest(HashMap<String, String>);
 
 impl JsManifest {
-    pub fn load() -> Self {
-        let path = "static/js/dist/manifest.json";
-        match fs::read_to_string(path) {
+    pub fn load(static_path: &Path) -> Self {
+        let path = static_path.join("js/dist/manifest.json");
+        match fs::read_to_string(&path) {
             Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
             Err(_) => {
-                tracing::warn!("manifest.json not found at {}, using empty manifest", path);
+                tracing::warn!(
+                    "manifest.json not found at {}, using empty manifest",
+                    path.display()
+                );
                 Self::default()
             }
         }
