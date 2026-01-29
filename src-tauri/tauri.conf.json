@@ -24,6 +24,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["../static/**/*", "../migrations/*"]
+    "resources": {
+      "../static": "static",
+      "../migrations": "migrations"
+    }
   }
 }

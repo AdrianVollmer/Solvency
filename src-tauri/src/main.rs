@@ -20,25 +20,25 @@ fn main() {
         .setup(|app| {
             let app_handle = app.handle().clone();
 
-            let resource_dir = app
-                .path()
-                .resource_dir()
-                .expect("Failed to resolve resource directory");
+            // In bundled builds, resources are under resource_dir().
+            // In dev, fall back to the workspace root via CARGO_MANIFEST_DIR.
+            let resource_dir = app.path().resource_dir().ok();
+            let workspace_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .parent()
+                .expect("CARGO_MANIFEST_DIR has no parent")
+                .to_path_buf();
 
-            let static_path = resource_dir.join("static");
-            let migrations_path = resource_dir.join("migrations");
+            let static_path = resource_dir
+                .as_ref()
+                .map(|d| d.join("static"))
+                .filter(|p| p.exists())
+                .unwrap_or_else(|| workspace_root.join("static"));
 
-            // Fall back to paths relative to the executable for development
-            let static_path = if static_path.exists() {
-                static_path
-            } else {
-                PathBuf::from("static")
-            };
-            let migrations_path = if migrations_path.exists() {
-                migrations_path
-            } else {
-                PathBuf::from("migrations")
-            };
+            let migrations_path = resource_dir
+                .as_ref()
+                .map(|d| d.join("migrations"))
+                .filter(|p| p.exists())
+                .unwrap_or_else(|| workspace_root.join("migrations"));
 
             let data_dir = dirs::data_dir()
                 .expect("Failed to resolve data directory")
