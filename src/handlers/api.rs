@@ -5,6 +5,7 @@ use tracing::{debug, warn};
 
 use crate::db::queries::{categories, transactions};
 use crate::error::AppResult;
+use crate::services::analytics;
 use crate::state::AppState;
 
 #[derive(Debug, Deserialize)]
@@ -48,41 +49,17 @@ pub async fn spending_by_category(
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
+    let breakdowns = analytics::spending_by_category(&transaction_list);
 
-    let mut category_totals: std::collections::HashMap<String, (String, i64)> =
-        std::collections::HashMap::new();
-
-    for transaction in &transaction_list {
-        let category_name = transaction
-            .category_name
-            .clone()
-            .unwrap_or_else(|| "Uncategorized".into());
-        let color = transaction
-            .category_color
-            .clone()
-            .unwrap_or_else(|| "#6b7280".into());
-
-        let entry = category_totals.entry(category_name).or_insert((color, 0));
-        entry.1 += transaction.transaction.amount_cents;
-    }
-
-    let total: i64 = category_totals.values().map(|(_, v)| v).sum();
-
-    let mut result: Vec<CategorySpending> = category_totals
+    let result: Vec<CategorySpending> = breakdowns
         .into_iter()
-        .map(|(category, (color, amount_cents))| CategorySpending {
-            category,
-            color,
-            amount_cents,
-            percentage: if total > 0 {
-                (amount_cents as f64 / total as f64) * 100.0
-            } else {
-                0.0
-            },
+        .map(|b| CategorySpending {
+            category: b.category,
+            color: b.color,
+            amount_cents: b.total_cents,
+            percentage: b.percentage,
         })
         .collect();
-
-    result.sort_by(|a, b| b.amount_cents.cmp(&a.amount_cents));
 
     Ok(Json(result))
 }
