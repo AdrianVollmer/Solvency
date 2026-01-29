@@ -58,7 +58,23 @@
     </div>
 
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
-    <div id="modal-container" class="fixed inset-0 z-40 hidden"></div>
+
+    {# Confirm modal for destructive actions #}
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+        <div class="fixed inset-0 bg-black/50 transition-opacity" data-confirm-backdrop></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-sm border border-neutral-200 dark:border-neutral-700">
+                <div class="p-6 space-y-4">
+                    <h3 id="confirm-modal-title" class="text-lg font-semibold text-neutral-900 dark:text-white">Confirm deletion</h3>
+                    <p id="confirm-modal-message" class="text-sm text-neutral-600 dark:text-neutral-400"></p>
+                </div>
+                <div class="flex gap-3 justify-end px-6 py-4 border-t border-neutral-200 dark:border-neutral-700">
+                    <button type="button" id="confirm-cancel-btn" class="btn btn-secondary">Cancel</button>
+                    <button type="button" id="confirm-action-btn" class="btn btn-danger-outline">Delete All</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
     async function importResource(file, url) {

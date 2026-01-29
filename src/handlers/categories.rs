@@ -22,6 +22,7 @@ pub struct CategoriesTemplate {
     pub version: &'static str,
     pub xsrf_token: String,
     pub categories: Vec<CategoryWithPath>,
+    pub delete_count: i64,
 }
 
 #[derive(Template)]
@@ -104,6 +105,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
+        delete_count: cats.len() as i64,
         categories: cats,
     };
 

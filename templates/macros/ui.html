@@ -438,7 +438,8 @@
 
 {# Page action bar for resource listing pages #}
 {# Primary "Add" button always visible; secondary actions in overflow menu on mobile #}
-{% macro page_action_bar(export_url, import_url, delete_endpoint, delete_confirm, add_url, add_label) %}
+{# delete_count: Number of records (shown in confirm modal). Pass 0 to omit count. #}
+{% macro page_action_bar(export_url, import_url, delete_endpoint, delete_confirm, add_url, add_label, delete_count) %}
 <div class="flex items-center gap-2">
     {# Desktop: inline secondary actions (hidden on mobile) #}
     <a href="{{ export_url }}" download class="hidden md:inline-flex btn btn-secondary items-center gap-2">
@@ -451,7 +452,7 @@
     </button>
     <button
         hx-delete="{{ delete_endpoint }}"
-        hx-confirm="{{ delete_confirm }}"
+        data-confirm-modal="{% if *delete_count > 0 %}{{ delete_confirm }} ({{ delete_count }} records){% else %}{{ delete_confirm }}{% endif %}"
         hx-target="body"
         hx-swap="none"
         hx-on::after-request="if(event.detail.successful) window.location.reload()"
@@ -477,7 +478,7 @@
             <hr class="my-1 border-neutral-200 dark:border-neutral-700">
             <button type="button"
                 hx-delete="{{ delete_endpoint }}"
-                hx-confirm="{{ delete_confirm }}"
+                data-confirm-modal="{% if *delete_count > 0 %}{{ delete_confirm }} ({{ delete_count }} records){% else %}{{ delete_confirm }}{% endif %}"
                 hx-target="body"
                 hx-swap="none"
                 hx-on::after-request="if(event.detail.successful) window.location.reload()"

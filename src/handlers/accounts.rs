@@ -21,6 +21,7 @@ pub struct AccountsTemplate {
     pub version: &'static str,
     pub xsrf_token: String,
     pub accounts: Vec<Account>,
+    pub delete_count: i64,
 }
 
 #[derive(Template)]
@@ -54,6 +55,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
+        delete_count: account_list.len() as i64,
         accounts: account_list,
     };
 

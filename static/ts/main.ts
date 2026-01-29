@@ -216,6 +216,59 @@ function registerServiceWorker(): void {
   }
 }
 
+// Custom confirm modal for destructive actions
+function initConfirmModal(): void {
+  const modal = document.getElementById("confirm-modal");
+  const messageEl = document.getElementById("confirm-modal-message");
+  const cancelBtn = document.getElementById("confirm-cancel-btn");
+  const actionBtn = document.getElementById("confirm-action-btn");
+  const backdrop = modal?.querySelector("[data-confirm-backdrop]");
+
+  if (!modal || !messageEl || !cancelBtn || !actionBtn) return;
+
+  let pendingCallback: (() => void) | null = null;
+
+  function openModal(message: string, onConfirm: () => void): void {
+    messageEl!.textContent = message;
+    pendingCallback = onConfirm;
+    modal!.classList.remove("hidden");
+    cancelBtn!.focus();
+  }
+
+  function closeModal(): void {
+    modal!.classList.add("hidden");
+    pendingCallback = null;
+  }
+
+  cancelBtn.addEventListener("click", closeModal);
+  backdrop?.addEventListener("click", closeModal);
+
+  actionBtn.addEventListener("click", () => {
+    const cb = pendingCallback;
+    closeModal();
+    if (cb) cb();
+  });
+
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+      closeModal();
+    }
+  });
+
+  // Intercept HTMX requests on elements with data-confirm-modal
+  document.body.addEventListener("htmx:confirm", (event: Event) => {
+    const el = event.target as HTMLElement;
+    if (!el.hasAttribute("data-confirm-modal")) return;
+
+    event.preventDefault();
+    const message = el.getAttribute("data-confirm-modal") || "Are you sure?";
+    const detail = (event as CustomEvent).detail;
+    openModal(message, () => {
+      detail.issueRequest(true);
+    });
+  });
+}
+
 function initHtmx(): void {
   // Configure HTMX to include XSRF token in all requests
   document.body.addEventListener("htmx:configRequest", (event: Event) => {
@@ -245,6 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initSidebar();
   initDropdowns();
   initHtmx();
+  initConfirmModal();
   registerServiceWorker();
 
   // Initialize XSRF protection

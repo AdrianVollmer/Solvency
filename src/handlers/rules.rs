@@ -22,6 +22,7 @@ pub struct RulesTemplate {
     pub version: &'static str,
     pub xsrf_token: String,
     pub rules: Vec<Rule>,
+    pub delete_count: i64,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
 }
@@ -72,6 +73,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
+        delete_count: rule_list.len() as i64,
         rules: rule_list,
         categories: category_list,
         tags: tag_list,

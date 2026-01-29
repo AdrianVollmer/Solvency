@@ -21,6 +21,7 @@ pub struct TagsTemplate {
     pub version: &'static str,
     pub xsrf_token: String,
     pub tags: Vec<Tag>,
+    pub delete_count: i64,
 }
 
 #[derive(Template)]
@@ -67,6 +68,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
+        delete_count: tag_list.len() as i64,
         tags: tag_list,
     };
 
