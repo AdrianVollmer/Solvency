@@ -139,51 +139,36 @@
     <script>
     async function importResource(file, url) {
         if (!file) return;
-        var fileInput = document.getElementById('import-file');
-        if (fileInput) fileInput.disabled = true;
-        if (typeof showToast === 'function') {
-            showToast('Importing\u2026', { type: 'info', duration: 0 });
-        }
         try {
             var text = await file.text();
-            var data = JSON.parse(text);
-            var headers = { 'Content-Type': 'application/json' };
+            JSON.parse(text); // validate JSON before navigating
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url + '/preview';
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'data';
+            input.value = text;
+            var xsrf = document.createElement('input');
+            xsrf.type = 'hidden';
+            xsrf.name = '_xsrf_token';
             var meta = document.querySelector('meta[name="xsrf-token"]');
-            if (meta) headers['X-XSRF-Token'] = meta.getAttribute('content');
-            var response = await fetch(url, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(data)
-            });
-            var result = await response.json();
-            var hasErrors = Array.isArray(result.errors) && result.errors.length > 0;
-            var toastType = result.imported > 0 ? 'success' : (hasErrors ? 'warning' : 'info');
-            var msg = result.message;
-            if (hasErrors) {
-                msg += '<ul class="mt-2 list-disc list-inside text-xs opacity-90">';
-                for (var err of result.errors) {
-                    msg += '<li>' + err.replace(/</g, '&lt;') + '</li>';
-                }
-                msg += '</ul>';
-            }
-            if (typeof showToast === 'function') {
-                showToast(msg, { type: toastType, duration: hasErrors ? 0 : 5000 });
-            } else {
-                alert(result.message);
-            }
-            if (result.imported > 0) {
-                location.reload();
-            }
+            if (meta) xsrf.value = meta.getAttribute('content');
+            form.appendChild(input);
+            form.appendChild(xsrf);
+            document.body.appendChild(form);
+            form.submit();
         } catch (e) {
             if (typeof showToast === 'function') {
-                showToast('Import failed: ' + e.message, { type: 'error' });
+                showToast('Invalid JSON file: ' + e.message, { type: 'error' });
             } else {
-                alert('Import failed: ' + e.message);
+                alert('Invalid JSON file: ' + e.message);
             }
-        }
-        if (fileInput) {
-            fileInput.value = '';
-            fileInput.disabled = false;
+            var fileInput = document.getElementById('import-file');
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.disabled = false;
+            }
         }
     }
     </script>

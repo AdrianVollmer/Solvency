@@ -10,6 +10,9 @@ use std::collections::HashMap;
 use crate::db::queries::transactions::TransactionFilter;
 use crate::db::queries::{categories, rules, tags, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
+use crate::handlers::import_preview::{
+    ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus, ImportPreviewTemplate,
+};
 use crate::models::{
     CategoryWithPath, NewRule, Rule, RuleActionType, Settings, Tag, TransactionWithRelations,
 };
@@ -420,6 +423,102 @@ pub async fn import(
         "errors": errors,
         "message": format!("Imported {} rules, skipped {}", created, skipped)
     })))
+}
+
+pub async fn import_preview(
+    State(state): State<AppState>,
+    Form(form): Form<ImportPreviewForm>,
+) -> AppResult<Html<String>> {
+    let data: Vec<RuleImport> = serde_json::from_str(&form.data)
+        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
+
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let cat_list = categories::list_categories(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+    let cat_names: std::collections::HashSet<String> =
+        cat_list.iter().map(|c| c.name.clone()).collect();
+    let tag_names: std::collections::HashSet<String> =
+        tag_list.iter().map(|t| t.name.clone()).collect();
+
+    let existing_rules = rules::list_rules(&conn)?;
+    let existing_names: std::collections::HashSet<String> =
+        existing_rules.iter().map(|r| r.name.clone()).collect();
+
+    let mut items = Vec::new();
+    let mut ok_count = 0;
+    let mut skip_count = 0;
+
+    for item in &data {
+        let action_label = match item.action_type {
+            RuleActionType::AssignCategory => "Assign Category",
+            RuleActionType::AssignTag => "Assign Tag",
+        };
+        let cells = vec![
+            item.name.clone(),
+            item.pattern.clone(),
+            action_label.to_string(),
+            item.action_value.clone(),
+        ];
+
+        if existing_names.contains(&item.name) {
+            skip_count += 1;
+            items.push(ImportPreviewItem {
+                status: ImportPreviewStatus::Skipped,
+                reason: "already exists".to_string(),
+                cells,
+            });
+        } else {
+            let target_exists = match item.action_type {
+                RuleActionType::AssignCategory => cat_names.contains(&item.action_value),
+                RuleActionType::AssignTag => tag_names.contains(&item.action_value),
+            };
+            if !target_exists {
+                let kind = match item.action_type {
+                    RuleActionType::AssignCategory => "category",
+                    RuleActionType::AssignTag => "tag",
+                };
+                skip_count += 1;
+                items.push(ImportPreviewItem {
+                    status: ImportPreviewStatus::Skipped,
+                    reason: format!("{} \"{}\" not found", kind, item.action_value),
+                    cells,
+                });
+            } else {
+                ok_count += 1;
+                items.push(ImportPreviewItem {
+                    status: ImportPreviewStatus::Ok,
+                    reason: String::new(),
+                    cells,
+                });
+            }
+        }
+    }
+
+    let template = ImportPreviewTemplate {
+        title: "Import Rules — Preview".to_string(),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        resource_name: "Rules".to_string(),
+        back_url: "/rules".to_string(),
+        import_url: "/rules/import".to_string(),
+        columns: vec![
+            "Name".to_string(),
+            "Pattern".to_string(),
+            "Action".to_string(),
+            "Target".to_string(),
+        ],
+        items,
+        ok_count,
+        skip_count,
+        raw_json: form.data,
+    };
+
+    template.render_html()
 }
 
 /// Fetch transactions matching a rule's regex pattern, filtered by scope.

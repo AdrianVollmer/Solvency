@@ -8,6 +8,9 @@ use std::collections::HashMap;
 
 use crate::db::queries::categories;
 use crate::error::{AppError, AppResult, RenderHtml};
+use crate::handlers::import_preview::{
+    ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus, ImportPreviewTemplate,
+};
 use crate::models::{Category, CategoryWithPath, NewCategory, Settings, TAG_PALETTE};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -370,4 +373,95 @@ pub async fn import(
         "imported": created,
         "message": format!("Successfully imported {} categories", created)
     })))
+}
+
+pub async fn import_preview(
+    State(state): State<AppState>,
+    Form(form): Form<ImportPreviewForm>,
+) -> AppResult<Html<String>> {
+    let data: Vec<CategoryImport> = serde_json::from_str(&form.data)
+        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
+
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let existing = categories::list_categories(&conn)?;
+    let existing_names: std::collections::HashSet<String> =
+        existing.iter().map(|c| c.name.clone()).collect();
+
+    // Collect all names that will exist after import (existing + new from file).
+    let all_names: std::collections::HashSet<String> = existing_names
+        .iter()
+        .cloned()
+        .chain(data.iter().map(|c| c.name.clone()))
+        .collect();
+
+    let mut items = Vec::new();
+    let mut ok_count = 0;
+    let mut skip_count = 0;
+
+    for item in &data {
+        let cells = vec![
+            item.name.clone(),
+            item.parent_name.clone().unwrap_or_default(),
+            item.color.clone(),
+            item.icon.clone(),
+        ];
+
+        if existing_names.contains(&item.name) {
+            skip_count += 1;
+            items.push(ImportPreviewItem {
+                status: ImportPreviewStatus::Skipped,
+                reason: "already exists".to_string(),
+                cells,
+            });
+        } else if let Some(ref pn) = item.parent_name {
+            if !all_names.contains(pn) {
+                skip_count += 1;
+                items.push(ImportPreviewItem {
+                    status: ImportPreviewStatus::Skipped,
+                    reason: format!("parent \"{}\" not found", pn),
+                    cells,
+                });
+            } else {
+                ok_count += 1;
+                items.push(ImportPreviewItem {
+                    status: ImportPreviewStatus::Ok,
+                    reason: String::new(),
+                    cells,
+                });
+            }
+        } else {
+            ok_count += 1;
+            items.push(ImportPreviewItem {
+                status: ImportPreviewStatus::Ok,
+                reason: String::new(),
+                cells,
+            });
+        }
+    }
+
+    let template = ImportPreviewTemplate {
+        title: "Import Categories — Preview".to_string(),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        resource_name: "Categories".to_string(),
+        back_url: "/categories".to_string(),
+        import_url: "/categories/import".to_string(),
+        columns: vec![
+            "Name".to_string(),
+            "Parent".to_string(),
+            "Color".to_string(),
+            "Icon".to_string(),
+        ],
+        items,
+        ok_count,
+        skip_count,
+        raw_json: form.data,
+    };
+
+    template.render_html()
 }

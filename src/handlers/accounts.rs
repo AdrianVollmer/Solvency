@@ -7,6 +7,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::queries::accounts;
 use crate::error::{AppError, AppResult, RenderHtml};
+use crate::handlers::import_preview::{
+    ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus, ImportPreviewTemplate,
+};
 use crate::models::{Account, AccountType, NewAccount, Settings};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -225,4 +228,62 @@ pub async fn import(
         "imported": created,
         "message": format!("Successfully imported {} accounts", created)
     })))
+}
+
+pub async fn import_preview(
+    State(state): State<AppState>,
+    Form(form): Form<ImportPreviewForm>,
+) -> AppResult<Html<String>> {
+    let data: Vec<AccountImport> = serde_json::from_str(&form.data)
+        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
+
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let existing = accounts::list_accounts(&conn)?;
+    let existing_names: std::collections::HashSet<String> =
+        existing.iter().map(|a| a.name.clone()).collect();
+
+    let mut items = Vec::new();
+    let mut ok_count = 0;
+    let mut skip_count = 0;
+
+    for item in &data {
+        let cells = vec![item.name.clone(), item.account_type.as_str().to_string()];
+
+        if existing_names.contains(&item.name) {
+            skip_count += 1;
+            items.push(ImportPreviewItem {
+                status: ImportPreviewStatus::Skipped,
+                reason: "already exists".to_string(),
+                cells,
+            });
+        } else {
+            ok_count += 1;
+            items.push(ImportPreviewItem {
+                status: ImportPreviewStatus::Ok,
+                reason: String::new(),
+                cells,
+            });
+        }
+    }
+
+    let template = ImportPreviewTemplate {
+        title: "Import Accounts — Preview".to_string(),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        resource_name: "Accounts".to_string(),
+        back_url: "/accounts".to_string(),
+        import_url: "/accounts/import".to_string(),
+        columns: vec!["Name".to_string(), "Type".to_string()],
+        items,
+        ok_count,
+        skip_count,
+        raw_json: form.data,
+    };
+
+    template.render_html()
 }

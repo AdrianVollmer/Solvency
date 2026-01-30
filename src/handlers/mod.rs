@@ -5,6 +5,7 @@ pub mod balances;
 pub mod categories;
 pub mod dashboard;
 pub mod import;
+pub mod import_preview;
 pub mod market_data;
 pub mod net_worth;
 pub mod rules;
@@ -47,6 +48,7 @@ pub fn routes() -> Router<AppState> {
         .route("/categories/create", post(categories::create))
         .route("/categories/export", get(categories::export))
         .route("/categories/import", post(categories::import))
+        .route("/categories/import/preview", post(categories::import_preview))
         .route("/categories/delete-all", delete(categories::delete_all))
         .route("/categories/:id/edit", get(categories::edit_form))
         .route("/categories/:id/update", post(categories::update_form))
@@ -58,6 +60,7 @@ pub fn routes() -> Router<AppState> {
         .route("/accounts/create", post(accounts::create))
         .route("/accounts/export", get(accounts::export))
         .route("/accounts/import", post(accounts::import))
+        .route("/accounts/import/preview", post(accounts::import_preview))
         .route("/accounts/:id/edit", get(accounts::edit_form))
         .route("/accounts/:id/update", post(accounts::update))
         .route("/accounts/:id", delete(accounts::delete))
@@ -68,6 +71,7 @@ pub fn routes() -> Router<AppState> {
         .route("/tags/create", post(tags::create))
         .route("/tags/export", get(tags::export))
         .route("/tags/import", post(tags::import))
+        .route("/tags/import/preview", post(tags::import_preview))
         .route("/tags/search", get(tags::search))
         .route("/tags/:id/edit", get(tags::edit_form))
         .route("/tags/:id/update", post(tags::update))
@@ -79,6 +83,7 @@ pub fn routes() -> Router<AppState> {
         .route("/rules/create", post(rules::create))
         .route("/rules/export", get(rules::export))
         .route("/rules/import", post(rules::import))
+        .route("/rules/import/preview", post(rules::import_preview))
         .route("/rules/:id", get(rules::detail))
         .route("/rules/:id/edit", get(rules::edit_form))
         .route("/rules/:id/update", post(rules::update))
