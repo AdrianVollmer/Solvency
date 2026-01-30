@@ -106,7 +106,11 @@ pub fn apply_rule_category(
     if transaction_ids.is_empty() {
         return Ok(0);
     }
-    let placeholders: String = transaction_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let placeholders: String = transaction_ids
+        .iter()
+        .map(|_| "?")
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "UPDATE transactions SET category_id = ?, updated_at = datetime('now') WHERE id IN ({})",
         placeholders

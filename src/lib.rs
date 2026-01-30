@@ -1,11 +1,11 @@
 pub mod auth;
-pub mod form_utils;
 pub mod config;
 pub mod date_utils;
 pub mod db;
 pub mod error;
 pub mod error_pages;
 pub mod filters;
+pub mod form_utils;
 pub mod handlers;
 pub mod models;
 pub mod server;

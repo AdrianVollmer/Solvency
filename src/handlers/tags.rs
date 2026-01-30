@@ -101,8 +101,8 @@ pub async fn edit_form(
     let conn = state.db.get()?;
     let app_settings = state.load_settings()?;
 
-    let tag = tags::get_tag(&conn, id)?
-        .ok_or_else(|| AppError::NotFound("Tag not found".into()))?;
+    let tag =
+        tags::get_tag(&conn, id)?.ok_or_else(|| AppError::NotFound("Tag not found".into()))?;
 
     let template = TagFormTemplate {
         title: format!("Edit Tag: {}", tag.name),

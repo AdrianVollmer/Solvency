@@ -89,7 +89,10 @@ pub struct PageQuery {
 
 #[derive(Debug, Deserialize)]
 pub struct CategoryForm {
-    #[serde(default, deserialize_with = "crate::form_utils::deserialize_optional_i64")]
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
     pub category_id: Option<i64>,
 }
 
