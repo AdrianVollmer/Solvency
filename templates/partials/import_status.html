@@ -4,6 +4,54 @@
      hx-trigger="every 500ms"
      hx-swap="outerHTML"
      {% endif %}>
+
+{# Progress Steps #}
+<div class="flex items-center justify-center space-x-4 mb-8">
+    <div class="flex items-center">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center
+            {% if session.is_parsing() %}bg-primary-600 text-white{% else %}bg-green-500 text-white{% endif %}">
+            {% if session.is_parsing() %}
+                <span class="icon-xs animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+            {% else %}
+                <span class="icon-xs" aria-hidden="true">{{ icons.get("check")|safe }}</span>
+            {% endif %}
+        </div>
+        <span class="ml-2 text-sm font-medium">Upload</span>
+    </div>
+    <div class="w-12 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
+    <div class="flex items-center">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center
+            {% if session.is_preview() %}bg-primary-600 text-white
+            {% else %}{% if session.is_importing() || session.is_completed() %}bg-green-500 text-white
+            {% else %}bg-gray-300 dark:bg-gray-600 text-gray-500{% endif %}{% endif %}">
+            {% if session.is_preview() %}
+                2
+            {% else %}{% if session.is_importing() || session.is_completed() %}
+                <span class="icon-xs" aria-hidden="true">{{ icons.get("check")|safe }}</span>
+            {% else %}
+                2
+            {% endif %}{% endif %}
+        </div>
+        <span class="ml-2 text-sm font-medium">Preview</span>
+    </div>
+    <div class="w-12 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
+    <div class="flex items-center">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center
+            {% if session.is_importing() %}bg-primary-600 text-white
+            {% else %}{% if session.is_completed() %}bg-green-500 text-white
+            {% else %}bg-gray-300 dark:bg-gray-600 text-gray-500{% endif %}{% endif %}">
+            {% if session.is_importing() %}
+                <span class="icon-xs animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+            {% else %}{% if session.is_completed() %}
+                <span class="icon-xs" aria-hidden="true">{{ icons.get("check")|safe }}</span>
+            {% else %}
+                3
+            {% endif %}{% endif %}
+        </div>
+        <span class="ml-2 text-sm font-medium">Import</span>
+    </div>
+</div>
+
 {% match session.status %}
     {% when crate::models::ImportStatus::Parsing %}
         {# Parsing Progress #}
