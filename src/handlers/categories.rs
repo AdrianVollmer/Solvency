@@ -6,7 +6,7 @@ use axum::Form;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::db::queries::categories;
+use crate::db::queries::{categories, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::handlers::import_preview::{
     ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus, ImportPreviewTemplate,
@@ -40,6 +40,21 @@ pub struct CategoryFormTemplate {
     pub categories: Vec<CategoryWithPath>,
     pub editing: Option<Category>,
     pub palette: &'static [(&'static str, &'static str)],
+    pub back_url: String,
+}
+
+#[derive(Template)]
+#[template(path = "pages/category_detail.html")]
+pub struct CategoryDetailTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub icons: crate::filters::Icons,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub xsrf_token: String,
+    pub category: CategoryWithPath,
+    pub transaction_count: i64,
+    pub children: Vec<CategoryWithPath>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -69,6 +84,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         categories: cats,
         editing: None,
         palette: TAG_PALETTE,
+        back_url: "/categories".into(),
     };
 
     template.render_html()
@@ -90,6 +106,7 @@ pub async fn edit_form(
     let app_settings = state.load_settings()?;
     let cats = categories::list_categories_with_path(&conn)?;
 
+    let back_url = format!("/categories/{}", id);
     let template = CategoryFormTemplate {
         title: "Edit Category".into(),
         settings: app_settings,
@@ -100,6 +117,7 @@ pub async fn edit_form(
         categories: cats,
         editing: Some(category),
         palette: TAG_PALETTE,
+        back_url,
     };
 
     Ok(template.render_html()?.into_response())
@@ -121,6 +139,41 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         xsrf_token: state.xsrf_token.value().to_string(),
         delete_count: cats.len() as i64,
         categories: cats,
+    };
+
+    template.render_html()
+}
+
+pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+
+    let category = categories::get_category_with_path(&conn, id)?
+        .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
+
+    let app_settings = state.load_settings()?;
+
+    let filter = transactions::TransactionFilter {
+        category_id: Some(id),
+        ..Default::default()
+    };
+    let transaction_count = transactions::count_transactions(&conn, &filter)?;
+
+    let all_cats = categories::list_categories_with_path(&conn)?;
+    let children: Vec<CategoryWithPath> = all_cats
+        .into_iter()
+        .filter(|c| c.category.parent_id == Some(id))
+        .collect();
+
+    let template = CategoryDetailTemplate {
+        title: category.category.name.clone(),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        category,
+        transaction_count,
+        children,
     };
 
     template.render_html()
@@ -223,7 +276,7 @@ pub async fn update_form(
 
     categories::update_category(&conn, id, &new_category)?;
 
-    Ok(Redirect::to("/categories"))
+    Ok(Redirect::to(&format!("/categories/{}", id)))
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
@@ -245,6 +298,20 @@ pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>
     let conn = state.db.get()?;
 
     categories::delete_all_categories(&conn)?;
+
+    Ok(Html(String::new()))
+}
+
+pub async fn unset_transactions(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+
+    categories::get_category(&conn, id)?
+        .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
+
+    transactions::unset_category(&conn, id)?;
 
     Ok(Html(String::new()))
 }

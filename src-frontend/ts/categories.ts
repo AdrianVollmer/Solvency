@@ -81,7 +81,6 @@ function renderTree(): void {
 }
 
 const ICON_GRIP = '<svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
-const ICON_TRASH = '<svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>';
 
 // Render nodes recursively
 function renderNodes(nodes: CategoryNode[]): string {
@@ -89,9 +88,6 @@ function renderNodes(nodes: CategoryNode[]): string {
 
   let html = '';
   for (const node of nodes) {
-    // Note: node.name is already HTML-escaped by Askama, safe for innerHTML
-    // But for JS string context (onclick), we need to escape quotes
-    const nameForJs = node.name.replace(/'/g, "\\'");
     const iconSvg = inlineSvg(svgMap[node.icon] || "", "w-5 h-5 lucide-icon");
 
     const dragHandle = node.builtIn ? '' : `
@@ -99,32 +95,18 @@ function renderNodes(nodes: CategoryNode[]): string {
             ${ICON_GRIP}
           </div>`;
 
-    const nameContent = node.builtIn
-      ? `<div class="flex items-center gap-3 flex-1 min-w-0 pl-1">
-            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: ${node.color}20; color: ${node.color};">
-              ${iconSvg}
-            </span>
-            <span class="font-medium text-gray-900 dark:text-gray-100">${node.name}</span>
-          </div>`
-      : `<a href="/categories/${node.id}/edit" class="flex items-center gap-3 flex-1 min-w-0">
+    const nameContent = `<a href="/categories/${node.id}" class="flex items-center gap-3 flex-1 min-w-0${node.builtIn ? ' pl-1' : ''}">
             <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: ${node.color}20; color: ${node.color};">
               ${iconSvg}
             </span>
             <span class="font-medium text-gray-900 dark:text-gray-100">${node.name}</span>
           </a>`;
 
-    const deleteBtn = node.builtIn ? '' : `
-          <button onclick="event.stopPropagation(); window.categoriesPage.deleteCategory(${node.id}, '${nameForJs}')"
-            class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-            ${ICON_TRASH}
-          </button>`;
-
     html += `
       <div class="tree-node" data-id="${node.id}">
         <div class="category-row group">
           ${dragHandle}
           ${nameContent}
-          ${deleteBtn}
         </div>
         <div class="tree-children" data-parent-id="${node.id}">
           ${renderNodes(node.children)}
@@ -195,51 +177,6 @@ async function handleDragEnd(evt: any): Promise<void> {
   }
 }
 
-// API functions
-async function deleteCategory(id: number, name: string): Promise<void> {
-  const cat = categories.find(c => c.id === id);
-  if (cat?.builtIn) return;
-
-  if (!confirm(`Delete "${name}"? This will also delete all subcategories.`)) return;
-
-  try {
-    const headers: Record<string, string> = {};
-    const token = getXsrfToken();
-    if (token) headers['X-XSRF-Token'] = token;
-
-    const response = await fetch(`/categories/${id}`, {
-      method: 'DELETE',
-      headers,
-    });
-
-    if (response.ok) {
-      // Remove from local data and re-render
-      removeCategory(id);
-      renderTree();
-    } else {
-      alert('Failed to delete category');
-    }
-  } catch (e) {
-    alert('Error deleting category: ' + (e as Error).message);
-  }
-}
-
-function removeCategory(id: number): void {
-  // Remove this category and all descendants
-  const toRemove = new Set<number>([id]);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const cat of categories) {
-      if (cat.parentId !== null && toRemove.has(cat.parentId) && !toRemove.has(cat.id)) {
-        toRemove.add(cat.id);
-        changed = true;
-      }
-    }
-  }
-  categories = categories.filter(c => !toRemove.has(c.id));
-}
-
 async function updateCategoryParent(id: number, parentId: number | null): Promise<boolean> {
   const cat = categories.find(c => c.id === id);
   if (!cat) return false;
@@ -280,17 +217,15 @@ async function init(initialCategories: Category[]): Promise<void> {
   renderTree();
 }
 
-// Export functions for use in HTML onclick handlers
+// Export functions for use in HTML
 declare global {
   interface Window {
     categoriesPage: {
       init: (categories: Category[]) => void;
-      deleteCategory: (id: number, name: string) => Promise<void>;
     };
   }
 }
 
 window.categoriesPage = {
   init,
-  deleteCategory,
 };

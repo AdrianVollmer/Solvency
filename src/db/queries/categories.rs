@@ -167,6 +167,45 @@ pub fn delete_all_categories(conn: &Connection) -> rusqlite::Result<usize> {
     Ok(rows)
 }
 
+pub fn get_category_with_path(
+    conn: &Connection,
+    id: i64,
+) -> rusqlite::Result<Option<CategoryWithPath>> {
+    conn.query_row(
+        "WITH RECURSIVE category_path AS (
+            SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at,
+                   name as path, 0 as depth
+            FROM categories WHERE parent_id IS NULL
+            UNION ALL
+            SELECT c.id, c.name, c.parent_id, c.color, c.icon, c.built_in, c.created_at, c.updated_at,
+                   cp.path || ' > ' || c.name, cp.depth + 1
+            FROM categories c
+            JOIN category_path cp ON c.parent_id = cp.id
+        )
+        SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at, path, depth
+        FROM category_path
+        WHERE id = ?",
+        [id],
+        |row| {
+            Ok(CategoryWithPath {
+                category: Category {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    parent_id: row.get(2)?,
+                    color: row.get(3)?,
+                    icon: row.get(4)?,
+                    built_in: row.get(5)?,
+                    created_at: row.get(6)?,
+                    updated_at: row.get(7)?,
+                },
+                path: row.get(8)?,
+                depth: row.get(9)?,
+            })
+        },
+    )
+    .optional()
+}
+
 pub fn get_child_categories(conn: &Connection, parent_id: i64) -> rusqlite::Result<Vec<Category>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at

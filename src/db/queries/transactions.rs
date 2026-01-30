@@ -313,6 +313,19 @@ pub fn delete_transaction(conn: &Connection, id: i64) -> rusqlite::Result<bool> 
     Ok(rows > 0)
 }
 
+pub fn unset_category(conn: &Connection, category_id: i64) -> rusqlite::Result<usize> {
+    let rows = conn.execute(
+        "UPDATE transactions SET category_id = NULL, updated_at = datetime('now') WHERE category_id = ?",
+        [category_id],
+    )?;
+    debug!(
+        category_id = category_id,
+        count = rows,
+        "Unset category from transactions"
+    );
+    Ok(rows)
+}
+
 pub fn delete_all_transactions(conn: &Connection) -> rusqlite::Result<usize> {
     conn.execute("DELETE FROM transaction_tags", [])?;
     let rows = conn.execute("DELETE FROM transactions", [])?;

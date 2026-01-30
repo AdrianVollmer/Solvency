@@ -53,8 +53,13 @@ pub fn routes() -> Router<AppState> {
             post(categories::import_preview),
         )
         .route("/categories/delete-all", delete(categories::delete_all))
+        .route("/categories/:id", get(categories::show))
         .route("/categories/:id/edit", get(categories::edit_form))
         .route("/categories/:id/update", post(categories::update_form))
+        .route(
+            "/categories/:id/unset-transactions",
+            post(categories::unset_transactions),
+        )
         .route("/categories/:id", put(categories::update))
         .route("/categories/:id", delete(categories::delete))
         // Account management
