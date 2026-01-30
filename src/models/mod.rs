@@ -18,7 +18,7 @@ pub use market_data::{MarketData, NewMarketData, SymbolDataCoverage};
 pub use net_worth::{NetWorthDataPoint, NetWorthSummary};
 pub use rule::{NewRule, Rule, RuleActionType};
 pub use settings::Settings;
-pub use tag::{NewTag, Tag, TagStyle};
+pub use tag::{NewTag, Tag, TagStyle, TagWithUsage, TAG_PALETTE};
 pub use trading::{
     NewTradingActivity, Position, PositionWithMarketData, TradingActivity, TradingActivityType,
     TradingImportRow, TradingImportRowStatus, TradingImportSession, TradingImportStatus,

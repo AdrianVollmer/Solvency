@@ -69,6 +69,8 @@ pub fn routes() -> Router<AppState> {
         .route("/tags/export", get(tags::export))
         .route("/tags/import", post(tags::import))
         .route("/tags/search", get(tags::search))
+        .route("/tags/:id/edit", get(tags::edit_form))
+        .route("/tags/:id/update", post(tags::update))
         .route("/tags/:id", delete(tags::delete))
         .route("/tags/delete-all", delete(tags::delete_all))
         // Rule management

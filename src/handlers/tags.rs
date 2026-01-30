@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::queries::tags;
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{NewTag, Settings, Tag, TagStyle};
+use crate::models::{NewTag, Settings, Tag, TagStyle, TagWithUsage, TAG_PALETTE};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -20,7 +20,7 @@ pub struct TagsTemplate {
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
-    pub tags: Vec<Tag>,
+    pub tags: Vec<TagWithUsage>,
     pub delete_count: i64,
 }
 
@@ -33,6 +33,8 @@ pub struct TagFormTemplate {
     pub manifest: JsManifest,
     pub version: &'static str,
     pub xsrf_token: String,
+    pub editing: Option<Tag>,
+    pub palette: &'static [(&'static str, &'static str)],
 }
 
 #[derive(Template)]
@@ -59,7 +61,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 
     let app_settings = state.load_settings()?;
 
-    let tag_list = tags::list_tags(&conn)?;
+    let tag_list = tags::list_tags_with_usage(&conn)?;
 
     let template = TagsTemplate {
         title: "Tags".into(),
@@ -85,9 +87,53 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
+        editing: None,
+        palette: TAG_PALETTE,
     };
 
     template.render_html()
+}
+
+pub async fn edit_form(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let tag = tags::get_tag(&conn, id)?
+        .ok_or_else(|| AppError::NotFound("Tag not found".into()))?;
+
+    let template = TagFormTemplate {
+        title: format!("Edit Tag: {}", tag.name),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        editing: Some(tag),
+        palette: TAG_PALETTE,
+    };
+
+    template.render_html()
+}
+
+pub async fn update(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Form(form): Form<TagFormData>,
+) -> AppResult<Redirect> {
+    let conn = state.db.get()?;
+
+    let updated_tag = NewTag {
+        name: form.name,
+        color: form.color.unwrap_or_else(|| "#6b7280".into()),
+        style: form.style.map(|s| TagStyle::parse(&s)).unwrap_or_default(),
+    };
+
+    tags::update_tag(&conn, id, &updated_tag)?;
+
+    Ok(Redirect::to("/tags"))
 }
 
 pub async fn search(

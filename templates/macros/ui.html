@@ -62,8 +62,9 @@
     {% call ui::stat_card_with_secondary(label="Gain", value="+$50", secondary="10%", trend="up") %}
 
     Tag badge:
-    {% call ui::tag_badge(color="#3b82f6", name="Tag", style="solid") %}
-    {% call ui::tag_badge_deletable(color="#3b82f6", name="Tag", style="solid", tag_id="123", endpoint="/tags/123") %}
+    {% call ui::tag_badge_solid(color="#3b82f6", name="Tag", text_color="white") %}
+    {% call ui::tag_badge(color="#3b82f6", name="Tag", text_color="#1e3a5f") %}
+    {% call ui::tag_badge_striped(color="#3b82f6", name="Tag", text_color="#1e3a5f") %}
 
     Page action bar (resource listing pages):
     {% call ui::page_action_bar(
@@ -249,18 +250,23 @@
 {% endmacro %}
 
 {# Tag badge (solid style) #}
-{% macro tag_badge_solid(color, name) %}
-<span class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}; color: white;">{{ name }}</span>
+{% macro tag_badge_solid(color, name, text_color) %}
+<span class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}; color: {{ text_color }};">{{ name }}</span>
 {% endmacro %}
 
-{# Tag badge (ghost style) #}
-{% macro tag_badge(color, name) %}
-<span class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}14; color: {{ color }};">{{ name }}</span>
+{# Tag badge (ghost/outline style) #}
+{% macro tag_badge(color, name, text_color) %}
+<span class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}1a; color: {{ text_color }};">{{ name }}</span>
+{% endmacro %}
+
+{# Tag badge (striped style) #}
+{% macro tag_badge_striped(color, name, text_color) %}
+<span class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background: repeating-linear-gradient(135deg, {{ color }}25 0px, {{ color }}25 2px, {{ color }}0a 2px, {{ color }}0a 6px); color: {{ text_color }};">{{ name }}</span>
 {% endmacro %}
 
 {# Tag badge with delete button (solid style) #}
-{% macro tag_badge_deletable_solid(color, name, tag_id) %}
-<span id="tag-{{ tag_id }}" class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}; color: white;">
+{% macro tag_badge_deletable_solid(color, name, tag_id, text_color) %}
+<span id="tag-{{ tag_id }}" class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}; color: {{ text_color }};">
     {{ name }}
     <button
         hx-delete="/tags/{{ tag_id }}"
@@ -268,15 +274,16 @@
         hx-swap="outerHTML"
         hx-confirm="Are you sure you want to delete this tag?"
         hx-disabled-elt="this"
-        class="hover:opacity-75">
+        class="hover:opacity-75"
+        aria-label="Delete tag {{ name }}">
         <span class="w-3 h-3">{{ icons.get("x")|safe }}</span>
     </button>
 </span>
 {% endmacro %}
 
-{# Tag badge with delete button (ghost style) #}
-{% macro tag_badge_deletable(color, name, tag_id) %}
-<span id="tag-{{ tag_id }}" class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}14; color: {{ color }};">
+{# Tag badge with delete button (ghost/outline style) #}
+{% macro tag_badge_deletable(color, name, tag_id, text_color) %}
+<span id="tag-{{ tag_id }}" class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}1a; color: {{ text_color }};">
     {{ name }}
     <button
         hx-delete="/tags/{{ tag_id }}"
@@ -284,7 +291,25 @@
         hx-swap="outerHTML"
         hx-confirm="Are you sure you want to delete this tag?"
         hx-disabled-elt="this"
-        class="hover:opacity-75">
+        class="hover:opacity-75"
+        aria-label="Delete tag {{ name }}">
+        <span class="w-3 h-3">{{ icons.get("x")|safe }}</span>
+    </button>
+</span>
+{% endmacro %}
+
+{# Tag badge with delete button (striped style) #}
+{% macro tag_badge_deletable_striped(color, name, tag_id, text_color) %}
+<span id="tag-{{ tag_id }}" class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background: repeating-linear-gradient(135deg, {{ color }}25 0px, {{ color }}25 2px, {{ color }}0a 2px, {{ color }}0a 6px); color: {{ text_color }};">
+    {{ name }}
+    <button
+        hx-delete="/tags/{{ tag_id }}"
+        hx-target="#tag-{{ tag_id }}"
+        hx-swap="outerHTML"
+        hx-confirm="Are you sure you want to delete this tag?"
+        hx-disabled-elt="this"
+        class="hover:opacity-75"
+        aria-label="Delete tag {{ name }}">
         <span class="w-3 h-3">{{ icons.get("x")|safe }}</span>
     </button>
 </span>

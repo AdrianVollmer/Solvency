@@ -3,30 +3,49 @@
 
 {% block content %}
 {% call ui::page_container(max_width="max-w-lg") %}
+    {% match editing %}
+    {% when Some with (tag) %}
+    {% call ui::page_header(title="Edit Tag", back_url="/tags", back_label="Tags", subtitle="Update tag properties") %}{% endcall %}
+    {% when None %}
     {% call ui::page_header(title="Add Tag", back_url="/tags", back_label="Tags", subtitle="Create a new tag to label transactions") %}{% endcall %}
+    {% endmatch %}
 
     {% call ui::card() %}
-        <form action="/tags/create" method="POST" class="space-y-4">
+        <form id="tag-form" action="{% match editing %}{% when Some with (tag) %}/tags/{{ tag.id }}/update{% when None %}/tags/create{% endmatch %}" method="POST" class="space-y-4">
             <div>
                 <label for="tag-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
                 <input type="text" id="tag-name" name="name" required
                     class="input w-full"
-                    placeholder="e.g., Vacation, Business">
+                    placeholder="e.g., Vacation, Business"
+                    value="{% match editing %}{% when Some with (tag) %}{{ tag.name }}{% when None %}{% endmatch %}">
             </div>
 
             <div>
                 <label for="tag-color" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Color</label>
-                <input type="color" id="tag-color" name="color" value="#6b7280"
-                    class="h-10 w-20 rounded border border-neutral-200 dark:border-neutral-700 cursor-pointer">
+                <select id="tag-color" name="color" class="input w-full" data-color-select>
+                    {% for entry in palette %}
+                    <option value="{{ entry.1 }}"
+                        {% match editing %}{% when Some with (tag) %}{% if tag.color == entry.1 %} selected{% endif %}{% when None %}{% if entry.1 == "#6b7280" %} selected{% endif %}{% endmatch %}>
+                        {{ entry.0 }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
 
             <div>
                 <label for="tag-style" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Style</label>
                 <select id="tag-style" name="style" class="input w-full">
-                    <option value="solid">Solid</option>
-                    <option value="outline">Outline</option>
-                    <option value="striped">Striped</option>
+                    <option value="solid"{% match editing %}{% when Some with (tag) %}{% if tag.style.as_str() == "solid" %} selected{% endif %}{% when None %}{% endmatch %}>Solid</option>
+                    <option value="outline"{% match editing %}{% when Some with (tag) %}{% if tag.style.as_str() == "outline" %} selected{% endif %}{% when None %}{% endmatch %}>Outline</option>
+                    <option value="striped"{% match editing %}{% when Some with (tag) %}{% if tag.style.as_str() == "striped" %} selected{% endif %}{% when None %}{% endmatch %}>Striped</option>
                 </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Preview</label>
+                <div id="tag-preview" class="flex items-center justify-center py-4 px-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+                    <span class="text-sm text-neutral-400 dark:text-neutral-500">Loading preview…</span>
+                </div>
             </div>
 
             <div class="flex gap-3 pt-4">
@@ -34,10 +53,35 @@
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary flex-1">
-                    Add Tag
+                    {% match editing %}{% when Some with (_tag) %}Save Changes{% when None %}Add Tag{% endmatch %}
                 </button>
             </div>
         </form>
+
+        {% match editing %}
+        {% when Some with (tag) %}
+        <div class="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-neutral-900 dark:text-white">Delete tag</h3>
+                    <p class="text-sm text-neutral-500 dark:text-neutral-400">Permanently remove this tag from all transactions.</p>
+                </div>
+                <button
+                    hx-delete="/tags/{{ tag.id }}"
+                    data-confirm-modal="Are you sure you want to delete this tag? It will be removed from all transactions."
+                    hx-target="body"
+                    hx-swap="none"
+                    hx-on::after-request="if(event.detail.successful) window.location.href='/tags'"
+                    hx-disabled-elt="this"
+                    class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+                    <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+                    Delete
+                </button>
+            </div>
+        </div>
+        {% when None %}
+        {% endmatch %}
     {% endcall %}
 {% endcall %}
+<script src="/static/js/dist/{{ manifest.get("tag-form.js") }}" defer></script>
 {% endblock %}

@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use crate::db::queries::categories;
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{Category, CategoryWithPath, NewCategory, Settings};
+use crate::models::{Category, CategoryWithPath, NewCategory, Settings, TAG_PALETTE};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -36,6 +36,7 @@ pub struct CategoryFormTemplate {
     pub xsrf_token: String,
     pub categories: Vec<CategoryWithPath>,
     pub editing: Option<Category>,
+    pub palette: &'static [(&'static str, &'static str)],
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,6 +61,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         xsrf_token: state.xsrf_token.value().to_string(),
         categories: cats,
         editing: None,
+        palette: TAG_PALETTE,
     };
 
     template.render_html()
@@ -86,6 +88,7 @@ pub async fn edit_form(
         xsrf_token: state.xsrf_token.value().to_string(),
         categories: cats,
         editing: Some(category),
+        palette: TAG_PALETTE,
     };
 
     template.render_html()

@@ -405,6 +405,28 @@ function initScrollHints(): void {
   });
 }
 
+// Decorate <select data-color-select> elements with a colored dot
+function initColorSelects(): void {
+  for (const select of document.querySelectorAll<HTMLSelectElement>("select[data-color-select]")) {
+    decorateColorSelect(select);
+  }
+}
+
+function decorateColorSelect(select: HTMLSelectElement): void {
+  function applyDot(): void {
+    const color = select.value;
+    const dot = encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5" fill="${color}"/></svg>`
+    );
+    select.style.backgroundImage = `url("data:image/svg+xml,${dot}")`;
+    select.style.backgroundRepeat = "no-repeat";
+    select.style.backgroundPosition = "8px center";
+    select.style.paddingLeft = "28px";
+  }
+  select.addEventListener("change", applyDot);
+  applyDot();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initSidebar();
@@ -413,6 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initConfirmModal();
   initKeyboardShortcuts();
   initScrollHints();
+  initColorSelects();
   registerServiceWorker();
 
   // Initialize XSRF protection

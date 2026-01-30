@@ -1,4 +1,4 @@
-use crate::models::tag::{NewTag, Tag, TagStyle};
+use crate::models::tag::{NewTag, Tag, TagStyle, TagWithUsage};
 use rusqlite::{params, Connection, OptionalExtension};
 use tracing::{debug, warn};
 
@@ -18,6 +18,36 @@ pub fn list_tags(conn: &Connection) -> rusqlite::Result<Vec<Tag>> {
                 color: row.get(2)?,
                 style: TagStyle::parse(&style_str),
                 created_at: row.get(4)?,
+            })
+        })?
+        .filter_map(|t| t.ok())
+        .collect();
+
+    Ok(tags)
+}
+
+pub fn list_tags_with_usage(conn: &Connection) -> rusqlite::Result<Vec<TagWithUsage>> {
+    let mut stmt = conn.prepare(
+        "SELECT t.id, t.name, t.color, t.style, t.created_at,
+                COUNT(tt.transaction_id) AS usage_count
+         FROM tags t
+         LEFT JOIN transaction_tags tt ON t.id = tt.tag_id
+         GROUP BY t.id
+         ORDER BY t.name",
+    )?;
+
+    let tags = stmt
+        .query_map([], |row| {
+            let style_str: String = row.get(3)?;
+            Ok(TagWithUsage {
+                tag: Tag {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    color: row.get(2)?,
+                    style: TagStyle::parse(&style_str),
+                    created_at: row.get(4)?,
+                },
+                usage_count: row.get(5)?,
             })
         })?
         .filter_map(|t| t.ok())

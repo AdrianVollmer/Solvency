@@ -40,8 +40,14 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="category-color" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Color</label>
-                    <input type="color" id="category-color" name="color" value="{% match editing %}{% when Some with (cat) %}{{ cat.color }}{% when None %}#6b7280{% endmatch %}"
-                        class="h-10 w-20 rounded border border-neutral-200 dark:border-neutral-700 cursor-pointer">
+                    <select id="category-color" name="color" class="input w-full" data-color-select>
+                        {% for entry in palette %}
+                        <option value="{{ entry.1 }}"
+                            {% match editing %}{% when Some with (cat) %}{% if cat.color == entry.1 %} selected{% endif %}{% when None %}{% if entry.1 == "#6b7280" %} selected{% endif %}{% endmatch %}>
+                            {{ entry.0 }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div>
                     <label for="category-icon" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Icon</label>

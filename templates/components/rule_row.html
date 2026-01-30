@@ -24,7 +24,7 @@
                 <span class="text-neutral-500 dark:text-neutral-400">Tag:</span>
                 {% for tag in tags %}
                     {% if tag.id.to_string() == rule.action_value %}
-                        {% call ui::tag_badge_solid(color=tag.color.as_str(), name=tag.name.as_str()) %}{% endcall %}
+                        {% call ui::tag_badge_solid(color=tag.color.as_str(), name=tag.name.as_str(), text_color=tag.text_color()) %}{% endcall %}
                     {% endif %}
                 {% endfor %}
             {% endif %}
