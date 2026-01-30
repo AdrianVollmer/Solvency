@@ -364,10 +364,15 @@ pub async fn import(
 
     let mut created = 0;
     let mut skipped = 0;
+    let mut errors: Vec<String> = Vec::new();
 
     for item in data {
         if existing_names.contains(&item.name) {
             skipped += 1;
+            errors.push(format!(
+                "\"{}\": a rule with this name already exists",
+                item.name
+            ));
             continue;
         }
 
@@ -378,7 +383,11 @@ pub async fn import(
                     id.to_string()
                 } else {
                     skipped += 1;
-                    continue; // Skip if category not found
+                    errors.push(format!(
+                        "\"{}\": category \"{}\" not found",
+                        item.name, item.action_value
+                    ));
+                    continue;
                 }
             }
             RuleActionType::AssignTag => {
@@ -386,7 +395,11 @@ pub async fn import(
                     id.to_string()
                 } else {
                     skipped += 1;
-                    continue; // Skip if tag not found
+                    errors.push(format!(
+                        "\"{}\": tag \"{}\" not found",
+                        item.name, item.action_value
+                    ));
+                    continue;
                 }
             }
         };
@@ -404,6 +417,7 @@ pub async fn import(
     Ok(Json(serde_json::json!({
         "imported": created,
         "skipped": skipped,
+        "errors": errors,
         "message": format!("Imported {} rules, skipped {}", created, skipped)
     })))
 }

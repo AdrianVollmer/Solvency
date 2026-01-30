@@ -156,8 +156,18 @@
                 body: JSON.stringify(data)
             });
             var result = await response.json();
+            var hasErrors = Array.isArray(result.errors) && result.errors.length > 0;
+            var toastType = result.imported > 0 ? 'success' : (hasErrors ? 'warning' : 'info');
+            var msg = result.message;
+            if (hasErrors) {
+                msg += '<ul class="mt-2 list-disc list-inside text-xs opacity-90">';
+                for (var err of result.errors) {
+                    msg += '<li>' + err.replace(/</g, '&lt;') + '</li>';
+                }
+                msg += '</ul>';
+            }
             if (typeof showToast === 'function') {
-                showToast(result.message, { type: result.imported > 0 ? 'success' : 'info' });
+                showToast(msg, { type: toastType, duration: hasErrors ? 0 : 5000 });
             } else {
                 alert(result.message);
             }
