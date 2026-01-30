@@ -41,6 +41,34 @@ pub struct RuleFormTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "pages/rule_detail.html")]
+pub struct RuleDetailTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub icons: crate::filters::Icons,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub xsrf_token: String,
+    pub rule: Rule,
+    pub categories: Vec<CategoryWithPath>,
+    pub tags: Vec<Tag>,
+}
+
+#[derive(Template)]
+#[template(path = "pages/rule_edit.html")]
+pub struct RuleEditTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub icons: crate::filters::Icons,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub xsrf_token: String,
+    pub rule: Rule,
+    pub categories: Vec<CategoryWithPath>,
+    pub tags: Vec<Tag>,
+}
+
+#[derive(Template)]
 #[template(path = "components/rule_row.html")]
 pub struct RuleRowTemplate {
     pub icons: crate::filters::Icons,
@@ -102,6 +130,57 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
     template.render_html()
 }
 
+pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let rule =
+        rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
+    let category_list = categories::list_categories_with_path(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+
+    let template = RuleDetailTemplate {
+        title: format!("Rule: {}", rule.name),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        rule,
+        categories: category_list,
+        tags: tag_list,
+    };
+
+    template.render_html()
+}
+
+pub async fn edit_form(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let rule =
+        rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
+    let category_list = categories::list_categories_with_path(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+
+    let template = RuleEditTemplate {
+        title: format!("Edit Rule: {}", rule.name),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        rule,
+        categories: category_list,
+        tags: tag_list,
+    };
+
+    template.render_html()
+}
+
 pub async fn create(
     State(state): State<AppState>,
     Form(form): Form<RuleFormData>,
@@ -127,7 +206,7 @@ pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Form(form): Form<RuleFormData>,
-) -> AppResult<Html<String>> {
+) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
     let action_type = RuleActionType::parse(&form.action_type)
@@ -142,20 +221,7 @@ pub async fn update(
 
     rules::update_rule(&conn, id, &updated_rule)?;
 
-    let rule =
-        rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
-
-    let category_list = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
-
-    let template = RuleRowTemplate {
-        icons: crate::filters::Icons,
-        rule,
-        categories: category_list,
-        tags: tag_list,
-    };
-
-    template.render_html()
+    Ok(Redirect::to(&format!("/rules/{id}")))
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block content %}
+<div class="space-y-6 max-w-2xl mx-auto">
+    {% let back_url = format!("/rules/{}", self.rule.id) %}
+    {% call ui::page_header(title="Edit Rule", back_url=back_url.as_str(), back_label="Details") %}{% endcall %}
+
+    {% call ui::card() %}
+        <form action="/rules/{{ rule.id }}/update" method="POST" class="space-y-4">
+            {% call ui::field(label="Name", id="rule-name") %}
+                <input type="text" id="rule-name" name="name" required value="{{ rule.name }}"
+                    class="input w-full">
+            {% endcall %}
+
+            {% call ui::field(label="Pattern (regex)", id="rule-pattern") %}
+                <input type="text" id="rule-pattern" name="pattern" required value="{{ rule.pattern }}"
+                    class="input w-full font-mono text-sm">
+            {% endcall %}
+
+            <div class="grid grid-cols-2 gap-4">
+                {% call ui::field(label="Action", id="action-type-select") %}
+                    <select name="action_type" id="action-type-select" class="input w-full" onchange="toggleActionValue(this)">
+                        <option value="assign_category" {% if rule.action_type.as_str() == "assign_category" %}selected{% endif %}>Assign Category</option>
+                        <option value="assign_tag" {% if rule.action_type.as_str() == "assign_tag" %}selected{% endif %}>Assign Tag</option>
+                    </select>
+                {% endcall %}
+                <div>
+                    <label for="action-value-category" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Value</label>
+                    <select name="{% if rule.action_type.as_str() == "assign_category" %}action_value{% endif %}" id="action-value-category" class="{% if rule.action_type.as_str() != "assign_category" %}hidden {% endif %}input w-full">
+                        {% for cat in categories %}
+                        <option value="{{ cat.category.id }}" {% if rule.action_value == cat.category.id.to_string() %}selected{% endif %}>{{ cat.path }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="{% if rule.action_type.as_str() == "assign_tag" %}action_value{% endif %}" id="action-value-tag" class="{% if rule.action_type.as_str() != "assign_tag" %}hidden {% endif %}input w-full">
+                        {% for tag in tags %}
+                        <option value="{{ tag.id }}" {% if rule.action_value == tag.id.to_string() %}selected{% endif %}>{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                <a href="/rules/{{ rule.id }}"
+                    class="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-center">
+                    Cancel
+                </a>
+                <button type="submit"
+                    class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    {% endcall %}
+</div>
+
+<script>
+function toggleActionValue(select) {
+    const categorySelect = document.getElementById('action-value-category');
+    const tagSelect = document.getElementById('action-value-tag');
+
+    if (select.value === 'assign_category') {
+        categorySelect.classList.remove('hidden');
+        categorySelect.name = 'action_value';
+        tagSelect.classList.add('hidden');
+        tagSelect.name = '';
+    } else {
+        categorySelect.classList.add('hidden');
+        categorySelect.name = '';
+        tagSelect.classList.remove('hidden');
+        tagSelect.name = 'action_value';
+    }
+}
+</script>
+{% endblock %}

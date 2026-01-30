@@ -292,20 +292,6 @@
 </button>
 {% endmacro %}
 
-{# Delete button for rules #}
-{% macro delete_rule_button(rule_id, confirm, label) %}
-<button
-    hx-delete="/rules/{{ rule_id }}"
-    hx-target="#rule-{{ rule_id }}"
-    hx-swap="outerHTML"
-    hx-confirm="{{ confirm }}"
-    hx-disabled-elt="this"
-    class="p-2 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-    aria-label="{{ label }}">
-    <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
-</button>
-{% endmacro %}
-
 {# Delete button for categories #}
 {% macro delete_category_button(category_id, confirm, label) %}
 <button
@@ -343,6 +329,21 @@
     hx-target="body"
     hx-swap="none"
     hx-on::after-request="if(event.detail.successful) window.location.href='/transactions'"
+    hx-disabled-elt="this"
+    class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
+    <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+    {{ label }}
+</button>
+{% endmacro %}
+
+{# Delete rule action with redirect to rules list #}
+{% macro delete_rule_action(rule_id, confirm, label) %}
+<button
+    hx-delete="/rules/{{ rule_id }}/delete"
+    hx-confirm="{{ confirm }}"
+    hx-target="body"
+    hx-swap="none"
+    hx-on::after-request="if(event.detail.successful) window.location.href='/rules'"
     hx-disabled-elt="this"
     class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
     <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
