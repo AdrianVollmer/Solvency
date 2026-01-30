@@ -45,6 +45,25 @@ impl Icons {
         ICONS.get(name).copied().unwrap_or("").to_string()
     }
 
+    /// Get an icon SVG by name, returning None if not found.
+    pub fn svg(name: &str) -> Option<&'static str> {
+        ICONS.get(name).copied()
+    }
+
+    /// Return all available icon names, sorted alphabetically.
+    pub fn names() -> Vec<&'static str> {
+        let mut names: Vec<&str> = ICONS.keys().copied().collect();
+        names.sort_unstable();
+        names
+    }
+
+    /// Return all icons as (name, svg) pairs, sorted by name.
+    pub fn all() -> Vec<(&'static str, &'static str)> {
+        let mut entries: Vec<(&str, &str)> = ICONS.entries().map(|(k, v)| (*k, *v)).collect();
+        entries.sort_unstable_by_key(|(k, _)| *k);
+        entries
+    }
+
     /// Get an icon as an SVG symbol element for sprite sheets.
     /// Returns `<symbol id="name">...</symbol>` markup.
     pub fn symbol(&self, name: &str) -> String {

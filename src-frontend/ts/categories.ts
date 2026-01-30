@@ -21,6 +21,21 @@ interface CategoryNode extends Category {
 
 let categories: Category[] = [];
 let sortableInstances: any[] = [];
+let svgMap: Record<string, string> = {};
+
+async function fetchIcons(): Promise<void> {
+  try {
+    const resp = await fetch("/api/icons/all");
+    svgMap = await resp.json();
+  } catch {
+    // Icons will render empty; non-critical
+  }
+}
+
+function inlineSvg(svg: string, classes: string): string {
+  if (!svg) return "";
+  return svg.replace("<svg", `<svg class="${classes}"`);
+}
 
 // Decode HTML entities for plain text usage (API calls, form values)
 function decodeHtml(html: string): string {
@@ -64,6 +79,9 @@ function renderTree(): void {
   initSortable();
 }
 
+const ICON_GRIP = '<svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
+const ICON_TRASH = '<svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>';
+
 // Render nodes recursively
 function renderNodes(nodes: CategoryNode[]): string {
   if (nodes.length === 0) return '';
@@ -73,21 +91,22 @@ function renderNodes(nodes: CategoryNode[]): string {
     // Note: node.name is already HTML-escaped by Askama, safe for innerHTML
     // But for JS string context (onclick), we need to escape quotes
     const nameForJs = node.name.replace(/'/g, "\\'");
+    const iconSvg = inlineSvg(svgMap[node.icon] || "", "w-5 h-5 lucide-icon");
     html += `
       <div class="tree-node" data-id="${node.id}">
         <div class="category-row group">
           <div class="drag-handle cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-none">
-            <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24"><use href="#grip-vertical"/></svg>
+            ${ICON_GRIP}
           </div>
           <a href="/categories/${node.id}/edit" class="flex items-center gap-3 flex-1 min-w-0">
             <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: ${node.color}20; color: ${node.color};">
-              <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#${node.icon}"/></svg>
+              ${iconSvg}
             </span>
             <span class="font-medium text-gray-900 dark:text-gray-100">${node.name}</span>
           </a>
           <button onclick="event.stopPropagation(); window.categoriesPage.deleteCategory(${node.id}, '${nameForJs}')"
             class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-            <svg class="w-5 h-5 lucide-icon" viewBox="0 0 24 24"><use href="#trash-2"/></svg>
+            ${ICON_TRASH}
           </button>
         </div>
         <div class="tree-children" data-parent-id="${node.id}">
@@ -229,8 +248,9 @@ async function updateCategoryParent(id: number, parentId: number | null): Promis
 }
 
 // Initialize
-function init(initialCategories: Category[]): void {
+async function init(initialCategories: Category[]): Promise<void> {
   categories = initialCategories;
+  await fetchIcons();
   renderTree();
 }
 

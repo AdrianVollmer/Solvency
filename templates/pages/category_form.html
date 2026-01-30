@@ -2,75 +2,6 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-{# SVG sprite sheet for icon picker #}
-<svg class="hidden" aria-hidden="true">
-  {{ icons.symbol("folder")|safe }}
-  {{ icons.symbol("house")|safe }}
-  {{ icons.symbol("car")|safe }}
-  {{ icons.symbol("utensils")|safe }}
-  {{ icons.symbol("shopping-cart")|safe }}
-  {{ icons.symbol("shopping-bag")|safe }}
-  {{ icons.symbol("heart")|safe }}
-  {{ icons.symbol("zap")|safe }}
-  {{ icons.symbol("film")|safe }}
-  {{ icons.symbol("music")|safe }}
-  {{ icons.symbol("gamepad-2")|safe }}
-  {{ icons.symbol("plane")|safe }}
-  {{ icons.symbol("train-front")|safe }}
-  {{ icons.symbol("bus")|safe }}
-  {{ icons.symbol("fuel")|safe }}
-  {{ icons.symbol("parking-meter")|safe }}
-  {{ icons.symbol("gift")|safe }}
-  {{ icons.symbol("coffee")|safe }}
-  {{ icons.symbol("pizza")|safe }}
-  {{ icons.symbol("apple")|safe }}
-  {{ icons.symbol("beer")|safe }}
-  {{ icons.symbol("wine")|safe }}
-  {{ icons.symbol("pill")|safe }}
-  {{ icons.symbol("stethoscope")|safe }}
-  {{ icons.symbol("graduation-cap")|safe }}
-  {{ icons.symbol("book")|safe }}
-  {{ icons.symbol("briefcase")|safe }}
-  {{ icons.symbol("building")|safe }}
-  {{ icons.symbol("landmark")|safe }}
-  {{ icons.symbol("banknote")|safe }}
-  {{ icons.symbol("credit-card")|safe }}
-  {{ icons.symbol("wallet")|safe }}
-  {{ icons.symbol("piggy-bank")|safe }}
-  {{ icons.symbol("receipt")|safe }}
-  {{ icons.symbol("calculator")|safe }}
-  {{ icons.symbol("percent")|safe }}
-  {{ icons.symbol("tag")|safe }}
-  {{ icons.symbol("tags")|safe }}
-  {{ icons.symbol("scissors")|safe }}
-  {{ icons.symbol("shirt")|safe }}
-  {{ icons.symbol("smartphone")|safe }}
-  {{ icons.symbol("tv")|safe }}
-  {{ icons.symbol("monitor")|safe }}
-  {{ icons.symbol("laptop")|safe }}
-  {{ icons.symbol("headphones")|safe }}
-  {{ icons.symbol("camera")|safe }}
-  {{ icons.symbol("wrench")|safe }}
-  {{ icons.symbol("hammer")|safe }}
-  {{ icons.symbol("paintbrush")|safe }}
-  {{ icons.symbol("brush")|safe }}
-  {{ icons.symbol("baby")|safe }}
-  {{ icons.symbol("dog")|safe }}
-  {{ icons.symbol("cat")|safe }}
-  {{ icons.symbol("tree-deciduous")|safe }}
-  {{ icons.symbol("flower")|safe }}
-  {{ icons.symbol("sun")|safe }}
-  {{ icons.symbol("cloud")|safe }}
-  {{ icons.symbol("umbrella")|safe }}
-  {{ icons.symbol("sparkles")|safe }}
-  {{ icons.symbol("star")|safe }}
-  {{ icons.symbol("ellipsis")|safe }}
-  {{ icons.symbol("circle")|safe }}
-  {{ icons.symbol("square")|safe }}
-  {{ icons.symbol("triangle")|safe }}
-  {{ icons.symbol("hexagon")|safe }}
-</svg>
-
 {% call ui::page_container(max_width="max-w-lg") %}
     {% match editing %}
     {% when Some with (cat) %}
@@ -149,8 +80,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script type="application/json" id="icon-list-data">
-["folder","house","car","utensils","shopping-cart","shopping-bag","heart","zap","film","music","gamepad-2","plane","train-front","bus","fuel","parking-meter","gift","coffee","pizza","apple","beer","wine","pill","stethoscope","graduation-cap","book","briefcase","building","landmark","banknote","credit-card","wallet","piggy-bank","receipt","calculator","percent","tag","tags","scissors","shirt","smartphone","tv","monitor","laptop","headphones","camera","wrench","hammer","paintbrush","brush","baby","dog","cat","tree-deciduous","flower","sun","cloud","umbrella","sparkles","star","ellipsis","circle","square","triangle","hexagon"]
-</script>
 <script src="/static/js/dist/{{ manifest.get("category-form.js") }}" defer></script>
 {% endblock %}

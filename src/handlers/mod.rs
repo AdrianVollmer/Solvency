@@ -244,6 +244,10 @@ pub fn routes() -> Router<AppState> {
             get(api::monthly_by_category),
         )
         .route("/api/analytics/flow-sankey", get(api::flow_sankey))
+        // Icons API
+        .route("/api/icons", get(api::icon_names))
+        .route("/api/icons/all", get(api::icon_all))
+        .route("/api/icons/:name", get(api::icon_svg))
         // Health check
         .route("/health", get(health))
 }

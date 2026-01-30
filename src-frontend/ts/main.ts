@@ -80,7 +80,7 @@ function showToast(message: string, options: ToastOptions = {}): void {
     <div class="flex items-start gap-3">
       <div class="flex-1 text-sm">${message}</div>
       <button class="text-white/80 hover:text-white flex-shrink-0" onclick="this.closest('.toast-item')?.remove(); this.parentElement?.parentElement?.remove();">
-        <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24"><use href="#x"/></svg>
+        <svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
   `;

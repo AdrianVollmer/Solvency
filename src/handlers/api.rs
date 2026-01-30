@@ -1,10 +1,12 @@
-use axum::extract::{Query, State};
-use axum::response::Json;
+use axum::extract::{Path, Query, State};
+use axum::http::{header, StatusCode};
+use axum::response::{IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, warn};
 
 use crate::db::queries::{categories, transactions};
 use crate::error::AppResult;
+use crate::filters::Icons;
 use crate::services::analytics;
 use crate::state::AppState;
 
@@ -876,4 +878,35 @@ pub async fn flow_sankey(
     );
 
     Ok(Json(SankeyResponse { nodes, links }))
+}
+
+// --- Icon API ---
+
+const ICON_CACHE: &str = "public, max-age=86400, immutable";
+
+/// Return all available icon names as a JSON array.
+pub async fn icon_names() -> impl IntoResponse {
+    ([(header::CACHE_CONTROL, ICON_CACHE)], Json(Icons::names()))
+}
+
+/// Return all icons as a JSON object mapping name → SVG markup.
+pub async fn icon_all() -> impl IntoResponse {
+    let map: std::collections::HashMap<&str, &str> = Icons::all().into_iter().collect();
+    ([(header::CACHE_CONTROL, ICON_CACHE)], Json(map))
+}
+
+/// Return the inline SVG markup for a single icon by name.
+pub async fn icon_svg(Path(name): Path<String>) -> impl IntoResponse {
+    match Icons::svg(&name) {
+        Some(svg) => (
+            StatusCode::OK,
+            [
+                (header::CONTENT_TYPE, "image/svg+xml"),
+                (header::CACHE_CONTROL, ICON_CACHE),
+            ],
+            svg,
+        )
+            .into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
 }
