@@ -432,7 +432,7 @@ async function updateFlowChart(params: URLSearchParams): Promise<void> {
         top: 20,
         bottom: 20,
         left: compact ? 10 : 20,
-        right: compact ? 80 : 240,
+        right: compact ? 80 : 120,
         emphasis: {
           focus: "adjacency",
         },
