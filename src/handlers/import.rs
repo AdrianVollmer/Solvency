@@ -6,9 +6,13 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
-use crate::db::queries::{categories, import, tags, transactions};
+use regex::RegexBuilder;
+
+use crate::db::queries::{categories, import, rules, tags, transactions};
 use crate::error::{html_escape, AppError, AppResult, RenderHtml};
-use crate::models::{CategoryWithPath, ImportSession, ImportStatus, NewTransaction, Settings};
+use crate::models::{
+    CategoryWithPath, ImportSession, ImportStatus, NewTransaction, RuleActionType, Settings,
+};
 use crate::services::csv_parser::parse_csv;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -266,8 +270,9 @@ async fn parse_files_background(
                 session_id = %session_id,
                 total_rows = row_index,
                 error_count = all_errors.len(),
-                "CSV parsing completed, ready for preview"
+                "CSV parsing completed, applying rules"
             );
+            apply_rules_to_import_rows(&conn, &session_id);
             let _ = import::update_session_status(&conn, &session_id, ImportStatus::Preview);
         }
     }
@@ -438,6 +443,121 @@ pub async fn confirm(
         categories: cats,
     };
     template.render_html()
+}
+
+fn apply_rules_to_import_rows(conn: &rusqlite::Connection, session_id: &str) {
+    let all_rules = match rules::list_rules(conn) {
+        Ok(r) => r,
+        Err(e) => {
+            warn!(session_id = %session_id, error = %e, "Failed to load rules for import");
+            return;
+        }
+    };
+
+    if all_rules.is_empty() {
+        return;
+    }
+
+    struct CompiledRule {
+        regex: regex::Regex,
+        action_type: RuleActionType,
+        category_id: Option<i64>,
+        tag_name: Option<String>,
+    }
+
+    let compiled: Vec<CompiledRule> = all_rules
+        .iter()
+        .filter_map(|rule| {
+            let regex = RegexBuilder::new(&rule.pattern)
+                .case_insensitive(true)
+                .build()
+                .ok()?;
+
+            match rule.action_type {
+                RuleActionType::AssignCategory => {
+                    let cat_id: i64 = rule.action_value.parse().ok()?;
+                    Some(CompiledRule {
+                        regex,
+                        action_type: rule.action_type,
+                        category_id: Some(cat_id),
+                        tag_name: None,
+                    })
+                }
+                RuleActionType::AssignTag => {
+                    let tag_id: i64 = rule.action_value.parse().ok()?;
+                    let tag = tags::get_tag(conn, tag_id).ok()??;
+                    Some(CompiledRule {
+                        regex,
+                        action_type: rule.action_type,
+                        category_id: None,
+                        tag_name: Some(tag.name),
+                    })
+                }
+            }
+        })
+        .collect();
+
+    if compiled.is_empty() {
+        return;
+    }
+
+    let rows = match import::get_pending_rows(conn, session_id) {
+        Ok(r) => r,
+        Err(e) => {
+            warn!(session_id = %session_id, error = %e, "Failed to load rows for rule application");
+            return;
+        }
+    };
+
+    let mut affected = 0u64;
+
+    for row in &rows {
+        let mut matched_category: Option<i64> = None;
+        let mut extra_tags: Vec<String> = Vec::new();
+
+        for cr in &compiled {
+            if !cr.regex.is_match(&row.data.description) {
+                continue;
+            }
+            match cr.action_type {
+                RuleActionType::AssignCategory => {
+                    if matched_category.is_none() {
+                        matched_category = cr.category_id;
+                    }
+                }
+                RuleActionType::AssignTag => {
+                    if let Some(ref name) = cr.tag_name {
+                        if !row.data.tags.contains(name) && !extra_tags.contains(name) {
+                            extra_tags.push(name.clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        let has_changes = matched_category.is_some() || !extra_tags.is_empty();
+        if !has_changes {
+            continue;
+        }
+        affected += 1;
+
+        if let Some(cat_id) = matched_category {
+            let _ = import::update_row_category(conn, row.id, Some(cat_id));
+        }
+
+        if !extra_tags.is_empty() {
+            let mut data = row.data.clone();
+            data.tags.extend(extra_tags);
+            let _ = import::update_row_data(conn, row.id, &data);
+        }
+    }
+
+    info!(
+        session_id = %session_id,
+        rules_compiled = compiled.len(),
+        rows_affected = affected,
+        "Applied rules to import rows"
+    );
 }
 
 async fn import_rows_background(state: AppState, session_id: String) {

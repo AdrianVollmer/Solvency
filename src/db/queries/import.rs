@@ -275,6 +275,15 @@ pub fn update_all_rows_category(
     Ok(updated)
 }
 
+pub fn update_row_data(conn: &Connection, row_id: i64, data: &ParsedTransaction) -> AppResult<()> {
+    let data_json = serde_json::to_string(data).unwrap();
+    conn.execute(
+        "UPDATE import_rows SET data = ?2 WHERE id = ?1",
+        params![row_id, data_json],
+    )?;
+    Ok(())
+}
+
 pub fn mark_row_imported(conn: &Connection, row_id: i64) -> AppResult<()> {
     conn.execute(
         "UPDATE import_rows SET status = 'imported' WHERE id = ?1",
