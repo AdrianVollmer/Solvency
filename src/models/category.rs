@@ -7,6 +7,7 @@ pub struct Category {
     pub parent_id: Option<i64>,
     pub color: String,
     pub icon: String,
+    pub built_in: bool,
     pub created_at: String,
     pub updated_at: String,
 }

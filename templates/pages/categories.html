@@ -83,7 +83,7 @@
 {% block scripts %}
 <script src="/static/js/dist/{{ manifest.get("categories.js") }}" defer></script>
 <script type="application/json" id="categories-data">
-[{% for cat in categories %}{"id":{{ cat.category.id }},"name":"{{ cat.category.name }}","parentId":{% match cat.category.parent_id %}{% when Some with (id) %}{{ id }}{% when None %}null{% endmatch %},"color":"{{ cat.category.color }}","icon":"{{ cat.category.icon }}"}{% if !loop.last %},{% endif %}{% endfor %}]
+[{% for cat in categories %}{"id":{{ cat.category.id }},"name":"{{ cat.category.name }}","parentId":{% match cat.category.parent_id %}{% when Some with (id) %}{{ id }}{% when None %}null{% endmatch %},"color":"{{ cat.category.color }}","icon":"{{ cat.category.icon }}","builtIn":{{ cat.category.built_in }}}{% if !loop.last %},{% endif %}{% endfor %}]
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

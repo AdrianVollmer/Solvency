@@ -10,6 +10,43 @@ use crate::filters::Icons;
 use crate::services::analytics;
 use crate::state::AppState;
 
+/// Collect a category and all its descendants into a set of IDs.
+fn collect_subtree_ids(
+    root_id: i64,
+    children_map: &std::collections::HashMap<i64, Vec<i64>>,
+) -> std::collections::HashSet<i64> {
+    let mut ids = std::collections::HashSet::new();
+    let mut stack = vec![root_id];
+    while let Some(id) = stack.pop() {
+        ids.insert(id);
+        if let Some(children) = children_map.get(&id) {
+            stack.extend(children);
+        }
+    }
+    ids
+}
+
+/// Build a children map and find the Transfers subtree IDs to exclude from analytics.
+fn transfers_excluded_ids(
+    all_categories: &[crate::models::category::Category],
+) -> std::collections::HashSet<i64> {
+    let mut children_map: std::collections::HashMap<i64, Vec<i64>> =
+        std::collections::HashMap::new();
+    for cat in all_categories {
+        if let Some(parent_id) = cat.parent_id {
+            children_map.entry(parent_id).or_default().push(cat.id);
+        }
+    }
+    if let Some(transfers) = all_categories
+        .iter()
+        .find(|c| c.built_in && c.name == "Transfers")
+    {
+        collect_subtree_ids(transfers.id, &children_map)
+    } else {
+        std::collections::HashSet::new()
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct AnalyticsParams {
     pub from_date: Option<String>,
@@ -51,7 +88,20 @@ pub async fn spending_by_category(
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
-    let breakdowns = analytics::spending_by_category(&transaction_list);
+
+    // Exclude Transfers subtree from the flat pie chart
+    let all_cats = categories::list_categories(&conn)?;
+    let excluded = transfers_excluded_ids(&all_cats);
+    let filtered: Vec<_> = transaction_list
+        .into_iter()
+        .filter(|t| {
+            t.transaction
+                .category_id
+                .is_none_or(|id| !excluded.contains(&id))
+        })
+        .collect();
+
+    let breakdowns = analytics::spending_by_category(&filtered);
 
     let result: Vec<CategorySpending> = breakdowns
         .into_iter()
@@ -285,10 +335,14 @@ pub async fn spending_by_category_tree(
         }
     }
 
+    // Exclude Transfers subtree
+    let excluded = transfers_excluded_ids(&all_categories);
+
     // Keep only categories with net negative amounts (expenses), negate to positive
     let spending_by_id: std::collections::HashMap<i64, i64> = totals_by_id
         .into_iter()
         .filter(|(_, v)| *v < 0)
+        .filter(|(k, _)| !excluded.contains(k))
         .map(|(k, v)| (k, -v))
         .collect();
     let uncategorized_total = if uncategorized_total < 0 {
@@ -307,6 +361,9 @@ pub async fn spending_by_category_tree(
     let mut top_level_ids: Vec<i64> = Vec::new();
 
     for cat in &all_categories {
+        if excluded.contains(&cat.id) {
+            continue;
+        }
         if let Some(parent_id) = cat.parent_id {
             children_map.entry(parent_id).or_default().push(cat.id);
         } else {
@@ -548,12 +605,17 @@ pub async fn flow_sankey(
         *totals_by_id.entry(t.transaction.category_id).or_insert(0) += t.transaction.amount_cents;
     }
 
-    // Build category hierarchy
+    // Build category hierarchy, excluding Transfers subtree
+    let excluded = transfers_excluded_ids(&all_categories);
+
     let mut children_map: std::collections::HashMap<i64, Vec<i64>> =
         std::collections::HashMap::new();
     let mut top_level_ids: Vec<i64> = Vec::new();
 
     for cat in &all_categories {
+        if excluded.contains(&cat.id) {
+            continue;
+        }
         if let Some(parent_id) = cat.parent_id {
             children_map.entry(parent_id).or_default().push(cat.id);
         } else {
@@ -574,7 +636,7 @@ pub async fn flow_sankey(
         }
         match cat_id {
             Some(id) => {
-                if !cat_map.contains_key(&id) {
+                if !cat_map.contains_key(&id) || excluded.contains(&id) {
                     continue;
                 }
                 if total > 0 {

@@ -4,7 +4,7 @@ use tracing::{debug, warn};
 
 pub fn list_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
     let mut stmt = conn.prepare(
-        "SELECT id, name, parent_id, color, icon, created_at, updated_at
+        "SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at
          FROM categories
          ORDER BY name",
     )?;
@@ -17,8 +17,9 @@ pub fn list_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
                 parent_id: row.get(2)?,
                 color: row.get(3)?,
                 icon: row.get(4)?,
-                created_at: row.get(5)?,
-                updated_at: row.get(6)?,
+                built_in: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
             })
         })?
         .filter_map(|c| c.ok())
@@ -30,16 +31,16 @@ pub fn list_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
 pub fn list_categories_with_path(conn: &Connection) -> rusqlite::Result<Vec<CategoryWithPath>> {
     let mut stmt = conn.prepare(
         "WITH RECURSIVE category_path AS (
-            SELECT id, name, parent_id, color, icon, created_at, updated_at,
+            SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at,
                    name as path, 0 as depth
             FROM categories WHERE parent_id IS NULL
             UNION ALL
-            SELECT c.id, c.name, c.parent_id, c.color, c.icon, c.created_at, c.updated_at,
+            SELECT c.id, c.name, c.parent_id, c.color, c.icon, c.built_in, c.created_at, c.updated_at,
                    cp.path || ' > ' || c.name, cp.depth + 1
             FROM categories c
             JOIN category_path cp ON c.parent_id = cp.id
         )
-        SELECT id, name, parent_id, color, icon, created_at, updated_at, path, depth
+        SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at, path, depth
         FROM category_path
         ORDER BY path",
     )?;
@@ -53,11 +54,12 @@ pub fn list_categories_with_path(conn: &Connection) -> rusqlite::Result<Vec<Cate
                     parent_id: row.get(2)?,
                     color: row.get(3)?,
                     icon: row.get(4)?,
-                    created_at: row.get(5)?,
-                    updated_at: row.get(6)?,
+                    built_in: row.get(5)?,
+                    created_at: row.get(6)?,
+                    updated_at: row.get(7)?,
                 },
-                path: row.get(7)?,
-                depth: row.get(8)?,
+                path: row.get(8)?,
+                depth: row.get(9)?,
             })
         })?
         .filter_map(|c| c.ok())
@@ -68,7 +70,7 @@ pub fn list_categories_with_path(conn: &Connection) -> rusqlite::Result<Vec<Cate
 
 pub fn get_category(conn: &Connection, id: i64) -> rusqlite::Result<Option<Category>> {
     conn.query_row(
-        "SELECT id, name, parent_id, color, icon, created_at, updated_at
+        "SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at
          FROM categories WHERE id = ?",
         [id],
         |row| {
@@ -78,8 +80,9 @@ pub fn get_category(conn: &Connection, id: i64) -> rusqlite::Result<Option<Categ
                 parent_id: row.get(2)?,
                 color: row.get(3)?,
                 icon: row.get(4)?,
-                created_at: row.get(5)?,
-                updated_at: row.get(6)?,
+                built_in: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
             })
         },
     )
@@ -108,7 +111,7 @@ pub fn update_category(
 ) -> rusqlite::Result<bool> {
     let rows = conn.execute(
         "UPDATE categories SET name = ?, parent_id = ?, color = ?, icon = ?,
-         updated_at = datetime('now') WHERE id = ?",
+         updated_at = datetime('now') WHERE id = ? AND built_in = 0",
         params![
             category.name,
             category.parent_id,
@@ -124,7 +127,7 @@ pub fn update_category(
 }
 
 pub fn delete_category(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
-    let rows = conn.execute("DELETE FROM categories WHERE id = ?", [id])?;
+    let rows = conn.execute("DELETE FROM categories WHERE id = ? AND built_in = 0", [id])?;
     if rows > 0 {
         debug!(category_id = id, "Deleted category");
     }
@@ -133,7 +136,7 @@ pub fn delete_category(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
 
 pub fn get_top_level_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
     let mut stmt = conn.prepare(
-        "SELECT id, name, parent_id, color, icon, created_at, updated_at
+        "SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at
          FROM categories
          WHERE parent_id IS NULL
          ORDER BY name",
@@ -147,8 +150,9 @@ pub fn get_top_level_categories(conn: &Connection) -> rusqlite::Result<Vec<Categ
                 parent_id: row.get(2)?,
                 color: row.get(3)?,
                 icon: row.get(4)?,
-                created_at: row.get(5)?,
-                updated_at: row.get(6)?,
+                built_in: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
             })
         })?
         .filter_map(|c| c.ok())
@@ -158,14 +162,14 @@ pub fn get_top_level_categories(conn: &Connection) -> rusqlite::Result<Vec<Categ
 }
 
 pub fn delete_all_categories(conn: &Connection) -> rusqlite::Result<usize> {
-    let rows = conn.execute("DELETE FROM categories", [])?;
-    warn!(count = rows, "Deleted all categories");
+    let rows = conn.execute("DELETE FROM categories WHERE built_in = 0", [])?;
+    warn!(count = rows, "Deleted all non-built-in categories");
     Ok(rows)
 }
 
 pub fn get_child_categories(conn: &Connection, parent_id: i64) -> rusqlite::Result<Vec<Category>> {
     let mut stmt = conn.prepare(
-        "SELECT id, name, parent_id, color, icon, created_at, updated_at
+        "SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at
          FROM categories
          WHERE parent_id = ?
          ORDER BY name",
@@ -179,8 +183,9 @@ pub fn get_child_categories(conn: &Connection, parent_id: i64) -> rusqlite::Resu
                 parent_id: row.get(2)?,
                 color: row.get(3)?,
                 icon: row.get(4)?,
-                created_at: row.get(5)?,
-                updated_at: row.get(6)?,
+                built_in: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
             })
         })?
         .filter_map(|c| c.ok())

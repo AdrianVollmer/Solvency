@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS categories (
     parent_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
     color TEXT NOT NULL DEFAULT '#6b7280',
     icon TEXT NOT NULL DEFAULT 'folder',
+    built_in INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(name, parent_id)
@@ -61,31 +62,37 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
     ('page_size', '25'),
     ('locale', 'en-US');
 
--- Insert default categories
-INSERT OR IGNORE INTO categories (id, name, color, icon) VALUES
-    (1, 'Food & Dining', '#ef4444', 'utensils'),
-    (2, 'Transportation', '#3b82f6', 'car'),
-    (3, 'Housing', '#8b5cf6', 'home'),
-    (4, 'Utilities', '#f59e0b', 'zap'),
-    (5, 'Entertainment', '#ec4899', 'film'),
-    (6, 'Shopping', '#10b981', 'shopping-bag'),
-    (7, 'Healthcare', '#06b6d4', 'heart'),
-    (8, 'Other', '#6b7280', 'more-horizontal');
+-- Insert built-in root categories
+INSERT OR IGNORE INTO categories (id, name, color, icon, built_in) VALUES
+    (1, 'Expenses',  '#ef4444', 'trending-down',    1),
+    (2, 'Income',    '#10b981', 'trending-up',       1),
+    (3, 'Transfers', '#3b82f6', 'arrow-left-right',  1);
+
+-- Default expense categories (children of Expenses)
+INSERT OR IGNORE INTO categories (id, name, parent_id, color, icon) VALUES
+    (4,  'Food & Dining',  1, '#ef4444', 'utensils'),
+    (5,  'Transportation', 1, '#3b82f6', 'car'),
+    (6,  'Housing',        1, '#8b5cf6', 'home'),
+    (7,  'Utilities',      1, '#f59e0b', 'zap'),
+    (8,  'Entertainment',  1, '#ec4899', 'film'),
+    (9,  'Shopping',       1, '#10b981', 'shopping-bag'),
+    (10, 'Healthcare',     1, '#06b6d4', 'heart'),
+    (11, 'Other',          1, '#6b7280', 'more-horizontal');
 
 -- Subcategories for Food & Dining
 INSERT OR IGNORE INTO categories (name, parent_id, color, icon) VALUES
-    ('Groceries', 1, '#ef4444', 'shopping-cart'),
-    ('Restaurants', 1, '#ef4444', 'utensils'),
-    ('Coffee & Snacks', 1, '#ef4444', 'coffee');
+    ('Groceries',      4, '#ef4444', 'shopping-cart'),
+    ('Restaurants',    4, '#ef4444', 'utensils'),
+    ('Coffee & Snacks', 4, '#ef4444', 'coffee');
 
 -- Subcategories for Transportation
 INSERT OR IGNORE INTO categories (name, parent_id, color, icon) VALUES
-    ('Gas', 2, '#3b82f6', 'fuel'),
-    ('Public Transit', 2, '#3b82f6', 'train'),
-    ('Parking', 2, '#3b82f6', 'parking');
+    ('Gas',            5, '#3b82f6', 'fuel'),
+    ('Public Transit', 5, '#3b82f6', 'train'),
+    ('Parking',        5, '#3b82f6', 'parking');
 
 -- Subcategories for Housing
 INSERT OR IGNORE INTO categories (name, parent_id, color, icon) VALUES
-    ('Rent/Mortgage', 3, '#8b5cf6', 'home'),
-    ('Maintenance', 3, '#8b5cf6', 'wrench'),
-    ('Insurance', 3, '#8b5cf6', 'shield');
+    ('Rent/Mortgage',  6, '#8b5cf6', 'home'),
+    ('Maintenance',    6, '#8b5cf6', 'wrench'),
+    ('Insurance',      6, '#8b5cf6', 'shield');

@@ -71,13 +71,17 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
 pub async fn edit_form(
     State(state): State<AppState>,
     Path(id): Path<i64>,
-) -> AppResult<Html<String>> {
+) -> AppResult<impl IntoResponse> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
 
     let category = categories::get_category(&conn, id)?
         .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
 
+    if category.built_in {
+        return Ok(Redirect::to("/categories").into_response());
+    }
+
+    let app_settings = state.load_settings()?;
     let cats = categories::list_categories_with_path(&conn)?;
 
     let template = CategoryFormTemplate {
@@ -92,7 +96,7 @@ pub async fn edit_form(
         palette: TAG_PALETTE,
     };
 
-    template.render_html()
+    Ok(template.render_html()?.into_response())
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -167,6 +171,13 @@ pub async fn update(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
+    let category = categories::get_category(&conn, id)?;
+    if category.map(|c| c.built_in).unwrap_or(false) {
+        return Err(AppError::Validation(
+            "Built-in categories cannot be modified".into(),
+        ));
+    }
+
     check_circular_parent(&conn, id, form.parent_id)?;
 
     let new_category = NewCategory {
@@ -188,6 +199,13 @@ pub async fn update_form(
 ) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
+    let category = categories::get_category(&conn, id)?;
+    if category.map(|c| c.built_in).unwrap_or(false) {
+        return Err(AppError::Validation(
+            "Built-in categories cannot be modified".into(),
+        ));
+    }
+
     check_circular_parent(&conn, id, form.parent_id)?;
 
     let new_category = NewCategory {
@@ -204,6 +222,13 @@ pub async fn update_form(
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
+
+    let category = categories::get_category(&conn, id)?;
+    if category.map(|c| c.built_in).unwrap_or(false) {
+        return Err(AppError::Validation(
+            "Built-in categories cannot be deleted".into(),
+        ));
+    }
 
     categories::delete_category(&conn, id)?;
 
@@ -235,8 +260,10 @@ pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoRespons
     let id_to_name: HashMap<i64, String> = cats.iter().map(|c| (c.id, c.name.clone())).collect();
 
     // Export with parent names instead of IDs for portability
+    // Exclude built-in categories from export (they always exist)
     let export_data: Vec<CategoryExport> = cats
         .iter()
+        .filter(|c| !c.built_in)
         .map(|c| CategoryExport {
             name: c.name.clone(),
             parent_name: c.parent_id.and_then(|pid| id_to_name.get(&pid).cloned()),

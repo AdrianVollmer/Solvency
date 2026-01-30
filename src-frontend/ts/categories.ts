@@ -13,6 +13,7 @@ interface Category {
   parentId: number | null;
   color: string;
   icon: string;
+  builtIn: boolean;
 }
 
 interface CategoryNode extends Category {
@@ -92,22 +93,38 @@ function renderNodes(nodes: CategoryNode[]): string {
     // But for JS string context (onclick), we need to escape quotes
     const nameForJs = node.name.replace(/'/g, "\\'");
     const iconSvg = inlineSvg(svgMap[node.icon] || "", "w-5 h-5 lucide-icon");
-    html += `
-      <div class="tree-node" data-id="${node.id}">
-        <div class="category-row group">
+
+    const dragHandle = node.builtIn ? '' : `
           <div class="drag-handle cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-none">
             ${ICON_GRIP}
-          </div>
-          <a href="/categories/${node.id}/edit" class="flex items-center gap-3 flex-1 min-w-0">
+          </div>`;
+
+    const nameContent = node.builtIn
+      ? `<div class="flex items-center gap-3 flex-1 min-w-0 pl-1">
             <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: ${node.color}20; color: ${node.color};">
               ${iconSvg}
             </span>
             <span class="font-medium text-gray-900 dark:text-gray-100">${node.name}</span>
-          </a>
+          </div>`
+      : `<a href="/categories/${node.id}/edit" class="flex items-center gap-3 flex-1 min-w-0">
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: ${node.color}20; color: ${node.color};">
+              ${iconSvg}
+            </span>
+            <span class="font-medium text-gray-900 dark:text-gray-100">${node.name}</span>
+          </a>`;
+
+    const deleteBtn = node.builtIn ? '' : `
           <button onclick="event.stopPropagation(); window.categoriesPage.deleteCategory(${node.id}, '${nameForJs}')"
             class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
             ${ICON_TRASH}
-          </button>
+          </button>`;
+
+    html += `
+      <div class="tree-node" data-id="${node.id}">
+        <div class="category-row group">
+          ${dragHandle}
+          ${nameContent}
+          ${deleteBtn}
         </div>
         <div class="tree-children" data-parent-id="${node.id}">
           ${renderNodes(node.children)}
@@ -156,6 +173,12 @@ async function handleDragEnd(evt: any): Promise<void> {
   const cat = categories.find(c => c.id === id);
   if (!cat) return;
 
+  // Built-in categories cannot be reparented
+  if (cat.builtIn) {
+    renderTree();
+    return;
+  }
+
   const oldParentId = cat.parentId;
   if (oldParentId !== newParentId) {
     // Update local state optimistically
@@ -174,6 +197,9 @@ async function handleDragEnd(evt: any): Promise<void> {
 
 // API functions
 async function deleteCategory(id: number, name: string): Promise<void> {
+  const cat = categories.find(c => c.id === id);
+  if (cat?.builtIn) return;
+
   if (!confirm(`Delete "${name}"? This will also delete all subcategories.`)) return;
 
   try {

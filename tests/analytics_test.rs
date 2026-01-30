@@ -27,23 +27,24 @@ async fn test_spending_by_category_empty() {
 async fn test_spending_by_category_aggregation() {
     let client = TestClient::new();
 
-    // Create transactions in "Food & Dining" category (id=1)
+    // Create transactions in "Food & Dining" category (id=4)
+    // Note: IDs 1-3 are built-in roots (Expenses, Income, Transfers)
     // Note: negative amounts are expenses
     assert!(
         client
-            .create_transaction("2024-01-01", "-50.00", "Lunch", None, Some(1))
+            .create_transaction("2024-01-01", "-50.00", "Lunch", None, Some(4))
             .await
     );
     assert!(
         client
-            .create_transaction("2024-01-02", "-30.00", "Coffee", None, Some(1))
+            .create_transaction("2024-01-02", "-30.00", "Coffee", None, Some(4))
             .await
     );
 
-    // Create transaction in "Transportation" category (id=2)
+    // Create transaction in "Transportation" category (id=5)
     assert!(
         client
-            .create_transaction("2024-01-03", "-20.00", "Bus fare", None, Some(2))
+            .create_transaction("2024-01-03", "-20.00", "Bus fare", None, Some(5))
             .await
     );
 
@@ -77,17 +78,17 @@ async fn test_spending_by_category_aggregation() {
 async fn test_spending_by_category_date_filter() {
     let client = TestClient::new();
 
-    // January transaction
+    // January transaction (Food & Dining = id 4)
     assert!(
         client
-            .create_transaction("2024-01-15", "-50.00", "January expense", None, Some(1))
+            .create_transaction("2024-01-15", "-50.00", "January expense", None, Some(4))
             .await
     );
 
     // March transaction
     assert!(
         client
-            .create_transaction("2024-03-15", "-70.00", "March expense", None, Some(1))
+            .create_transaction("2024-03-15", "-70.00", "March expense", None, Some(4))
             .await
     );
 
@@ -109,17 +110,17 @@ async fn test_spending_by_category_date_filter() {
 async fn test_monthly_summary() {
     let client = TestClient::new();
 
-    // January: -$100
+    // January: -$100 (Housing = id 6)
     assert!(
         client
-            .create_transaction("2024-01-05", "-100.00", "Rent", None, Some(3))
+            .create_transaction("2024-01-05", "-100.00", "Rent", None, Some(6))
             .await
     );
 
     // February: -$150
     assert!(
         client
-            .create_transaction("2024-02-05", "-150.00", "Rent", None, Some(3))
+            .create_transaction("2024-02-05", "-150.00", "Rent", None, Some(6))
             .await
     );
 
@@ -135,22 +136,22 @@ async fn test_monthly_summary() {
 async fn test_flow_sankey_structure() {
     let client = TestClient::new();
 
-    // Add income
+    // Add income (Income root = id 2)
     assert!(
         client
-            .create_transaction("2024-01-01", "1000.00", "Salary", None, Some(8))
+            .create_transaction("2024-01-01", "1000.00", "Salary", None, Some(2))
             .await
     );
 
-    // Add expenses
+    // Add expenses (Housing = id 6, Food & Dining = id 4)
     assert!(
         client
-            .create_transaction("2024-01-05", "-300.00", "Rent", None, Some(3))
+            .create_transaction("2024-01-05", "-300.00", "Rent", None, Some(6))
             .await
     );
     assert!(
         client
-            .create_transaction("2024-01-10", "-100.00", "Food", None, Some(1))
+            .create_transaction("2024-01-10", "-100.00", "Food", None, Some(4))
             .await
     );
 
@@ -187,10 +188,10 @@ async fn test_uncategorized_transaction() {
 async fn test_empty_date_range() {
     let client = TestClient::new();
 
-    // Create transaction in 2024
+    // Create transaction in 2024 (Food & Dining = id 4)
     assert!(
         client
-            .create_transaction("2024-06-15", "-50.00", "Expense", None, Some(1))
+            .create_transaction("2024-06-15", "-50.00", "Expense", None, Some(4))
             .await
     );
 
