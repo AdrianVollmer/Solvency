@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cloc src migrations scripts templates static/ts tests
+cloc --fullpath --not-match-d='.*vendor.*' --vcs=git
