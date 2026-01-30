@@ -81,10 +81,10 @@ async function deleteAccount(id) {
         if (response.ok) {
             window.location.href = '/accounts';
         } else {
-            alert('Failed to delete account');
+            showAlertModal('Failed to delete account');
         }
     } catch (e) {
-        alert('Failed to delete account: ' + e.message);
+        showAlertModal('Failed to delete account: ' + e.message);
     }
 }
 </script>

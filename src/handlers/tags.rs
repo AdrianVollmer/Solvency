@@ -321,11 +321,7 @@ pub async fn import_preview(
         resource_name: "Tags".to_string(),
         back_url: "/tags".to_string(),
         import_url: "/tags/import".to_string(),
-        columns: vec![
-            "Name".to_string(),
-            "Color".to_string(),
-            "Style".to_string(),
-        ],
+        columns: vec!["Name".to_string(), "Color".to_string(), "Style".to_string()],
         items,
         ok_count,
         skip_count,

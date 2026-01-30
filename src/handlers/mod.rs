@@ -48,7 +48,10 @@ pub fn routes() -> Router<AppState> {
         .route("/categories/create", post(categories::create))
         .route("/categories/export", get(categories::export))
         .route("/categories/import", post(categories::import))
-        .route("/categories/import/preview", post(categories::import_preview))
+        .route(
+            "/categories/import/preview",
+            post(categories::import_preview),
+        )
         .route("/categories/delete-all", delete(categories::delete_all))
         .route("/categories/:id/edit", get(categories::edit_form))
         .route("/categories/:id/update", post(categories::update_form))

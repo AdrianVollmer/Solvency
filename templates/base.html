@@ -65,6 +65,22 @@
         </div>
     </div>
 
+    {# Alert modal for error messages #}
+    <div id="alert-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="alert-modal-title">
+        <div class="fixed inset-0 bg-black/50 transition-opacity" data-alert-backdrop></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-sm border border-neutral-200 dark:border-neutral-700">
+                <div class="p-6 space-y-4">
+                    <h3 id="alert-modal-title" class="text-lg font-semibold text-neutral-900 dark:text-white">Error</h3>
+                    <p id="alert-modal-message" class="text-sm text-neutral-600 dark:text-neutral-400"></p>
+                </div>
+                <div class="flex gap-3 justify-end px-6 py-4 border-t border-neutral-200 dark:border-neutral-700">
+                    <button type="button" id="alert-ok-btn" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {# Keyboard shortcuts help modal #}
     <div id="keyboard-shortcuts-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="keyboard-shortcuts-title">
         <div class="fixed inset-0 bg-black/50 transition-opacity" onclick="document.getElementById('keyboard-shortcuts-modal').classList.add('hidden')"></div>
@@ -159,10 +175,10 @@
             document.body.appendChild(form);
             form.submit();
         } catch (e) {
-            if (typeof showToast === 'function') {
+            if (typeof showAlertModal === 'function') {
+                showAlertModal('Invalid JSON file: ' + e.message);
+            } else if (typeof showToast === 'function') {
                 showToast('Invalid JSON file: ' + e.message, { type: 'error' });
-            } else {
-                alert('Invalid JSON file: ' + e.message);
             }
             var fileInput = document.getElementById('import-file');
             if (fileInput) {

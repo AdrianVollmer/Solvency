@@ -170,7 +170,9 @@ function initDropdowns(): void {
 }
 
 function closeAllDropdowns(): void {
-  for (const menu of document.querySelectorAll("[data-dropdown] .dropdown-menu")) {
+  for (const menu of document.querySelectorAll(
+    "[data-dropdown] .dropdown-menu",
+  )) {
     menu.classList.add("hidden");
   }
   for (const toggle of document.querySelectorAll("[data-dropdown-toggle]")) {
@@ -214,6 +216,40 @@ function registerServiceWorker(): void {
         console.error("Service Worker registration failed:", error);
       });
   }
+}
+
+// Alert modal for error/info messages (single OK button)
+function initAlertModal(): void {
+  const modal = document.getElementById("alert-modal");
+  const titleEl = document.getElementById("alert-modal-title");
+  const messageEl = document.getElementById("alert-modal-message");
+  const okBtn = document.getElementById("alert-ok-btn");
+  const backdrop = modal?.querySelector("[data-alert-backdrop]");
+
+  if (!modal || !titleEl || !messageEl || !okBtn) return;
+
+  function closeModal(): void {
+    modal!.classList.add("hidden");
+  }
+
+  okBtn.addEventListener("click", closeModal);
+  backdrop?.addEventListener("click", closeModal);
+
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+      closeModal();
+    }
+  });
+
+  function showAlertModal(message: string, title = "Error"): void {
+    titleEl!.textContent = title;
+    messageEl!.textContent = message;
+    modal!.classList.remove("hidden");
+    okBtn!.focus();
+  }
+
+  (window as unknown as Record<string, unknown>).showAlertModal =
+    showAlertModal;
 }
 
 // Custom confirm modal for destructive actions
@@ -367,7 +403,9 @@ function initKeyboardShortcuts(): void {
 
     // /: focus search input
     if (e.key === "/") {
-      const searchInput = document.getElementById("search") as HTMLInputElement | null;
+      const searchInput = document.getElementById(
+        "search",
+      ) as HTMLInputElement | null;
       if (searchInput) {
         e.preventDefault();
         searchInput.focus();
@@ -381,7 +419,11 @@ function initScrollHints(): void {
   function updateHint(el: HTMLElement): void {
     const hasOverflow = el.scrollWidth > el.clientWidth + 1;
     if (!hasOverflow) {
-      el.classList.remove("scroll-hint-right", "scroll-hint-left", "scroll-hint-both");
+      el.classList.remove(
+        "scroll-hint-right",
+        "scroll-hint-left",
+        "scroll-hint-both",
+      );
       return;
     }
     const atLeft = el.scrollLeft <= 1;
@@ -407,7 +449,9 @@ function initScrollHints(): void {
 
 // Decorate <select data-color-select> elements with a colored dot
 function initColorSelects(): void {
-  for (const select of document.querySelectorAll<HTMLSelectElement>("select[data-color-select]")) {
+  for (const select of document.querySelectorAll<HTMLSelectElement>(
+    "select[data-color-select]",
+  )) {
     decorateColorSelect(select);
   }
 }
@@ -416,7 +460,7 @@ function decorateColorSelect(select: HTMLSelectElement): void {
   function applyDot(): void {
     const color = select.value;
     const dot = encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5" fill="${color}"/></svg>`
+      `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5" fill="${color}"/></svg>`,
     );
     select.style.backgroundImage = `url("data:image/svg+xml,${dot}")`;
     select.style.backgroundRepeat = "no-repeat";
@@ -432,6 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initSidebar();
   initDropdowns();
   initHtmx();
+  initAlertModal();
   initConfirmModal();
   initKeyboardShortcuts();
   initScrollHints();
