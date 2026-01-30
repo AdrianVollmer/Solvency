@@ -33,7 +33,7 @@
                         {% else %}
                             {% for tag in tags %}
                                 {% if tag.id.to_string() == rule.action_value %}
-                                    {% call ui::tag_badge(color=tag.color, name=tag.name, text_color=tag.ghost_text_color()) %}{% endcall %}
+                                    {% call ui::tag_badge_auto(style=tag.style.as_str(), color=tag.color.as_str(), name=tag.name.as_str(), text_color=tag.text_color(), ghost_text_color=tag.ghost_text_color()) %}{% endcall %}
                                 {% endif %}
                             {% endfor %}
                         {% endif %}
@@ -97,7 +97,7 @@
                                 {% else %}
                                     <div class="flex flex-wrap gap-1">
                                         {% for tag in t.tags %}
-                                            {% call ui::tag_badge(color=tag.color, name=tag.name, text_color=tag.ghost_text_color()) %}{% endcall %}
+                                            {% call ui::tag_badge_auto(style=tag.style.as_str(), color=tag.color.as_str(), name=tag.name.as_str(), text_color=tag.text_color(), ghost_text_color=tag.ghost_text_color()) %}{% endcall %}
                                         {% endfor %}
                                     </div>
                                 {% endif %}

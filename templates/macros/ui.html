@@ -249,6 +249,17 @@
 {% endif %}
 {% endmacro %}
 
+{# Tag badge (auto style based on tag style field) #}
+{% macro tag_badge_auto(style, color, name, text_color, ghost_text_color) %}
+{% if style == "solid" %}
+{% call tag_badge_solid(color=color, name=name, text_color=text_color) %}{% endcall %}
+{% else if style == "striped" %}
+{% call tag_badge_striped(color=color, name=name, text_color=ghost_text_color) %}{% endcall %}
+{% else %}
+{% call tag_badge(color=color, name=name, text_color=ghost_text_color) %}{% endcall %}
+{% endif %}
+{% endmacro %}
+
 {# Tag badge (solid style) #}
 {% macro tag_badge_solid(color, name, text_color) %}
 <span class="inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full" style="background-color: {{ color }}; color: {{ text_color }};">{{ name }}</span>

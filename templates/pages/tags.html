@@ -31,13 +31,7 @@
                 <tr onclick="window.location.href='/tags/{{ tw.tag.id }}/edit'"
                     class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer row-hover">
                     <td class="px-6 py-4">
-                        {% if tw.tag.style.as_str() == "solid" %}
-                            {% call ui::tag_badge_solid(color=tw.tag.color.as_str(), name=tw.tag.name.as_str(), text_color=tw.tag.text_color()) %}{% endcall %}
-                        {% else if tw.tag.style.as_str() == "striped" %}
-                            {% call ui::tag_badge_striped(color=tw.tag.color.as_str(), name=tw.tag.name.as_str(), text_color=tw.tag.ghost_text_color()) %}{% endcall %}
-                        {% else %}
-                            {% call ui::tag_badge(color=tw.tag.color.as_str(), name=tw.tag.name.as_str(), text_color=tw.tag.ghost_text_color()) %}{% endcall %}
-                        {% endif %}
+                        {% call ui::tag_badge_auto(style=tw.tag.style.as_str(), color=tw.tag.color.as_str(), name=tw.tag.name.as_str(), text_color=tw.tag.text_color(), ghost_text_color=tw.tag.ghost_text_color()) %}{% endcall %}
                     </td>
                     <td class="px-6 py-4 text-right tabular-nums{% if tw.usage_count == 0 %} text-neutral-400 dark:text-neutral-500{% else %} text-neutral-700 dark:text-neutral-300{% endif %}">
                         {{ tw.usage_count }}
