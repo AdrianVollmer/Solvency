@@ -16,7 +16,7 @@ use solvency::config::{AuthMode, Config};
 use solvency::db::{create_in_memory_pool, migrations};
 use solvency::handlers;
 use solvency::state::{AppState, JsManifest, MarketDataRefreshState};
-use solvency::xsrf::XsrfToken;
+use solvency::xsrf::{xsrf_middleware, XsrfToken};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tower::ServiceExt;
@@ -84,6 +84,19 @@ impl TestClient {
             .with_state(self.state.clone())
     }
 
+    /// Get the router with XSRF middleware applied (for testing XSRF protection).
+    pub fn router_with_xsrf(&self) -> Router {
+        use axum::middleware;
+
+        let xsrf_token = self.state.xsrf_token.clone();
+        handlers::routes()
+            .layer(middleware::from_fn(move |req, next| {
+                let token = xsrf_token.clone();
+                xsrf_middleware(token, req, next)
+            }))
+            .with_state(self.state.clone())
+    }
+
     /// Make a GET request and return status and body.
     pub async fn get(&self, uri: &str) -> (StatusCode, String) {
         let response = self
@@ -125,6 +138,97 @@ impl TestClient {
                     .method("POST")
                     .uri(uri)
                     .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let body_bytes = response.into_body().collect().await.unwrap().to_bytes();
+        (status, String::from_utf8_lossy(&body_bytes).to_string())
+    }
+
+    /// Make a multipart POST request with XSRF header and return status and body.
+    pub async fn post_multipart(
+        &self,
+        uri: &str,
+        field_name: &str,
+        file_name: &str,
+        file_content: &[u8],
+    ) -> (StatusCode, String) {
+        let boundary = "----TestBoundary12345";
+        let mut body = Vec::new();
+
+        body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
+        body.extend_from_slice(
+            format!(
+                "Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\n",
+                field_name, file_name
+            )
+            .as_bytes(),
+        );
+        body.extend_from_slice(b"Content-Type: text/csv\r\n\r\n");
+        body.extend_from_slice(file_content);
+        body.extend_from_slice(b"\r\n");
+        body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
+
+        let response = self
+            .router_with_xsrf()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(uri)
+                    .header(
+                        "Content-Type",
+                        format!("multipart/form-data; boundary={}", boundary),
+                    )
+                    .header("X-XSRF-Token", self.state.xsrf_token.value())
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let body_bytes = response.into_body().collect().await.unwrap().to_bytes();
+        (status, String::from_utf8_lossy(&body_bytes).to_string())
+    }
+
+    /// Make a multipart POST request *without* XSRF header (for testing rejection).
+    pub async fn post_multipart_without_xsrf(
+        &self,
+        uri: &str,
+        field_name: &str,
+        file_name: &str,
+        file_content: &[u8],
+    ) -> (StatusCode, String) {
+        let boundary = "----TestBoundary12345";
+        let mut body = Vec::new();
+
+        body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
+        body.extend_from_slice(
+            format!(
+                "Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\n",
+                field_name, file_name
+            )
+            .as_bytes(),
+        );
+        body.extend_from_slice(b"Content-Type: text/csv\r\n\r\n");
+        body.extend_from_slice(file_content);
+        body.extend_from_slice(b"\r\n");
+        body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
+
+        let response = self
+            .router_with_xsrf()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(uri)
+                    .header(
+                        "Content-Type",
+                        format!("multipart/form-data; boundary={}", boundary),
+                    )
                     .body(Body::from(body))
                     .unwrap(),
             )

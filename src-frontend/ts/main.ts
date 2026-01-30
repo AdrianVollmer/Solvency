@@ -28,6 +28,54 @@ function injectXsrfTokenToAllForms(): void {
   }
 }
 
+function initMultipartXsrf(): void {
+  document.addEventListener("submit", (event: SubmitEvent) => {
+    const form = event.target as HTMLFormElement;
+    if (form.enctype !== "multipart/form-data") return;
+
+    const token = getXsrfToken();
+    if (!token) return;
+
+    event.preventDefault();
+
+    const submitBtn = form.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement | null;
+    if (submitBtn) submitBtn.disabled = true;
+
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+      method: form.method,
+      headers: { [XSRF_HEADER]: token },
+      body: formData,
+    })
+      .then((response) => {
+        if (response.redirected) {
+          window.location.href = response.url;
+        } else if (response.ok) {
+          window.location.reload();
+        } else {
+          response.text().then((text) => {
+            const alertFn = (
+              window as unknown as Record<
+                string,
+                (msg: string, title?: string) => void
+              >
+            ).showAlertModal;
+            if (alertFn) {
+              alertFn(text || "Upload failed");
+            }
+            if (submitBtn) submitBtn.disabled = false;
+          });
+        }
+      })
+      .catch(() => {
+        if (submitBtn) submitBtn.disabled = false;
+      });
+  });
+}
+
 function initXsrfObserver(): void {
   // Watch for dynamically added forms
   const observer = new MutationObserver((mutations) => {
@@ -486,6 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize XSRF protection
   injectXsrfTokenToAllForms();
   initXsrfObserver();
+  initMultipartXsrf();
 
   const themeToggle = document.getElementById("theme-toggle");
   if (themeToggle) {
