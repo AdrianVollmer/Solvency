@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod form_utils;
 pub mod config;
 pub mod date_utils;
 pub mod db;

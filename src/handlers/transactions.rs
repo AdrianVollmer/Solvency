@@ -256,7 +256,9 @@ pub struct TransactionFormData {
     pub amount: String,
     pub currency: String,
     pub description: String,
+    #[serde(default, deserialize_with = "crate::form_utils::deserialize_optional_i64")]
     pub category_id: Option<i64>,
+    #[serde(default, deserialize_with = "crate::form_utils::deserialize_optional_i64")]
     pub account_id: Option<i64>,
     pub notes: Option<String>,
     #[serde(default)]

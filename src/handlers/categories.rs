@@ -42,6 +42,7 @@ pub struct CategoryFormTemplate {
 #[derive(Debug, Deserialize)]
 pub struct CategoryFormData {
     pub name: String,
+    #[serde(default, deserialize_with = "crate::form_utils::deserialize_optional_i64")]
     pub parent_id: Option<i64>,
     pub color: Option<String>,
     pub icon: Option<String>,

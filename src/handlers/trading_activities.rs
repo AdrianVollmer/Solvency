@@ -256,6 +256,7 @@ pub struct TradingActivityFormData {
     pub unit_price: Option<String>,
     pub currency: String,
     pub fee: Option<String>,
+    #[serde(default, deserialize_with = "crate::form_utils::deserialize_optional_i64")]
     pub account_id: Option<i64>,
     pub notes: Option<String>,
 }
