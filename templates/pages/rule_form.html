@@ -2,10 +2,10 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-<div class="space-y-6">
+{% call ui::page_container() %}
     {% call ui::page_header(title="Add Rule", back_url="/rules", back_label="Rules", subtitle="Create a rule to automatically categorize transactions") %}{% endcall %}
 
-    {% call ui::card(class="p-6 max-w-2xl") %}
+    {% call ui::card() %}
         <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
             Rules automatically assign categories or tags to transactions based on description patterns.
             Use regular expressions for flexible matching.
@@ -58,7 +58,7 @@
             </div>
         </form>
     {% endcall %}
-</div>
+{% endcall %}
 
 <script>
 function toggleActionValue(select) {

@@ -2,7 +2,7 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-<div class="space-y-6 max-w-4xl mx-auto">
+{% call ui::page_container(max_width="max-w-4xl") %}
     <div class="flex items-start justify-between gap-4">
         {% call ui::page_header(title="Transaction Details", back_url="/transactions", back_label="Transactions") %}{% endcall %}
         <div class="flex gap-2">
@@ -140,5 +140,5 @@
         <span>Created: {{ transaction.created_at }}</span>
         <span>Updated: {{ transaction.updated_at }}</span>
     </div>
-</div>
+{% endcall %}
 {% endblock %}

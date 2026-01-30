@@ -2,14 +2,14 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-<div class="space-y-6">
+{% call ui::page_container(max_width="max-w-lg") %}
     {% if account.is_some() %}
     {% call ui::page_header(title=title.as_str(), back_url="/accounts", back_label="Accounts", subtitle="Update account details") %}{% endcall %}
     {% else %}
     {% call ui::page_header(title=title.as_str(), back_url="/accounts", back_label="Accounts", subtitle="Create a new account to track") %}{% endcall %}
     {% endif %}
 
-    {% call ui::card(class="p-6 max-w-lg") %}
+    {% call ui::card() %}
         <form action="{% if let Some(acc) = account %}/accounts/{{ acc.id }}/update{% else %}/accounts/create{% endif %}" method="POST" class="space-y-4">
             {% if let Some(acc) = account %}
             <div class="mb-4 p-3 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
@@ -65,7 +65,7 @@
         </div>
         {% endif %}
     {% endcall %}
-</div>
+{% endcall %}
 
 {% if account.is_some() %}
 <script>

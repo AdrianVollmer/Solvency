@@ -2,7 +2,7 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-<div class="space-y-6">
+{% call ui::page_container() %}
     {% let back_url = format!("/trading/activities/{}", self.activity.id) %}
     {% call ui::page_header(title="Edit Activity", back_url=back_url.as_str(), back_label="Details") %}{% endcall %}
 
@@ -69,5 +69,5 @@
             </div>
         </form>
     {% endcall %}
-</div>
+{% endcall %}
 {% endblock %}

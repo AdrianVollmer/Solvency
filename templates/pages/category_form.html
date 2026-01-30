@@ -2,7 +2,7 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-<div class="space-y-6">
+{% call ui::page_container(max_width="max-w-lg") %}
     {% match editing %}
     {% when Some with (cat) %}
     {% call ui::page_header(title="Edit Category", back_url="/categories", back_label="Categories", subtitle="Update category details") %}{% endcall %}
@@ -10,7 +10,7 @@
     {% call ui::page_header(title="Add Category", back_url="/categories", back_label="Categories", subtitle="Create a new category to organize transactions") %}{% endcall %}
     {% endmatch %}
 
-    {% call ui::card(class="p-6 max-w-lg") %}
+    {% call ui::card() %}
         <form action="{% match editing %}{% when Some with (cat) %}/categories/{{ cat.id }}/update{% when None %}/categories/create{% endmatch %}" method="POST" class="space-y-4">
             <div>
                 <label for="category-name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</label>
@@ -61,5 +61,5 @@
             </div>
         </form>
     {% endcall %}
-</div>
+{% endcall %}
 {% endblock %}

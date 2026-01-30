@@ -2,7 +2,7 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-<div class="space-y-6 max-w-2xl mx-auto">
+{% call ui::page_container() %}
     {% call ui::page_header(title="Add Transaction", back_url="/transactions", back_label="Transactions", subtitle="Record a new transaction") %}{% endcall %}
 
     {% call ui::card() %}
@@ -91,5 +91,5 @@
             </div>
         </form>
     {% endcall %}
-</div>
+{% endcall %}
 {% endblock %}

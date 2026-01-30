@@ -86,7 +86,19 @@
     {% endcall %}
     {% call ui::section(title="Regional", card_class="p-6 space-y-6") %}...{% endcall %}
     {% call ui::section(title="Database", class="max-w-2xl", card_class="p-6 space-y-6") %}...{% endcall %}
+
+    Page container (centered content with max width):
+    {% call ui::page_container() %}...{% endcall %}
+    {% call ui::page_container(max_width="max-w-4xl") %}...{% endcall %}
 #}
+
+{# Page container - centered content area for form / detail / edit pages #}
+{# max_width: Tailwind max-width class (default: "max-w-2xl") #}
+{% macro page_container(max_width="max-w-2xl") %}
+<div class="space-y-6 {{ max_width }} mx-auto">
+    {{ caller() }}
+</div>
+{% endmacro %}
 
 {# Date range filter with progressive disclosure #}
 {# page_url: Base URL for the page (e.g., "/spending", "/transactions") #}
