@@ -41,7 +41,14 @@ impl Transaction {
 
     pub fn amount_formatted(&self) -> String {
         let symbol = currency_symbol(&self.currency);
-        format!("{}{}", symbol, self.amount_display())
+        let abs_cents = self.amount_cents.abs();
+        let dollars = abs_cents / 100;
+        let cents = abs_cents % 100;
+        if self.amount_cents < 0 {
+            format!("-{}{}.{:02}", symbol, dollars, cents)
+        } else {
+            format!("{}{}.{:02}", symbol, dollars, cents)
+        }
     }
 
     pub fn is_income(&self) -> bool {
