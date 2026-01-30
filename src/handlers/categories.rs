@@ -134,12 +134,40 @@ pub async fn create(
     Ok(Redirect::to("/categories"))
 }
 
+/// Walk the ancestor chain of `proposed_parent_id`; if we encounter
+/// `category_id` it means setting this parent would create a cycle.
+fn check_circular_parent(
+    conn: &r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    category_id: i64,
+    proposed_parent_id: Option<i64>,
+) -> AppResult<()> {
+    let proposed = match proposed_parent_id {
+        Some(pid) => pid,
+        None => return Ok(()),
+    };
+    let all_cats = categories::list_categories(conn)?;
+    let parent_map: HashMap<i64, Option<i64>> =
+        all_cats.iter().map(|c| (c.id, c.parent_id)).collect();
+    let mut current = Some(proposed);
+    while let Some(cid) = current {
+        if cid == category_id {
+            return Err(AppError::Validation(
+                "Cannot set parent: would create a circular reference".into(),
+            ));
+        }
+        current = parent_map.get(&cid).copied().flatten();
+    }
+    Ok(())
+}
+
 pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Form(form): Form<CategoryFormData>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
+
+    check_circular_parent(&conn, id, form.parent_id)?;
 
     let new_category = NewCategory {
         name: form.name,
@@ -159,6 +187,8 @@ pub async fn update_form(
     Form(form): Form<CategoryFormData>,
 ) -> AppResult<Redirect> {
     let conn = state.db.get()?;
+
+    check_circular_parent(&conn, id, form.parent_id)?;
 
     let new_category = NewCategory {
         name: form.name,
@@ -257,59 +287,54 @@ pub async fn import(
 
     let conn = state.db.get()?;
 
-    // First pass: create categories without parents, build name -> id map
     let mut name_to_id: HashMap<String, i64> = HashMap::new();
-    let mut deferred: Vec<&CategoryImport> = Vec::new();
 
-    // Get existing categories
+    // Seed map with existing categories
     let existing = categories::list_categories(&conn)?;
     for cat in &existing {
         name_to_id.insert(cat.name.clone(), cat.id);
     }
 
-    // Process items - those without parents first, then those with parents
-    for item in &data {
-        if item.parent_name.is_none() {
-            if !name_to_id.contains_key(&item.name) {
+    // Iteratively create categories in dependency order: each pass creates
+    // items whose parent already exists in name_to_id.  Repeat until no
+    // progress is made (remaining items have broken/missing parent refs).
+    let mut remaining: Vec<&CategoryImport> = data.iter().collect();
+    let mut created = 0;
+    loop {
+        let mut next_remaining: Vec<&CategoryImport> = Vec::new();
+        let mut progress = false;
+        for item in remaining {
+            if name_to_id.contains_key(&item.name) {
+                continue;
+            }
+            let parent_resolved = match &item.parent_name {
+                None => true,
+                Some(pn) => name_to_id.contains_key(pn),
+            };
+            if parent_resolved {
+                let parent_id = item
+                    .parent_name
+                    .as_ref()
+                    .and_then(|pn| name_to_id.get(pn).copied());
                 let new_cat = NewCategory {
                     name: item.name.clone(),
-                    parent_id: None,
+                    parent_id,
                     color: item.color.clone(),
                     icon: item.icon.clone(),
                 };
                 let id = categories::create_category(&conn, &new_cat)?;
                 name_to_id.insert(item.name.clone(), id);
+                created += 1;
+                progress = true;
+            } else {
+                next_remaining.push(item);
             }
-        } else {
-            deferred.push(item);
         }
-    }
-
-    // Second pass: create categories with parents
-    let mut created = 0;
-    for item in deferred {
-        if !name_to_id.contains_key(&item.name) {
-            let parent_id = item
-                .parent_name
-                .as_ref()
-                .and_then(|pn| name_to_id.get(pn).copied());
-
-            let new_cat = NewCategory {
-                name: item.name.clone(),
-                parent_id,
-                color: item.color.clone(),
-                icon: item.icon.clone(),
-            };
-            let id = categories::create_category(&conn, &new_cat)?;
-            name_to_id.insert(item.name.clone(), id);
-            created += 1;
+        if !progress {
+            break;
         }
+        remaining = next_remaining;
     }
-
-    created += data
-        .iter()
-        .filter(|i| i.parent_name.is_none() && !existing.iter().any(|e| e.name == i.name))
-        .count();
 
     Ok(Json(serde_json::json!({
         "imported": created,

@@ -192,6 +192,61 @@ pub struct CategoryTreeNode {
     pub children: Vec<CategoryTreeNode>,
 }
 
+fn tree_node_total(node: &CategoryTreeNode) -> i64 {
+    node.amount_cents.unwrap_or(0) + node.children.iter().map(tree_node_total).sum::<i64>()
+}
+
+fn build_subtree(
+    cat_id: i64,
+    children_map: &std::collections::HashMap<i64, Vec<i64>>,
+    spending_by_id: &std::collections::HashMap<i64, i64>,
+    cat_map: &std::collections::HashMap<i64, &crate::models::category::Category>,
+) -> Option<CategoryTreeNode> {
+    let cat = cat_map.get(&cat_id)?;
+    let child_ids = children_map.get(&cat_id).cloned().unwrap_or_default();
+    let direct_spending = spending_by_id.get(&cat_id).copied().unwrap_or(0);
+
+    let mut child_nodes: Vec<CategoryTreeNode> = child_ids
+        .iter()
+        .filter_map(|&id| build_subtree(id, children_map, spending_by_id, cat_map))
+        .collect();
+
+    child_nodes.sort_by_key(|n| std::cmp::Reverse(tree_node_total(n)));
+
+    let has_children_spending = !child_nodes.is_empty();
+
+    if has_children_spending && direct_spending > 0 {
+        child_nodes.push(CategoryTreeNode {
+            name: format!("Other {}", cat.name),
+            color: cat.color.clone(),
+            amount_cents: Some(direct_spending),
+            children: Vec::new(),
+        });
+        Some(CategoryTreeNode {
+            name: cat.name.clone(),
+            color: cat.color.clone(),
+            amount_cents: None,
+            children: child_nodes,
+        })
+    } else if has_children_spending {
+        Some(CategoryTreeNode {
+            name: cat.name.clone(),
+            color: cat.color.clone(),
+            amount_cents: None,
+            children: child_nodes,
+        })
+    } else if direct_spending > 0 {
+        Some(CategoryTreeNode {
+            name: cat.name.clone(),
+            color: cat.color.clone(),
+            amount_cents: Some(direct_spending),
+            children: Vec::new(),
+        })
+    } else {
+        None
+    }
+}
+
 pub async fn spending_by_category_tree(
     State(state): State<AppState>,
     Query(params): Query<AnalyticsParams>,
@@ -261,75 +316,10 @@ pub async fn spending_by_category_tree(
 
     top_level_ids.sort();
 
-    let mut result: Vec<CategoryTreeNode> = Vec::new();
-
-    for &cat_id in &top_level_ids {
-        let cat = match cat_map.get(&cat_id) {
-            Some(c) => c,
-            None => continue,
-        };
-
-        let child_ids = children_map.get(&cat_id).cloned().unwrap_or_default();
-        let direct_spending = spending_by_id.get(&cat_id).copied().unwrap_or(0);
-
-        // Build children nodes (only those with spending)
-        let mut child_nodes: Vec<CategoryTreeNode> = Vec::new();
-        for &child_id in &child_ids {
-            let child_amount = spending_by_id.get(&child_id).copied().unwrap_or(0);
-            if child_amount == 0 {
-                continue;
-            }
-            if let Some(child_cat) = cat_map.get(&child_id) {
-                child_nodes.push(CategoryTreeNode {
-                    name: child_cat.name.clone(),
-                    color: child_cat.color.clone(),
-                    amount_cents: Some(child_amount),
-                    children: Vec::new(),
-                });
-            }
-        }
-
-        child_nodes.sort_by(|a, b| {
-            b.amount_cents
-                .unwrap_or(0)
-                .cmp(&a.amount_cents.unwrap_or(0))
-        });
-
-        let has_children_spending = !child_nodes.is_empty();
-
-        if has_children_spending && direct_spending > 0 {
-            // Parent has both direct spending and children: add pseudo-child
-            child_nodes.push(CategoryTreeNode {
-                name: format!("Other {}", cat.name),
-                color: cat.color.clone(),
-                amount_cents: Some(direct_spending),
-                children: Vec::new(),
-            });
-            result.push(CategoryTreeNode {
-                name: cat.name.clone(),
-                color: cat.color.clone(),
-                amount_cents: None,
-                children: child_nodes,
-            });
-        } else if has_children_spending {
-            // Parent has only children spending
-            result.push(CategoryTreeNode {
-                name: cat.name.clone(),
-                color: cat.color.clone(),
-                amount_cents: None,
-                children: child_nodes,
-            });
-        } else if direct_spending > 0 {
-            // Leaf node with direct spending only
-            result.push(CategoryTreeNode {
-                name: cat.name.clone(),
-                color: cat.color.clone(),
-                amount_cents: Some(direct_spending),
-                children: Vec::new(),
-            });
-        }
-        // Skip categories with no spending at all
-    }
+    let mut result: Vec<CategoryTreeNode> = top_level_ids
+        .iter()
+        .filter_map(|&id| build_subtree(id, &children_map, &spending_by_id, &cat_map))
+        .collect();
 
     // Add uncategorized as top-level leaf
     if uncategorized_total > 0 {
@@ -341,20 +331,8 @@ pub async fn spending_by_category_tree(
         });
     }
 
-    // Sort top-level by total spending (sum of children or direct)
-    result.sort_by(|a, b| {
-        let total_a = if a.children.is_empty() {
-            a.amount_cents.unwrap_or(0)
-        } else {
-            a.children.iter().map(|c| c.amount_cents.unwrap_or(0)).sum()
-        };
-        let total_b = if b.children.is_empty() {
-            b.amount_cents.unwrap_or(0)
-        } else {
-            b.children.iter().map(|c| c.amount_cents.unwrap_or(0)).sum()
-        };
-        total_b.cmp(&total_a)
-    });
+    // Sort top-level by total spending (recursive sum of all descendants)
+    result.sort_by_key(|n| std::cmp::Reverse(tree_node_total(n)));
 
     if result.is_empty() {
         warn!("spending_by_category_tree: no spending data in selected period");
@@ -627,73 +605,78 @@ pub async fn flow_sankey(
         }));
     }
 
-    // Pre-compute total income/expense per top-level category (direct +
-    // children) so we can sort by total and emit nodes in tree order.
-    // This prevents crossing streams in the Sankey by ensuring the node
-    // array order matches the visual top-to-bottom layout.
-    struct TopLevelEntry<'a> {
+    // Build recursive tree for each top-level category, separately for
+    // income and expense.  Each node tracks its subtotal (direct +
+    // descendants) and max subtree depth so we can assign Sankey columns.
+    struct SankeyTreeNode<'a> {
         cat: &'a crate::models::category::Category,
         direct: i64,
-        children: Vec<(&'a str, &'a str, i64)>, // (name, color, amount)
-        total: i64,
+        children: Vec<SankeyTreeNode<'a>>,
+        subtotal: i64,
+        max_subtree_depth: u32,
     }
 
-    let build_entries = |amount_map: &std::collections::HashMap<i64, i64>| -> Vec<TopLevelEntry> {
-        let mut entries: Vec<TopLevelEntry> = Vec::new();
-        for &cat_id in &top_level_ids {
-            let cat = match cat_map.get(&cat_id) {
-                Some(c) => c,
-                None => continue,
-            };
-            let child_ids = children_map.get(&cat_id).cloned().unwrap_or_default();
-            let direct = amount_map.get(&cat_id).copied().unwrap_or(0);
+    fn build_sankey_tree<'a>(
+        cat_id: i64,
+        amount_map: &std::collections::HashMap<i64, i64>,
+        children_map: &std::collections::HashMap<i64, Vec<i64>>,
+        cat_map: &std::collections::HashMap<i64, &'a crate::models::category::Category>,
+    ) -> Option<SankeyTreeNode<'a>> {
+        let cat = cat_map.get(&cat_id)?;
+        let direct = amount_map.get(&cat_id).copied().unwrap_or(0);
+        let child_ids = children_map.get(&cat_id).cloned().unwrap_or_default();
 
-            let mut children: Vec<(&str, &str, i64)> = Vec::new();
-            for &cid in &child_ids {
-                let amt = amount_map.get(&cid).copied().unwrap_or(0);
-                if amt == 0 {
-                    continue;
-                }
-                if let Some(cc) = cat_map.get(&cid) {
-                    children.push((&cc.name, &cc.color, amt));
-                }
-            }
-            children.sort_by(|a, b| b.2.cmp(&a.2));
+        let mut children: Vec<SankeyTreeNode<'a>> = child_ids
+            .iter()
+            .filter_map(|&id| build_sankey_tree(id, amount_map, children_map, cat_map))
+            .collect();
+        children.sort_by(|a, b| b.subtotal.cmp(&a.subtotal));
 
-            let child_sum: i64 = children.iter().map(|(_, _, c)| *c).sum();
-            let total = direct + child_sum;
-            if total == 0 {
-                continue;
-            }
-            entries.push(TopLevelEntry {
-                cat,
-                direct,
-                children,
-                total,
-            });
+        let child_sum: i64 = children.iter().map(|c| c.subtotal).sum();
+        let subtotal = direct + child_sum;
+        if subtotal == 0 {
+            return None;
         }
-        entries.sort_by(|a, b| b.total.cmp(&a.total));
-        entries
-    };
 
-    let income_entries = build_entries(&income_by_id);
-    let expense_entries = build_entries(&expense_by_id);
+        let max_subtree_depth = children
+            .iter()
+            .map(|c| c.max_subtree_depth + 1)
+            .max()
+            .unwrap_or(0);
 
-    // Compute column depths dynamically based on whether each side has
-    // hierarchy.  Explicit depths prevent nodeAlign:"justify" from
-    // pushing leaf categories into the children column.
-    let income_has_hierarchy = income_entries.iter().any(|e| !e.children.is_empty());
-    let expense_has_hierarchy = expense_entries.iter().any(|e| !e.children.is_empty());
+        Some(SankeyTreeNode {
+            cat,
+            direct,
+            children,
+            subtotal,
+            max_subtree_depth,
+        })
+    }
 
-    let inc_child_depth: u32 = 0;
-    let inc_parent_depth: u32 = if income_has_hierarchy { 1 } else { 0 };
-    let budget_depth: u32 = inc_parent_depth + 1;
-    let exp_parent_depth: u32 = budget_depth + 1;
-    let exp_child_depth: u32 = if expense_has_hierarchy {
-        exp_parent_depth + 1
-    } else {
-        exp_parent_depth
-    };
+    let mut income_trees: Vec<SankeyTreeNode> = top_level_ids
+        .iter()
+        .filter_map(|&id| build_sankey_tree(id, &income_by_id, &children_map, &cat_map))
+        .collect();
+    income_trees.sort_by(|a, b| b.subtotal.cmp(&a.subtotal));
+
+    let mut expense_trees: Vec<SankeyTreeNode> = top_level_ids
+        .iter()
+        .filter_map(|&id| build_sankey_tree(id, &expense_by_id, &children_map, &cat_map))
+        .collect();
+    expense_trees.sort_by(|a, b| b.subtotal.cmp(&a.subtotal));
+
+    // Column layout based on actual max depth on each side:
+    //   Income leaves (col 0) ... income roots (col max_inc)
+    //   | Budget (col max_inc+1) |
+    //   expense roots (col max_inc+2) ... expense leaves (col max_inc+2+max_exp)
+    let max_income_depth = income_trees
+        .iter()
+        .map(|t| t.max_subtree_depth)
+        .max()
+        .unwrap_or(0);
+    let income_root_col = max_income_depth;
+    let budget_depth = income_root_col + 1;
+    let expense_root_col = budget_depth + 1;
 
     let budget_name = "Budget".to_string();
     let mut nodes: Vec<SankeyNode> = Vec::new();
@@ -716,61 +699,57 @@ pub async fn flow_sankey(
         }
     }
 
-    // --- Income side: children → parent → Budget ---
-    // Nodes added in tree order (sorted by total desc) so that within
-    // each Sankey column the vertical positions match.
-    for entry in &income_entries {
-        if !entry.children.is_empty() {
-            for &(name, color, cents) in &entry.children {
-                ensure_node(&mut nodes, &mut node_names, name, color, inc_child_depth);
+    // Recursively emit income nodes.  Income flows left-to-right:
+    // deepest leaves at col 0 → parents → roots → Budget.
+    // A node at tree_depth d gets Sankey col = max_depth - d.
+    fn emit_income(
+        node: &SankeyTreeNode,
+        tree_depth: u32,
+        max_depth: u32,
+        nodes: &mut Vec<SankeyNode>,
+        links: &mut Vec<SankeyLink>,
+        seen: &mut std::collections::HashSet<String>,
+    ) {
+        let col = max_depth - tree_depth;
+        ensure_node(nodes, seen, &node.cat.name, &node.cat.color, col);
+
+        if !node.children.is_empty() {
+            for child in &node.children {
+                emit_income(child, tree_depth + 1, max_depth, nodes, links, seen);
                 links.push(SankeyLink {
-                    source: name.to_string(),
-                    target: entry.cat.name.clone(),
-                    value: cents as f64 / 100.0,
+                    source: child.cat.name.clone(),
+                    target: node.cat.name.clone(),
+                    value: child.subtotal as f64 / 100.0,
                 });
             }
-            if entry.direct > 0 {
-                let other = format!("Other {}", entry.cat.name);
-                ensure_node(
-                    &mut nodes,
-                    &mut node_names,
-                    &other,
-                    &entry.cat.color,
-                    inc_child_depth,
-                );
+            if node.direct > 0 {
+                let other = format!("Other {}", node.cat.name);
+                let child_col = max_depth - (tree_depth + 1);
+                ensure_node(nodes, seen, &other, &node.cat.color, child_col);
                 links.push(SankeyLink {
                     source: other,
-                    target: entry.cat.name.clone(),
-                    value: entry.direct as f64 / 100.0,
+                    target: node.cat.name.clone(),
+                    value: node.direct as f64 / 100.0,
                 });
             }
-            ensure_node(
-                &mut nodes,
-                &mut node_names,
-                &entry.cat.name,
-                &entry.cat.color,
-                inc_parent_depth,
-            );
-            links.push(SankeyLink {
-                source: entry.cat.name.clone(),
-                target: budget_name.clone(),
-                value: entry.total as f64 / 100.0,
-            });
-        } else {
-            // Leaf income: same column as parents
-            ensure_node(
-                &mut nodes,
-                &mut node_names,
-                &entry.cat.name,
-                &entry.cat.color,
-                inc_parent_depth,
-            );
-            links.push(SankeyLink {
-                source: entry.cat.name.clone(),
-                target: budget_name.clone(),
-                value: entry.direct as f64 / 100.0,
-            });
         }
+    }
+
+    // --- Income side ---
+    for tree in &income_trees {
+        emit_income(
+            tree,
+            0,
+            income_root_col,
+            &mut nodes,
+            &mut links,
+            &mut node_names,
+        );
+        links.push(SankeyLink {
+            source: tree.cat.name.clone(),
+            target: budget_name.clone(),
+            value: tree.subtotal as f64 / 100.0,
+        });
     }
 
     if uncategorized_income > 0 {
@@ -779,7 +758,7 @@ pub async fn flow_sankey(
             &mut node_names,
             "Uncategorized",
             "#6b7280",
-            inc_parent_depth,
+            income_root_col,
         );
         links.push(SankeyLink {
             source: "Uncategorized".into(),
@@ -796,59 +775,62 @@ pub async fn flow_sankey(
         budget_depth,
     );
 
-    // --- Expense side: Budget → parent → children ---
-    for entry in &expense_entries {
-        if !entry.children.is_empty() {
-            ensure_node(
-                &mut nodes,
-                &mut node_names,
-                &entry.cat.name,
-                &entry.cat.color,
-                exp_parent_depth,
-            );
-            links.push(SankeyLink {
-                source: budget_name.clone(),
-                target: entry.cat.name.clone(),
-                value: entry.total as f64 / 100.0,
-            });
-            for &(name, color, cents) in &entry.children {
-                ensure_node(&mut nodes, &mut node_names, name, color, exp_child_depth);
+    // Recursively emit expense nodes.  Expenses flow left-to-right:
+    // Budget → roots → parents → deepest leaves.
+    // A node at tree_depth d gets Sankey col = base_col + d.
+    fn emit_expense(
+        node: &SankeyTreeNode,
+        tree_depth: u32,
+        base_col: u32,
+        nodes: &mut Vec<SankeyNode>,
+        links: &mut Vec<SankeyLink>,
+        seen: &mut std::collections::HashSet<String>,
+    ) {
+        let col = base_col + tree_depth;
+        ensure_node(nodes, seen, &node.cat.name, &node.cat.color, col);
+
+        if !node.children.is_empty() {
+            for child in &node.children {
+                emit_expense(child, tree_depth + 1, base_col, nodes, links, seen);
                 links.push(SankeyLink {
-                    source: entry.cat.name.clone(),
-                    target: name.to_string(),
-                    value: cents as f64 / 100.0,
+                    source: node.cat.name.clone(),
+                    target: child.cat.name.clone(),
+                    value: child.subtotal as f64 / 100.0,
                 });
             }
-            if entry.direct > 0 {
-                let other = format!("Other {}", entry.cat.name);
+            if node.direct > 0 {
+                let other = format!("Other {}", node.cat.name);
                 ensure_node(
-                    &mut nodes,
-                    &mut node_names,
+                    nodes,
+                    seen,
                     &other,
-                    &entry.cat.color,
-                    exp_child_depth,
+                    &node.cat.color,
+                    base_col + tree_depth + 1,
                 );
                 links.push(SankeyLink {
-                    source: entry.cat.name.clone(),
+                    source: node.cat.name.clone(),
                     target: other,
-                    value: entry.direct as f64 / 100.0,
+                    value: node.direct as f64 / 100.0,
                 });
             }
-        } else {
-            // Leaf expense: same column as parents, not pushed right
-            ensure_node(
-                &mut nodes,
-                &mut node_names,
-                &entry.cat.name,
-                &entry.cat.color,
-                exp_parent_depth,
-            );
-            links.push(SankeyLink {
-                source: budget_name.clone(),
-                target: entry.cat.name.clone(),
-                value: entry.direct as f64 / 100.0,
-            });
         }
+    }
+
+    // --- Expense side ---
+    for tree in &expense_trees {
+        links.push(SankeyLink {
+            source: budget_name.clone(),
+            target: tree.cat.name.clone(),
+            value: tree.subtotal as f64 / 100.0,
+        });
+        emit_expense(
+            tree,
+            0,
+            expense_root_col,
+            &mut nodes,
+            &mut links,
+            &mut node_names,
+        );
     }
 
     if uncategorized_expense > 0 {
@@ -862,7 +844,7 @@ pub async fn flow_sankey(
             &mut node_names,
             name,
             "#6b7280",
-            exp_parent_depth,
+            expense_root_col,
         );
         links.push(SankeyLink {
             source: budget_name.clone(),

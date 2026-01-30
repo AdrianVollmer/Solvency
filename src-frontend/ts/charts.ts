@@ -84,6 +84,35 @@ function mapTreeToSunburst(nodes: CategoryTreeNode[]): any[] {
   });
 }
 
+function treeMaxDepth(nodes: CategoryTreeNode[]): number {
+  let max = 0;
+  for (const node of nodes) {
+    if (node.children.length > 0) {
+      max = Math.max(max, 1 + treeMaxDepth(node.children));
+    }
+  }
+  return max;
+}
+
+function buildSunburstLevels(maxDepth: number): any[] {
+  const levels: any[] = [{}];
+  for (let i = 1; i <= maxDepth; i++) {
+    const r0Pct = 10 + ((i - 1) / maxDepth) * 80;
+    const rPct = 10 + (i / maxDepth) * 80;
+    levels.push({
+      r0: `${r0Pct}%`,
+      r: `${rPct}%`,
+      itemStyle: { opacity: Math.max(0.5, 1 - (i - 1) * 0.15) },
+      label: {
+        rotate: i < maxDepth ? "radial" : undefined,
+        align: i === maxDepth ? "right" : undefined,
+        fontSize: Math.max(8, 13 - i),
+      },
+    });
+  }
+  return levels;
+}
+
 async function updateCategoryChart(params: URLSearchParams): Promise<void> {
   const container = document.getElementById("category-chart");
   if (!container) return;
@@ -130,31 +159,7 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
           borderWidth: 2,
           borderColor: borderColor,
         },
-        levels: [
-          {},
-          {
-            r0: "10%",
-            r: "50%",
-            itemStyle: {
-              opacity: 1,
-            },
-            label: {
-              rotate: "radial",
-              fontSize: 12,
-            },
-          },
-          {
-            r0: "50%",
-            r: "90%",
-            itemStyle: {
-              opacity: 0.75,
-            },
-            label: {
-              align: "right",
-              fontSize: 10,
-            },
-          },
-        ],
+        levels: buildSunburstLevels(Math.max(1, treeMaxDepth(data))),
         label: {
           show: true,
           color: dark ? "#e5e5e5" : "#262626",
