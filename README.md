@@ -12,12 +12,15 @@ built with Rust.
 ## Features
 
 The primary use case is running this program as a self-hosted Docker
-instance accessed locally or via VPN. Your data stays yours! There is currently
-no support for multiple users.
+instance accessed locally or via VPN. Your data stays yours! There is
+currently no support for multiple users.
 
-- **Transaction tracking** with categories, tags, and multi-currency support
-- **Spending analytics** with interactive charts (Sankey diagrams, category breakdowns, time series)
-- **Investment portfolio** tracking with positions, realized/unrealized gains, and market data from Yahoo Finance
+- **Transaction tracking** with categories, tags, and multi-currency
+  support
+- **Spending analytics** with interactive charts (Sankey diagrams,
+  category breakdowns, time series)
+- **Investment portfolio** tracking with positions, realized/unrealized
+  gains, and market data from Yahoo Finance
 - **Net worth** calculation and historical trends
 - **Automatic categorization** via pattern-matching rules
 - **Bulk import/export** of transactions and trading activities from CSV
@@ -25,15 +28,7 @@ no support for multiple users.
 
 ## Demo
 
-Try it out with Docker (or Podman):
-
-``` bash
-docker run --rm --init -p 7070:7070 \
-    -e SOLVENCY_PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS \
-    ghcr.io/adrianvollmer/solvency:latest
-```
-
-To spin up an instance with some demo data:
+Take it for a spin! To start up an instance with some demo data:
 
 ``` bash
 docker run --rm --init -p 7070:7070 \
@@ -105,7 +100,8 @@ sqlx migrate run
 
 ### Environment Variables
 
-All environment variables are prefixed with `SOLVENCY_`. Create a `.env` file:
+All environment variables are prefixed with `SOLVENCY_`. Create a `.env`
+file:
 
 ``` bash
 SOLVENCY_DATABASE_URL=sqlite://solvency.db
@@ -117,23 +113,23 @@ RUST_LOG=info
 
 #### Password Authentication
 
-The `SOLVENCY_PASSWORD_HASH` environment variable is **required**. Set it to an
-Argon2 hash of your password:
+The `SOLVENCY_PASSWORD_HASH` environment variable is **required**. Set
+it to an Argon2 hash of your password:
 
 ``` bash
 # Using argon2 CLI tool
 echo -n "your-password" | argon2 $(openssl rand -base64 16) -id -e
 ```
 
-To explicitly allow unauthenticated access (e.g., for local-only deployments),
-set:
+To explicitly allow unauthenticated access (e.g., for local-only
+deployments), set:
 
 ``` bash
 SOLVENCY_PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS
 ```
 
-The app will refuse to start if `SOLVENCY_PASSWORD_HASH` is unset, empty, or
-invalid.
+The app will refuse to start if `SOLVENCY_PASSWORD_HASH` is unset,
+empty, or invalid.
 
 ## Docker Deployment
 
@@ -179,8 +175,9 @@ docker run --rm -d \
   `sqlite:///app/data/solvency.db`)
 - `SOLVENCY_PORT`: Port to listen on (default: `7070`)
 - `SOLVENCY_HOST`: IP address to bind to (default: `0.0.0.0`)
-- `SOLVENCY_PASSWORD_HASH`: **Required.** Argon2 hash for authentication, or
-  `DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS` to disable auth
+- `SOLVENCY_PASSWORD_HASH`: **Required.** Argon2 hash for
+  authentication, or `DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS` to
+  disable auth
 - `RUST_LOG`: Log level (default: `info`)
 
 ## License
