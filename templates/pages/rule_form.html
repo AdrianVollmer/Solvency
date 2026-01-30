@@ -17,10 +17,13 @@
                     class="input w-full">
             {% endcall %}
 
-            {% call ui::field(label="Pattern (regex)", id="rule-pattern") %}
+            <div>
+                <label for="rule-pattern" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Pattern (<a href="https://docs.rs/regex/latest/regex/#syntax" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline">regex</a>)
+                </label>
                 <input type="text" id="rule-pattern" name="pattern" required placeholder="e.g., walmart|costco|kroger"
                     class="input w-full font-mono text-sm">
-            {% endcall %}
+            </div>
 
             <div class="grid grid-cols-2 gap-4">
                 {% call ui::field(label="Action", id="action-type-select") %}
