@@ -61,6 +61,20 @@
         </div>
     {% endcall %}
 
+    {# Apply Actions #}
+    <div class="flex flex-wrap gap-3">
+        <a href="/rules/{{ rule.id }}/preview?scope=all"
+            class="btn btn-primary inline-flex items-center gap-2">
+            <span class="icon-xs" aria-hidden="true">{{ icons.get("play")|safe }}</span>
+            Apply to all transactions
+        </a>
+        <a href="/rules/{{ rule.id }}/preview?scope=uncategorized"
+            class="btn btn-secondary inline-flex items-center gap-2">
+            <span class="icon-xs" aria-hidden="true">{{ icons.get("play")|safe }}</span>
+            Apply to uncategorized transactions
+        </a>
+    </div>
+
     {# Metadata Section #}
     <div class="text-sm text-neutral-500 dark:text-neutral-400 flex gap-6">
         <span>Created: {{ rule.created_at }}</span>

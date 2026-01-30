@@ -14,6 +14,8 @@ pub struct TransactionFilter {
     pub offset: Option<i64>,
     /// SQL ORDER BY expression (e.g., "e.date DESC"). Defaults to "e.date DESC, e.id DESC".
     pub sort_sql: Option<String>,
+    /// When true, only return transactions without a category.
+    pub uncategorized_only: bool,
 }
 
 pub fn list_transactions(
@@ -52,6 +54,9 @@ pub fn list_transactions(
     if let Some(tag_id) = filter.tag_id {
         sql.push_str(" AND EXISTS(SELECT 1 FROM transaction_tags et WHERE et.transaction_id = e.id AND et.tag_id = ?)");
         params_vec.push(Box::new(tag_id));
+    }
+    if filter.uncategorized_only {
+        sql.push_str(" AND e.category_id IS NULL");
     }
 
     // Use provided sort or default to date DESC
@@ -139,6 +144,9 @@ pub fn count_transactions(conn: &Connection, filter: &TransactionFilter) -> rusq
     if let Some(tag_id) = filter.tag_id {
         sql.push_str(" AND EXISTS(SELECT 1 FROM transaction_tags et WHERE et.transaction_id = e.id AND et.tag_id = ?)");
         params_vec.push(Box::new(tag_id));
+    }
+    if filter.uncategorized_only {
+        sql.push_str(" AND e.category_id IS NULL");
     }
 
     let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();

@@ -316,6 +316,7 @@ pub async fn index(
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
         sort_sql: Some(sort.sql_order_by()),
+        ..Default::default()
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
@@ -369,6 +370,7 @@ pub async fn table_partial(
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
         sort_sql: Some(sort.sql_order_by()),
+        ..Default::default()
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
@@ -542,16 +544,7 @@ struct TransactionExport {
 pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
     let conn = state.db.get()?;
 
-    let filter = crate::db::queries::transactions::TransactionFilter {
-        search: None,
-        category_id: None,
-        tag_id: None,
-        from_date: None,
-        to_date: None,
-        limit: None,
-        offset: None,
-        sort_sql: None,
-    };
+    let filter = crate::db::queries::transactions::TransactionFilter::default();
 
     let txns = transactions::list_transactions(&conn, &filter)?;
 

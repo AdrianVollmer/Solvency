@@ -1,14 +1,18 @@
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::header;
 use axum::response::{Html, IntoResponse, Json, Redirect};
 use axum::Form;
+use regex::RegexBuilder;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::db::queries::{categories, rules, tags};
+use crate::db::queries::{categories, rules, tags, transactions};
+use crate::db::queries::transactions::TransactionFilter;
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{CategoryWithPath, NewRule, Rule, RuleActionType, Settings, Tag};
+use crate::models::{
+    CategoryWithPath, NewRule, Rule, RuleActionType, Settings, Tag, TransactionWithRelations,
+};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -77,12 +81,38 @@ pub struct RuleRowTemplate {
     pub tags: Vec<Tag>,
 }
 
+#[derive(Template)]
+#[template(path = "pages/rule_preview.html")]
+pub struct RulePreviewTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub icons: crate::filters::Icons,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub xsrf_token: String,
+    pub rule: Rule,
+    pub scope: String,
+    pub matched: Vec<TransactionWithRelations>,
+    pub categories: Vec<CategoryWithPath>,
+    pub tags: Vec<Tag>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct RuleFormData {
     pub name: String,
     pub pattern: String,
     pub action_type: String,
     pub action_value: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PreviewQuery {
+    pub scope: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ApplyFormData {
+    pub scope: String,
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -376,4 +406,95 @@ pub async fn import(
         "skipped": skipped,
         "message": format!("Imported {} rules, skipped {}", created, skipped)
     })))
+}
+
+/// Fetch transactions matching a rule's regex pattern, filtered by scope.
+fn match_transactions(
+    conn: &rusqlite::Connection,
+    rule: &Rule,
+    scope: &str,
+) -> AppResult<Vec<TransactionWithRelations>> {
+    let re = RegexBuilder::new(&rule.pattern)
+        .case_insensitive(true)
+        .build()
+        .map_err(|e| AppError::Validation(format!("Invalid regex pattern: {e}")))?;
+
+    let filter = TransactionFilter {
+        uncategorized_only: scope == "uncategorized",
+        ..Default::default()
+    };
+    let all = transactions::list_transactions(conn, &filter)?;
+
+    let matched: Vec<TransactionWithRelations> = all
+        .into_iter()
+        .filter(|t| re.is_match(&t.transaction.description))
+        .collect();
+
+    Ok(matched)
+}
+
+pub async fn preview(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Query(params): Query<PreviewQuery>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let rule =
+        rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
+
+    let scope = params.scope.unwrap_or_else(|| "all".into());
+    let matched = match_transactions(&conn, &rule, &scope)?;
+    let category_list = categories::list_categories_with_path(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+
+    let template = RulePreviewTemplate {
+        title: format!("Preview: {}", rule.name),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        rule,
+        scope,
+        matched,
+        categories: category_list,
+        tags: tag_list,
+    };
+
+    template.render_html()
+}
+
+pub async fn apply(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Form(form): Form<ApplyFormData>,
+) -> AppResult<Redirect> {
+    let conn = state.db.get()?;
+
+    let rule =
+        rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
+
+    let matched = match_transactions(&conn, &rule, &form.scope)?;
+    let ids: Vec<i64> = matched.iter().map(|t| t.transaction.id).collect();
+
+    match rule.action_type {
+        RuleActionType::AssignCategory => {
+            let category_id: i64 = rule
+                .action_value
+                .parse()
+                .map_err(|_| AppError::Validation("Invalid category ID".into()))?;
+            rules::apply_rule_category(&conn, &ids, category_id)?;
+        }
+        RuleActionType::AssignTag => {
+            let tag_id: i64 = rule
+                .action_value
+                .parse()
+                .map_err(|_| AppError::Validation("Invalid tag ID".into()))?;
+            rules::apply_rule_tag(&conn, &ids, tag_id)?;
+        }
+    }
+
+    Ok(Redirect::to(&format!("/rules/{id}")))
 }

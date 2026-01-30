@@ -80,6 +80,8 @@ pub fn routes() -> Router<AppState> {
         .route("/rules/:id", get(rules::detail))
         .route("/rules/:id/edit", get(rules::edit_form))
         .route("/rules/:id/update", post(rules::update))
+        .route("/rules/:id/preview", get(rules::preview))
+        .route("/rules/:id/apply", post(rules::apply))
         .route("/rules/:id/delete", delete(rules::delete))
         .route("/rules/delete-all", delete(rules::delete_all))
         // Import

@@ -96,3 +96,48 @@ pub fn delete_all_rules(conn: &Connection) -> rusqlite::Result<usize> {
     warn!(count = rows, "Deleted all rules");
     Ok(rows)
 }
+
+/// Batch-assign a category to the given transaction IDs.
+pub fn apply_rule_category(
+    conn: &Connection,
+    transaction_ids: &[i64],
+    category_id: i64,
+) -> rusqlite::Result<usize> {
+    if transaction_ids.is_empty() {
+        return Ok(0);
+    }
+    let placeholders: String = transaction_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let sql = format!(
+        "UPDATE transactions SET category_id = ?, updated_at = datetime('now') WHERE id IN ({})",
+        placeholders
+    );
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    params_vec.push(Box::new(category_id));
+    for id in transaction_ids {
+        params_vec.push(Box::new(*id));
+    }
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let rows = conn.execute(&sql, params_refs.as_slice())?;
+    debug!(count = rows, category_id, "Applied rule: assigned category");
+    Ok(rows)
+}
+
+/// Batch-add a tag to the given transaction IDs.
+pub fn apply_rule_tag(
+    conn: &Connection,
+    transaction_ids: &[i64],
+    tag_id: i64,
+) -> rusqlite::Result<usize> {
+    if transaction_ids.is_empty() {
+        return Ok(0);
+    }
+    let mut count = 0usize;
+    for tx_id in transaction_ids {
+        count += conn.execute(
+            "INSERT OR IGNORE INTO transaction_tags (transaction_id, tag_id) VALUES (?, ?)",
+            params![tx_id, tag_id],
+        )?;
+    }
+    debug!(count, tag_id, "Applied rule: assigned tag");
+    Ok(count)
+}
