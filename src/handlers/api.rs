@@ -727,6 +727,32 @@ pub async fn flow_sankey(
         .collect();
     expense_trees.sort_by(|a, b| b.subtotal.cmp(&a.subtotal));
 
+    // Detect category names that appear on both income and expense sides.
+    // Without disambiguation, shared names create cycles in the DAG
+    // (e.g. "Expenses" → Budget → "Expenses").
+    fn collect_tree_names(node: &SankeyTreeNode, names: &mut std::collections::HashSet<String>) {
+        names.insert(node.cat.name.clone());
+        if !node.children.is_empty() {
+            for child in &node.children {
+                collect_tree_names(child, names);
+            }
+            if node.direct > 0 {
+                names.insert(format!("Other {}", node.cat.name));
+            }
+        }
+    }
+
+    let mut income_names: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut expense_names: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for tree in &income_trees {
+        collect_tree_names(tree, &mut income_names);
+    }
+    for tree in &expense_trees {
+        collect_tree_names(tree, &mut expense_names);
+    }
+    let overlap: std::collections::HashSet<String> =
+        income_names.intersection(&expense_names).cloned().collect();
+
     // Column layout based on actual max depth on each side:
     //   Income leaves (col 0) ... income roots (col max_inc)
     //   | Budget (col max_inc+1) |
@@ -764,6 +790,7 @@ pub async fn flow_sankey(
     // Recursively emit income nodes.  Income flows left-to-right:
     // deepest leaves at col 0 → parents → roots → Budget.
     // A node at tree_depth d gets Sankey col = max_depth - d.
+    // Names in `overlap` are suffixed with " (In)" to avoid cycles.
     fn emit_income(
         node: &SankeyTreeNode,
         tree_depth: u32,
@@ -771,26 +798,50 @@ pub async fn flow_sankey(
         nodes: &mut Vec<SankeyNode>,
         links: &mut Vec<SankeyLink>,
         seen: &mut std::collections::HashSet<String>,
+        overlap: &std::collections::HashSet<String>,
     ) {
         let col = max_depth - tree_depth;
-        ensure_node(nodes, seen, &node.cat.name, &node.cat.color, col);
+        let name = if overlap.contains(&node.cat.name) {
+            format!("{} (In)", node.cat.name)
+        } else {
+            node.cat.name.clone()
+        };
+        ensure_node(nodes, seen, &name, &node.cat.color, col);
 
         if !node.children.is_empty() {
             for child in &node.children {
-                emit_income(child, tree_depth + 1, max_depth, nodes, links, seen);
+                emit_income(
+                    child,
+                    tree_depth + 1,
+                    max_depth,
+                    nodes,
+                    links,
+                    seen,
+                    overlap,
+                );
+                let child_name = if overlap.contains(&child.cat.name) {
+                    format!("{} (In)", child.cat.name)
+                } else {
+                    child.cat.name.clone()
+                };
                 links.push(SankeyLink {
-                    source: child.cat.name.clone(),
-                    target: node.cat.name.clone(),
+                    source: child_name,
+                    target: name.clone(),
                     value: child.subtotal as f64 / 100.0,
                 });
             }
             if node.direct > 0 {
-                let other = format!("Other {}", node.cat.name);
+                let other_base = format!("Other {}", node.cat.name);
+                let other = if overlap.contains(&other_base) {
+                    format!("{} (In)", other_base)
+                } else {
+                    other_base
+                };
                 let child_col = max_depth - (tree_depth + 1);
                 ensure_node(nodes, seen, &other, &node.cat.color, child_col);
                 links.push(SankeyLink {
                     source: other,
-                    target: node.cat.name.clone(),
+                    target: name.clone(),
                     value: node.direct as f64 / 100.0,
                 });
             }
@@ -806,9 +857,15 @@ pub async fn flow_sankey(
             &mut nodes,
             &mut links,
             &mut node_names,
+            &overlap,
         );
+        let root_name = if overlap.contains(&tree.cat.name) {
+            format!("{} (In)", tree.cat.name)
+        } else {
+            tree.cat.name.clone()
+        };
         links.push(SankeyLink {
-            source: tree.cat.name.clone(),
+            source: root_name,
             target: budget_name.clone(),
             value: tree.subtotal as f64 / 100.0,
         });

@@ -183,6 +183,71 @@ async fn test_uncategorized_transaction() {
     );
 }
 
+/// Test sankey does not produce cycles when a category tree has both
+/// income and expense transactions (e.g. a refund under an expense
+/// category).  The overlapping names must be disambiguated so the DAG
+/// remains acyclic.
+#[tokio::test]
+async fn test_flow_sankey_no_cycle_on_mixed_income_expense() {
+    let client = TestClient::new();
+
+    // Groceries (id=12) is under Food & Dining (id=4) which is under
+    // Expenses (id=1).  A positive amount here (refund) makes the
+    // "Groceries" → "Food & Dining" → "Expenses" chain appear on the
+    // income side.
+    assert!(
+        client
+            .create_transaction("2024-01-01", "50.00", "Grocery refund", None, Some(12))
+            .await
+    );
+
+    // Restaurants (id=13) is also under Food & Dining (id=4).
+    // A negative amount makes it appear on the expense side, pulling
+    // "Food & Dining" and "Expenses" into the expense tree as well.
+    assert!(
+        client
+            .create_transaction("2024-01-02", "-200.00", "Dinner", None, Some(13))
+            .await
+    );
+
+    let (status, body) = client.get("/api/analytics/flow-sankey").await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.contains("\"nodes\""), "Response must have nodes");
+    assert!(body.contains("\"links\""), "Response must have links");
+
+    // The overlapping names should be disambiguated on the income side.
+    assert!(
+        body.contains("(In)"),
+        "Overlapping income-side names should be suffixed with (In)"
+    );
+
+    // Verify no node name appears as both a link source and a link
+    // target in a way that would form a cycle.  A simple check: no name
+    // should appear as the source→Budget AND Budget→target.
+    let parsed: serde_json::Value = serde_json::from_str(&body).expect("valid JSON");
+    let links = parsed["links"].as_array().expect("links array");
+
+    let mut into_budget: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    let mut from_budget: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    for link in links {
+        let src = link["source"].as_str().unwrap();
+        let tgt = link["target"].as_str().unwrap();
+        if tgt == "Budget" {
+            into_budget.insert(src);
+        }
+        if src == "Budget" {
+            from_budget.insert(tgt);
+        }
+    }
+    let cycle_nodes: Vec<&&str> = into_budget.intersection(&from_budget).collect();
+    assert!(
+        cycle_nodes.is_empty(),
+        "No node should flow both into and out of Budget, found: {:?}",
+        cycle_nodes
+    );
+}
+
 /// Test empty date range returns no data.
 #[tokio::test]
 async fn test_empty_date_range() {
