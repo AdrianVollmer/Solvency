@@ -497,7 +497,30 @@ pub async fn create(
     let conn = state.db.get()?;
 
     let new_activity = form.to_new_activity()?;
-    trading::create_activity(&conn, &new_activity)?;
+    let id = trading::create_activity(&conn, &new_activity)?;
+
+    match new_activity.activity_type {
+        TradingActivityType::Split => {
+            if let Some(ratio) = new_activity.quantity {
+                trading::apply_split_to_past_activities(
+                    &conn,
+                    id,
+                    &new_activity.symbol,
+                    &new_activity.date,
+                    ratio,
+                )?;
+            }
+        }
+        TradingActivityType::Buy | TradingActivityType::Sell => {
+            trading::apply_existing_splits_to_activity(
+                &conn,
+                id,
+                &new_activity.symbol,
+                &new_activity.date,
+            )?;
+        }
+        _ => {}
+    }
 
     Ok(Redirect::to("/trading/activities"))
 }
@@ -509,14 +532,55 @@ pub async fn update(
 ) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
+    let old_activity = trading::get_activity(&conn, id)?
+        .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
+
+    // Undo split effects from the old version of this activity.
+    if old_activity.activity_type == TradingActivityType::Split {
+        trading::reverse_split_adjustments(&conn, id)?;
+    } else {
+        trading::delete_adjustments_targeting_activity(&conn, id)?;
+    }
+
     let new_activity = form.to_new_activity()?;
     trading::update_activity(&conn, id, &new_activity)?;
+
+    // Apply split effects for the new version.
+    match new_activity.activity_type {
+        TradingActivityType::Split => {
+            if let Some(ratio) = new_activity.quantity {
+                trading::apply_split_to_past_activities(
+                    &conn,
+                    id,
+                    &new_activity.symbol,
+                    &new_activity.date,
+                    ratio,
+                )?;
+            }
+        }
+        TradingActivityType::Buy | TradingActivityType::Sell => {
+            trading::apply_existing_splits_to_activity(
+                &conn,
+                id,
+                &new_activity.symbol,
+                &new_activity.date,
+            )?;
+        }
+        _ => {}
+    }
 
     Ok(Redirect::to("/trading/activities"))
 }
 
 pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
+
+    // If this is a split, reverse its adjustments before deleting.
+    if let Some(activity) = trading::get_activity(&conn, id)? {
+        if activity.activity_type == TradingActivityType::Split {
+            trading::reverse_split_adjustments(&conn, id)?;
+        }
+    }
 
     trading::delete_activity(&conn, id)?;
 

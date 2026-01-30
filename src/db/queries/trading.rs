@@ -265,11 +265,8 @@ fn calculate_positions_from_activities(activities: Vec<ActivityRow>) -> Vec<Posi
                 }
             }
             TradingActivityType::Split => {
-                // Split adjusts quantity but not total cost
-                // quantity field contains the split ratio (e.g., 2.0 for 2:1 split)
-                if qty > 0.0 {
-                    entry.0 *= qty;
-                }
+                // Split adjustments are pre-applied to BUY/SELL quantities
+                // when activities are created. No runtime adjustment needed.
             }
             TradingActivityType::Fee | TradingActivityType::Tax => {
                 // These reduce cost basis (they're expenses associated with the position)
@@ -420,10 +417,8 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
                 }
             }
             TradingActivityType::Split => {
-                // Split adjusts quantity but not cost/proceeds
-                if qty > 0.0 {
-                    entry.0 *= qty;
-                }
+                // Split adjustments are pre-applied to BUY/SELL quantities
+                // when activities are created. No runtime adjustment needed.
             }
             TradingActivityType::Fee => {
                 // Fee amount is stored in unit_price_cents
@@ -805,5 +800,273 @@ pub fn mark_import_row_error(conn: &Connection, row_id: i64, error: &str) -> App
         "UPDATE trading_import_rows SET status = 'error', error = ?2 WHERE id = ?1",
         params![row_id, error],
     )?;
+    Ok(())
+}
+
+// Split adjustment operations
+
+/// Apply a split to all prior BUY/SELL activities for the same symbol.
+/// Multiplies their quantity by the ratio and divides their unit_price by it,
+/// recording original values in `trading_split_adjustments` for reversal.
+pub fn apply_split_to_past_activities(
+    conn: &Connection,
+    split_activity_id: i64,
+    symbol: &str,
+    split_date: &str,
+    ratio: f64,
+) -> rusqlite::Result<()> {
+    let mut stmt = conn.prepare(
+        "SELECT id, quantity, unit_price_cents
+         FROM trading_activities
+         WHERE symbol = ?1
+           AND date < ?2
+           AND activity_type IN ('BUY', 'SELL')
+           AND quantity IS NOT NULL
+           AND id NOT IN (
+               SELECT target_activity_id FROM trading_split_adjustments
+               WHERE split_activity_id = ?3
+           )",
+    )?;
+
+    let targets: Vec<(i64, f64, Option<i64>)> = stmt
+        .query_map(params![symbol, split_date, split_activity_id], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    for (target_id, original_qty, original_price) in targets {
+        conn.execute(
+            "INSERT INTO trading_split_adjustments
+             (split_activity_id, target_activity_id, original_quantity, original_unit_price_cents, split_ratio)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![split_activity_id, target_id, original_qty, original_price, ratio],
+        )?;
+
+        let new_qty = original_qty * ratio;
+        let new_price = original_price.map(|p| (p as f64 / ratio).round() as i64);
+
+        conn.execute(
+            "UPDATE trading_activities
+             SET quantity = ?1, unit_price_cents = ?2, updated_at = datetime('now')
+             WHERE id = ?3",
+            params![new_qty, new_price, target_id],
+        )?;
+
+        debug!(
+            split_id = split_activity_id,
+            target_id = target_id,
+            original_qty = original_qty,
+            new_qty = new_qty,
+            "Applied split adjustment"
+        );
+    }
+
+    Ok(())
+}
+
+/// Apply all existing splits (dated after this activity) to a newly created BUY/SELL.
+pub fn apply_existing_splits_to_activity(
+    conn: &Connection,
+    activity_id: i64,
+    symbol: &str,
+    activity_date: &str,
+) -> rusqlite::Result<()> {
+    let mut stmt = conn.prepare(
+        "SELECT id, quantity
+         FROM trading_activities
+         WHERE symbol = ?1
+           AND date > ?2
+           AND activity_type = 'SPLIT'
+           AND quantity IS NOT NULL
+           AND quantity > 0
+         ORDER BY date ASC, id ASC",
+    )?;
+
+    let splits: Vec<(i64, f64)> = stmt
+        .query_map(params![symbol, activity_date], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    if splits.is_empty() {
+        return Ok(());
+    }
+
+    let (current_qty, current_price): (Option<f64>, Option<i64>) = conn.query_row(
+        "SELECT quantity, unit_price_cents FROM trading_activities WHERE id = ?1",
+        [activity_id],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    )?;
+
+    let Some(mut running_qty) = current_qty else {
+        return Ok(());
+    };
+    let mut running_price = current_price;
+
+    for (split_id, ratio) in &splits {
+        let already_applied: bool = conn.query_row(
+            "SELECT COUNT(*) FROM trading_split_adjustments
+             WHERE split_activity_id = ?1 AND target_activity_id = ?2",
+            params![split_id, activity_id],
+            |row| Ok(row.get::<_, i64>(0)? > 0),
+        )?;
+
+        if already_applied {
+            continue;
+        }
+
+        conn.execute(
+            "INSERT INTO trading_split_adjustments
+             (split_activity_id, target_activity_id, original_quantity, original_unit_price_cents, split_ratio)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![split_id, activity_id, running_qty, running_price, ratio],
+        )?;
+
+        running_qty *= ratio;
+        running_price = running_price.map(|p| (p as f64 / ratio).round() as i64);
+    }
+
+    if Some(running_qty) != current_qty || running_price != current_price {
+        conn.execute(
+            "UPDATE trading_activities
+             SET quantity = ?1, unit_price_cents = ?2, updated_at = datetime('now')
+             WHERE id = ?3",
+            params![running_qty, running_price, activity_id],
+        )?;
+    }
+
+    Ok(())
+}
+
+/// Reverse all adjustments made by a specific split activity, restoring
+/// target activities to the values they would have without this split.
+///
+/// Handles the case of multiple overlapping splits by recomputing from
+/// the base (pre-any-split) values and re-applying remaining splits.
+pub fn reverse_split_adjustments(
+    conn: &Connection,
+    split_activity_id: i64,
+) -> rusqlite::Result<()> {
+    // Collect the target activity ids affected by this split.
+    let mut target_stmt = conn.prepare(
+        "SELECT target_activity_id FROM trading_split_adjustments
+         WHERE split_activity_id = ?1",
+    )?;
+    let target_ids: Vec<i64> = target_stmt
+        .query_map([split_activity_id], |row| row.get(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+    drop(target_stmt);
+
+    for target_id in target_ids {
+        recompute_target_without_split(conn, target_id, split_activity_id)?;
+    }
+
+    // Delete the adjustment records for this split.
+    conn.execute(
+        "DELETE FROM trading_split_adjustments WHERE split_activity_id = ?1",
+        [split_activity_id],
+    )?;
+
+    Ok(())
+}
+
+/// Remove adjustment records that target a specific activity (for cleanup
+/// when a BUY/SELL is deleted—no reversal needed since the activity is going away).
+pub fn delete_adjustments_targeting_activity(
+    conn: &Connection,
+    target_activity_id: i64,
+) -> rusqlite::Result<()> {
+    conn.execute(
+        "DELETE FROM trading_split_adjustments WHERE target_activity_id = ?1",
+        [target_activity_id],
+    )?;
+    Ok(())
+}
+
+/// Recompute a target activity's quantity/price after removing one split.
+///
+/// Algorithm:
+/// 1. Find the base value (original before any split) from the earliest adjustment.
+/// 2. Delete the adjustment record for the removed split.
+/// 3. Re-apply remaining splits in chronological order, updating their
+///    stored originals along the way.
+/// 4. Write the final value back to the activity.
+fn recompute_target_without_split(
+    conn: &Connection,
+    target_id: i64,
+    removed_split_id: i64,
+) -> rusqlite::Result<()> {
+    // Get the base (pre-any-split) values: the original from the earliest adjustment.
+    let base: Option<(f64, Option<i64>)> = conn
+        .query_row(
+            "SELECT sa.original_quantity, sa.original_unit_price_cents
+             FROM trading_split_adjustments sa
+             JOIN trading_activities s ON s.id = sa.split_activity_id
+             WHERE sa.target_activity_id = ?1
+             ORDER BY s.date ASC, s.id ASC
+             LIMIT 1",
+            [target_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .optional()?;
+
+    let Some((base_qty, base_price)) = base else {
+        return Ok(());
+    };
+
+    // Delete the record for the removed split.
+    conn.execute(
+        "DELETE FROM trading_split_adjustments
+         WHERE split_activity_id = ?1 AND target_activity_id = ?2",
+        params![removed_split_id, target_id],
+    )?;
+
+    // Collect remaining adjustments in chronological order.
+    let mut remaining_stmt = conn.prepare(
+        "SELECT sa.id, sa.split_ratio
+         FROM trading_split_adjustments sa
+         JOIN trading_activities s ON s.id = sa.split_activity_id
+         WHERE sa.target_activity_id = ?1
+         ORDER BY s.date ASC, s.id ASC",
+    )?;
+    let remaining: Vec<(i64, f64)> = remaining_stmt
+        .query_map([target_id], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    // Replay remaining adjustments from the base values.
+    let mut running_qty = base_qty;
+    let mut running_price = base_price;
+
+    for (adj_id, ratio) in &remaining {
+        conn.execute(
+            "UPDATE trading_split_adjustments
+             SET original_quantity = ?1, original_unit_price_cents = ?2
+             WHERE id = ?3",
+            params![running_qty, running_price, adj_id],
+        )?;
+
+        running_qty *= ratio;
+        running_price = running_price.map(|p| (p as f64 / ratio).round() as i64);
+    }
+
+    // Write the final computed values to the activity.
+    conn.execute(
+        "UPDATE trading_activities
+         SET quantity = ?1, unit_price_cents = ?2, updated_at = datetime('now')
+         WHERE id = ?3",
+        params![running_qty, running_price, target_id],
+    )?;
+
+    debug!(
+        target_id = target_id,
+        removed_split = removed_split_id,
+        final_qty = running_qty,
+        "Recomputed target after split removal"
+    );
+
     Ok(())
 }

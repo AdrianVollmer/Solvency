@@ -480,8 +480,48 @@ async fn import_rows_background(state: AppState, session_id: String) {
         };
 
         match trading::create_activity(&conn, &new_activity) {
-            Ok(_) => {
-                let _ = trading::mark_import_row_imported(&conn, row.id);
+            Ok(id) => {
+                // Apply split adjustments for the newly imported activity.
+                let split_result = match activity_type {
+                    TradingActivityType::Split => {
+                        if let Some(ratio) = quantity {
+                            trading::apply_split_to_past_activities(
+                                &conn,
+                                id,
+                                &new_activity.symbol,
+                                &new_activity.date,
+                                ratio,
+                            )
+                        } else {
+                            Ok(())
+                        }
+                    }
+                    TradingActivityType::Buy | TradingActivityType::Sell => {
+                        trading::apply_existing_splits_to_activity(
+                            &conn,
+                            id,
+                            &new_activity.symbol,
+                            &new_activity.date,
+                        )
+                    }
+                    _ => Ok(()),
+                };
+                if let Err(e) = split_result {
+                    error_count += 1;
+                    errors.push(format!(
+                        "Row {}: Split adjustment failed: {}",
+                        row.row_index + 1,
+                        e
+                    ));
+                    let _ = trading::mark_import_row_error(
+                        &conn,
+                        row.id,
+                        &format!("Split adjustment failed: {}", e),
+                    );
+                    let _ = trading::increment_import_session_error_count(&conn, &session_id);
+                } else {
+                    let _ = trading::mark_import_row_imported(&conn, row.id);
+                }
             }
             Err(e) => {
                 error_count += 1;

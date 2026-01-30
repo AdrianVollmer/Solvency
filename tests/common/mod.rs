@@ -13,8 +13,10 @@ use axum::Router;
 use http_body_util::BodyExt;
 use solvency::auth;
 use solvency::config::{AuthMode, Config};
+use solvency::db::queries::trading;
 use solvency::db::{create_in_memory_pool, migrations};
 use solvency::handlers;
+use solvency::models::TradingActivity;
 use solvency::state::{AppState, JsManifest, MarketDataRefreshState};
 use solvency::xsrf::{xsrf_middleware, XsrfToken};
 use std::path::{Path, PathBuf};
@@ -308,6 +310,66 @@ impl TestClient {
         let (status, _) = self
             .post_form(
                 "/trading/activities/create",
+                &[
+                    ("date", date),
+                    ("symbol", symbol),
+                    ("activity_type", activity_type),
+                    ("quantity", quantity),
+                    ("unit_price", unit_price),
+                    ("currency", "USD"),
+                    ("fee", "0"),
+                ],
+            )
+            .await;
+        status == StatusCode::SEE_OTHER
+    }
+
+    /// Get all trading activities for a symbol, ordered by date ascending.
+    pub fn get_activities_for_symbol(&self, symbol: &str) -> Vec<TradingActivity> {
+        let conn = self.state.db.get().expect("Failed to get DB connection");
+        trading::get_activities_for_symbol(&conn, symbol).expect("Failed to query activities")
+    }
+
+    /// Make a DELETE request and return status and body.
+    pub async fn delete_request(&self, uri: &str) -> (StatusCode, String) {
+        let response = self
+            .router()
+            .oneshot(
+                Request::builder()
+                    .method("DELETE")
+                    .uri(uri)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        (status, String::from_utf8_lossy(&body).to_string())
+    }
+
+    /// Delete a trading activity by ID via the API.
+    pub async fn delete_trading_activity(&self, id: i64) -> bool {
+        let (status, _) = self
+            .delete_request(&format!("/trading/activities/{}/delete", id))
+            .await;
+        status == StatusCode::OK
+    }
+
+    /// Update a trading activity via POST and return success status.
+    pub async fn update_trading_activity(
+        &self,
+        id: i64,
+        date: &str,
+        symbol: &str,
+        activity_type: &str,
+        quantity: &str,
+        unit_price: &str,
+    ) -> bool {
+        let (status, _) = self
+            .post_form(
+                &format!("/trading/activities/{}/update", id),
                 &[
                     ("date", date),
                     ("symbol", symbol),
