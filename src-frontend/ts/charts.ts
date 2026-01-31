@@ -22,6 +22,8 @@ interface MonthlySummary {
 interface SankeyData {
   nodes: { name: string; color?: string; depth: number }[];
   links: { source: string; target: string; value: number }[];
+  from_date?: string;
+  to_date?: string;
 }
 
 interface MonthlyByCategoryResponse {
@@ -421,7 +423,15 @@ async function updateFlowChart(params: URLSearchParams): Promise<void> {
       trigger: "item",
       formatter: (params: any) => {
         if (params.dataType === "edge") {
-          return `${params.data.source} → ${params.data.target}: ${formatCurrency(params.data.value * 100)}`;
+          const amount = formatCurrency(params.data.value * 100);
+          const months = getMonthSpan(data.from_date, data.to_date);
+          const perMonth = formatCurrency(
+            (params.data.value * 100) / months,
+          );
+          return (
+            `${params.data.source} → ${params.data.target}: ${amount}` +
+            `<br/><span style="font-size:0.85em;opacity:0.7">${perMonth}/mo</span>`
+          );
         }
         return `<strong>${params.name}</strong>`;
       },
@@ -461,6 +471,20 @@ async function updateFlowChart(params: URLSearchParams): Promise<void> {
 
   activeChart.setOption(option);
   activeChart.resize();
+}
+
+function getMonthSpan(fromDate?: string, toDate?: string): number {
+  const fromStr =
+    fromDate ||
+    (document.getElementById("from_date") as HTMLInputElement)?.value;
+  const toStr =
+    toDate ||
+    (document.getElementById("to_date") as HTMLInputElement)?.value;
+  if (!fromStr || !toStr) return 1;
+  const from = new Date(fromStr + "T00:00:00");
+  const to = new Date(toStr + "T00:00:00");
+  const days = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24) + 1;
+  return Math.max(1, days / (365.25 / 12));
 }
 
 function getFilterParams(): URLSearchParams {

@@ -566,6 +566,12 @@ pub struct SankeyLink {
 pub struct SankeyResponse {
     pub nodes: Vec<SankeyNode>,
     pub links: Vec<SankeyLink>,
+    /// Earliest transaction date in the result set (YYYY-MM-DD)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_date: Option<String>,
+    /// Latest transaction date in the result set (YYYY-MM-DD)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to_date: Option<String>,
 }
 
 pub async fn flow_sankey(
@@ -586,6 +592,20 @@ pub async fn flow_sankey(
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
+
+    // Derive actual date range from transactions (important for the "All" preset
+    // where the filter dates are 1970–2099).
+    let actual_from = transaction_list
+        .iter()
+        .map(|t| t.transaction.date.as_str())
+        .min()
+        .map(String::from);
+    let actual_to = transaction_list
+        .iter()
+        .map(|t| t.transaction.date.as_str())
+        .max()
+        .map(String::from);
+
     let all_categories = categories::list_categories(&conn)?;
 
     let cat_map: std::collections::HashMap<i64, &crate::models::category::Category> =
@@ -664,6 +684,8 @@ pub async fn flow_sankey(
         return Ok(Json(SankeyResponse {
             nodes: Vec::new(),
             links: Vec::new(),
+            from_date: None,
+            to_date: None,
         }));
     }
 
@@ -978,7 +1000,12 @@ pub async fn flow_sankey(
         "flow_sankey: returning hierarchical data"
     );
 
-    Ok(Json(SankeyResponse { nodes, links }))
+    Ok(Json(SankeyResponse {
+        nodes,
+        links,
+        from_date: actual_from,
+        to_date: actual_to,
+    }))
 }
 
 // --- Icon API ---
