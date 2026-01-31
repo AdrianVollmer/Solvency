@@ -45,13 +45,29 @@ pub async fn error_page_middleware(
     let is_api = path.starts_with("/api/");
     let is_health = path == "/health";
 
+    let method = request.method().clone();
     let response = next.run(request).await;
+
+    let status = response.status();
+    if status.is_client_error() || status.is_server_error() {
+        let message = response
+            .extensions()
+            .get::<ErrorMessage>()
+            .map(|e| e.0.as_str())
+            .unwrap_or("");
+        tracing::warn!(
+            %status,
+            %method,
+            %path,
+            message,
+            "request failed"
+        );
+    }
 
     if is_htmx || is_api || is_health {
         return response;
     }
 
-    let status = response.status();
     if status.is_client_error() || status.is_server_error() {
         render_error_page(&state, status, &response)
     } else {
