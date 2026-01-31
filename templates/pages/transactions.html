@@ -44,6 +44,7 @@
             <label for="category_filter" class="sr-only">Filter by category</label>
             <select id="category_filter" name="category_id" class="input">
                 <option value="">All Categories</option>
+                <option value="0" {% if filter.is_uncategorized() %}selected{% endif %}>Uncategorized</option>
                 {% for cat in categories %}
                 <option value="{{ cat.category.id }}" {% if filter.matches_category(cat.category.id) %}selected{% endif %}>
                     {{ cat.display_name() }}

@@ -161,7 +161,15 @@ pub struct TransactionEditTemplate {
 #[derive(Debug, Default, Clone, Deserialize)]
 pub struct TransactionFilterParams {
     pub search: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
     pub category_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
     pub tag_id: Option<i64>,
     pub from_date: Option<String>,
     pub to_date: Option<String>,
@@ -201,6 +209,10 @@ impl Sortable for TransactionFilterParams {
 }
 
 impl TransactionFilterParams {
+    pub fn is_uncategorized(&self) -> bool {
+        self.category_id == Some(0)
+    }
+
     pub fn matches_category(&self, id: &i64) -> bool {
         self.category_id == Some(*id)
     }
@@ -317,14 +329,18 @@ pub async fn index(
 
     let filter = transactions::TransactionFilter {
         search: params.search.clone(),
-        category_id: params.category_id,
+        category_id: if params.is_uncategorized() {
+            None
+        } else {
+            params.category_id
+        },
         tag_id: params.tag_id,
         from_date: Some(date_range.from_str()),
         to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
         sort_sql: Some(sort.sql_order_by()),
-        ..Default::default()
+        uncategorized_only: params.is_uncategorized(),
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
@@ -371,14 +387,18 @@ pub async fn table_partial(
 
     let filter = transactions::TransactionFilter {
         search: params.search.clone(),
-        category_id: params.category_id,
+        category_id: if params.is_uncategorized() {
+            None
+        } else {
+            params.category_id
+        },
         tag_id: params.tag_id,
         from_date: Some(date_range.from_str()),
         to_date: Some(date_range.to_str()),
         limit: Some(page_size),
         offset: Some((page - 1) * page_size),
         sort_sql: Some(sort.sql_order_by()),
-        ..Default::default()
+        uncategorized_only: params.is_uncategorized(),
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
