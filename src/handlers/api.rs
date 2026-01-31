@@ -167,6 +167,36 @@ pub async fn spending_over_time(
     Ok(Json(result))
 }
 
+/// Generate all "YYYY-MM" strings for months between two "YYYY-MM-DD" date
+/// strings (inclusive of the months each date falls in).
+fn all_months_in_range(from_date: &str, to_date: &str) -> Vec<String> {
+    use chrono::{Datelike, NaiveDate};
+    let from = match NaiveDate::parse_from_str(from_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => return Vec::new(),
+    };
+    let to = match NaiveDate::parse_from_str(to_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut months = Vec::new();
+    let (mut year, mut month) = (from.year(), from.month());
+    let (end_year, end_month) = (to.year(), to.month());
+
+    while (year, month) <= (end_year, end_month) {
+        months.push(format!("{year:04}-{month:02}"));
+        if month == 12 {
+            year += 1;
+            month = 1;
+        } else {
+            month += 1;
+        }
+    }
+
+    months
+}
+
 pub async fn monthly_summary(
     State(state): State<AppState>,
     Query(params): Query<AnalyticsParams>,
@@ -203,6 +233,19 @@ pub async fn monthly_summary(
         let entry = monthly_data.entry(month).or_insert((0, 0));
         entry.0 += transaction.transaction.amount_cents;
         entry.1 += 1;
+    }
+
+    // Fill gaps between the first and last month so zero-spending months
+    // still appear as bars instead of being skipped.
+    if monthly_data.len() >= 2 {
+        if let (Some(first), Some(last)) = (
+            monthly_data.keys().min().cloned(),
+            monthly_data.keys().max().cloned(),
+        ) {
+            for month in all_months_in_range(&format!("{first}-01"), &format!("{last}-01")) {
+                monthly_data.entry(month).or_insert((0, 0));
+            }
+        }
     }
 
     let mut result: Vec<MonthlySummary> = monthly_data
@@ -510,6 +553,16 @@ pub async fn monthly_by_category(
         all_months.insert(month.clone());
         *data.entry(cat_id).or_default().entry(month).or_insert(0) +=
             transaction.transaction.amount_cents;
+    }
+
+    // Fill gaps between the first and last month so zero-spending months
+    // still appear as bars instead of being skipped.
+    if all_months.len() >= 2 {
+        let first = all_months.iter().next().unwrap().clone();
+        let last = all_months.iter().next_back().unwrap().clone();
+        for month in all_months_in_range(&format!("{first}-01"), &format!("{last}-01")) {
+            all_months.insert(month);
+        }
     }
 
     let months: Vec<String> = all_months.into_iter().collect();
