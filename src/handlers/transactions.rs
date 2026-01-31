@@ -71,7 +71,6 @@ pub struct TransactionsTemplate {
     pub xsrf_token: String,
     pub transactions: Vec<TransactionWithRelations>,
     pub categories: Vec<CategoryWithPath>,
-    pub tags: Vec<Tag>,
     pub total_count: i64,
     pub delete_count: i64,
     pub page: i64,
@@ -80,6 +79,23 @@ pub struct TransactionsTemplate {
     pub date_range: DateRange,
     pub presets: &'static [DatePreset],
     pub sort: TableSort<TransactionSortColumn>,
+}
+
+#[derive(Template)]
+#[template(path = "pages/transactions_bulk.html")]
+pub struct TransactionBulkTemplate {
+    pub title: String,
+    pub settings: Settings,
+    pub icons: crate::filters::Icons,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub xsrf_token: String,
+    pub categories: Vec<CategoryWithPath>,
+    pub tags: Vec<Tag>,
+    pub total_count: i64,
+    pub filter: TransactionFilterParams,
+    pub date_range: DateRange,
+    pub back_url: String,
 }
 
 #[derive(Template)]
@@ -347,7 +363,6 @@ pub async fn index(
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
     let total_count = transactions::count_transactions(&conn, &filter)?;
     let cats = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
 
     let template = TransactionsTemplate {
         title: "Transactions".into(),
@@ -358,7 +373,6 @@ pub async fn index(
         xsrf_token: state.xsrf_token.value().to_string(),
         transactions: transaction_list,
         categories: cats,
-        tags: tag_list,
         total_count,
         delete_count: total_count,
         page,
@@ -416,6 +430,58 @@ pub async fn table_partial(
         filter: params,
         date_range,
         sort,
+    };
+
+    template.render_html()
+}
+
+pub async fn bulk_page(
+    State(state): State<AppState>,
+    Query(params): Query<TransactionFilterParams>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let date_range = params.resolve_date_range();
+
+    let filter = transactions::TransactionFilter {
+        search: params.search.clone(),
+        category_id: if params.is_uncategorized() {
+            None
+        } else {
+            params.category_id
+        },
+        tag_id: params.tag_id,
+        from_date: Some(date_range.from_str()),
+        to_date: Some(date_range.to_str()),
+        uncategorized_only: params.is_uncategorized(),
+        ..Default::default()
+    };
+
+    let total_count = transactions::count_transactions(&conn, &filter)?;
+    let cats = categories::list_categories_with_path(&conn)?;
+    let tag_list = tags::list_tags(&conn)?;
+
+    let back_qs = params.preserve_query_string(&date_range);
+    let back_url = if back_qs.is_empty() {
+        "/transactions".to_string()
+    } else {
+        format!("/transactions?{}", back_qs)
+    };
+
+    let template = TransactionBulkTemplate {
+        title: "Bulk Operations".into(),
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        manifest: state.manifest.clone(),
+        version: VERSION,
+        xsrf_token: state.xsrf_token.value().to_string(),
+        categories: cats,
+        tags: tag_list,
+        total_count,
+        filter: params,
+        date_range,
+        back_url,
     };
 
     template.render_html()

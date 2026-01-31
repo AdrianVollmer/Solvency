@@ -39,6 +39,7 @@ pub fn routes() -> Router<AppState> {
         .route("/transactions/new", get(transactions::new_form))
         .route("/transactions/create", post(transactions::create))
         .route("/transactions/table", get(transactions::table_partial))
+        .route("/transactions/bulk", get(transactions::bulk_page))
         .route("/transactions/:id", get(transactions::show))
         .route("/transactions/:id/edit", get(transactions::edit_form))
         .route("/transactions/:id/update", post(transactions::update))

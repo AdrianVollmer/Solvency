@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block content %}
+{% call ui::page_container(max_width="max-w-2xl") %}
+    {% call ui::page_header(title="Bulk Operations", back_url=back_url, back_label="Transactions") %}{% endcall %}
+
+    {% if total_count == 0 %}
+    <div class="text-center py-12 text-neutral-500 dark:text-neutral-400">
+        <p class="text-lg font-medium">No matching transactions</p>
+        <p class="mt-1 text-sm">Adjust your filters to select transactions for bulk operations.</p>
+    </div>
+    {% else %}
+    <p class="text-sm text-neutral-500 dark:text-neutral-400">
+        Applying to <strong class="text-neutral-900 dark:text-white">{{ total_count }}</strong> matching transaction{% if total_count != 1 %}s{% endif %}.
+    </p>
+
+    {% call ui::section(title="Set Category") %}
+        <form class="flex flex-col sm:flex-row sm:items-end gap-4">
+            {% if filter.search.is_some() %}
+            <input type="hidden" name="search" value="{{ filter.search.as_deref().unwrap_or("") }}">
+            {% endif %}
+            {% if filter.category_id.is_some() %}
+            <input type="hidden" name="category_id" value="{{ filter.category_id.unwrap() }}">
+            {% endif %}
+            {% if filter.tag_id.is_some() %}
+            <input type="hidden" name="tag_id" value="{{ filter.tag_id.unwrap() }}">
+            {% endif %}
+            <input type="hidden" name="from_date" value="{{ date_range.from_str() }}">
+            <input type="hidden" name="to_date" value="{{ date_range.to_str() }}">
+
+            <div class="flex-1">
+                <label for="bulk_category" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Category</label>
+                <select id="bulk_category" name="set_category_id" class="input w-full">
+                    <option value="">-- select --</option>
+                    <option value="0">Clear category</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category.id }}">{{ cat.display_name() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                hx-post="/transactions/bulk-category"
+                data-confirm-modal="Set category on all {{ total_count }} matching transaction{% if total_count != 1 %}s{% endif %}?"
+                data-confirm-title="Bulk set category"
+                data-confirm-action="Apply"
+                hx-target="body"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) window.location.reload()"
+                class="btn btn-secondary">Apply</button>
+        </form>
+    {% endcall %}
+
+    {% call ui::section(title="Add Tag") %}
+        <form class="flex flex-col sm:flex-row sm:items-end gap-4">
+            {% if filter.search.is_some() %}
+            <input type="hidden" name="search" value="{{ filter.search.as_deref().unwrap_or("") }}">
+            {% endif %}
+            {% if filter.category_id.is_some() %}
+            <input type="hidden" name="category_id" value="{{ filter.category_id.unwrap() }}">
+            {% endif %}
+            {% if filter.tag_id.is_some() %}
+            <input type="hidden" name="tag_id" value="{{ filter.tag_id.unwrap() }}">
+            {% endif %}
+            <input type="hidden" name="from_date" value="{{ date_range.from_str() }}">
+            <input type="hidden" name="to_date" value="{{ date_range.to_str() }}">
+
+            <div class="flex-1">
+                <label for="bulk_tag" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Tag</label>
+                <select id="bulk_tag" name="set_tag_id" class="input w-full">
+                    <option value="">-- select --</option>
+                    {% for tag in tags %}
+                    <option value="{{ tag.id }}">{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                hx-post="/transactions/bulk-tag"
+                data-confirm-modal="Add tag to all {{ total_count }} matching transaction{% if total_count != 1 %}s{% endif %}?"
+                data-confirm-title="Bulk add tag"
+                data-confirm-action="Apply"
+                hx-target="body"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) window.location.reload()"
+                class="btn btn-secondary">Apply</button>
+        </form>
+    {% endcall %}
+    {% endif %}
+{% endcall %}
+{% endblock %}
