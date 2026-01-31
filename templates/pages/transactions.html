@@ -27,11 +27,17 @@
     {% endcall %}
 
     {# Search and category filter #}
-    <form hx-get="/transactions/table" hx-target="#transaction-table" hx-trigger="change, keyup delay:300ms from:input[name='search']" class="flex flex-wrap gap-4">
+    <form id="filter-form" hx-get="/transactions/table" hx-target="#transaction-table"
+        hx-trigger="change, keyup delay:300ms from:input[name='search']"
+        hx-on::after-request="var p=new URLSearchParams(new FormData(this));p.delete('preset');history.replaceState(null,'','/transactions?'+p.toString())"
+        class="flex flex-wrap gap-4">
         <input type="hidden" name="from_date" value="{{ date_range.from_str() }}">
         <input type="hidden" name="to_date" value="{{ date_range.to_str() }}">
         {% if date_range.preset.is_some() %}
         <input type="hidden" name="preset" value="{{ date_range.preset.unwrap().as_str() }}">
+        {% endif %}
+        {% if filter.tag_id.is_some() %}
+        <input type="hidden" name="tag_id" value="{{ filter.tag_id.unwrap() }}">
         {% endif %}
 
         <div class="flex-1 min-w-[200px]">
@@ -53,6 +59,55 @@
             </select>
         </div>
     </form>
+
+    {% if total_count > 0 %}
+    <div class="flex flex-wrap gap-4 items-end">
+        <form class="flex items-end gap-2">
+            <div>
+                <label for="bulk_category" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Set Category</label>
+                <select id="bulk_category" name="set_category_id" class="input text-sm">
+                    <option value="">-- select --</option>
+                    <option value="0">Clear category</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category.id }}">{{ cat.display_name() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                hx-post="/transactions/bulk-category"
+                hx-include="#filter-form"
+                data-confirm-modal="Set category on all {{ total_count }} matching transactions?"
+                data-confirm-title="Bulk set category"
+                data-confirm-action="Apply"
+                hx-target="body"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) window.location.reload()"
+                class="btn btn-secondary text-sm">Apply</button>
+        </form>
+
+        <form class="flex items-end gap-2">
+            <div>
+                <label for="bulk_tag" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Add Tag</label>
+                <select id="bulk_tag" name="set_tag_id" class="input text-sm">
+                    <option value="">-- select --</option>
+                    {% for tag in tags %}
+                    <option value="{{ tag.id }}">{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                hx-post="/transactions/bulk-tag"
+                hx-include="#filter-form"
+                data-confirm-modal="Add tag to all {{ total_count }} matching transactions?"
+                data-confirm-title="Bulk add tag"
+                data-confirm-action="Apply"
+                hx-target="body"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) window.location.reload()"
+                class="btn btn-secondary text-sm">Apply</button>
+        </form>
+    </div>
+    {% endif %}
 
     <div id="transaction-table">
         {% include "partials/transaction_table.html" %}

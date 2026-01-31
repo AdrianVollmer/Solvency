@@ -18,21 +18,11 @@ pub struct TransactionFilter {
     pub uncategorized_only: bool,
 }
 
-pub fn list_transactions(
-    conn: &Connection,
-    filter: &TransactionFilter,
-) -> rusqlite::Result<Vec<TransactionWithRelations>> {
-    let mut sql = String::from(
-        "SELECT e.id, e.date, e.amount_cents, e.currency, e.description,
-                e.category_id, e.account_id, e.notes, e.created_at, e.updated_at,
-                e.value_date, e.payer, e.payee, e.reference, e.transaction_type,
-                e.counterparty_iban, e.creditor_id, e.mandate_reference, e.customer_reference,
-                c.name as category_name, c.color as category_color, a.name as account_name
-         FROM transactions e
-         LEFT JOIN categories c ON e.category_id = c.id
-         LEFT JOIN accounts a ON e.account_id = a.id
-         WHERE 1=1",
-    );
+/// Build the WHERE clause fragments and params for a TransactionFilter.
+/// Returns SQL conditions (without leading WHERE/AND) appended after "WHERE 1=1",
+/// and the corresponding parameter vector.
+fn build_filter_where(filter: &TransactionFilter) -> (String, Vec<Box<dyn rusqlite::ToSql>>) {
+    let mut sql = String::new();
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
     if let Some(ref search) = filter.search {
@@ -58,6 +48,28 @@ pub fn list_transactions(
     if filter.uncategorized_only {
         sql.push_str(" AND e.category_id IS NULL");
     }
+
+    (sql, params_vec)
+}
+
+pub fn list_transactions(
+    conn: &Connection,
+    filter: &TransactionFilter,
+) -> rusqlite::Result<Vec<TransactionWithRelations>> {
+    let (where_clause, mut params_vec) = build_filter_where(filter);
+
+    let mut sql = format!(
+        "SELECT e.id, e.date, e.amount_cents, e.currency, e.description,
+                e.category_id, e.account_id, e.notes, e.created_at, e.updated_at,
+                e.value_date, e.payer, e.payee, e.reference, e.transaction_type,
+                e.counterparty_iban, e.creditor_id, e.mandate_reference, e.customer_reference,
+                c.name as category_name, c.color as category_color, a.name as account_name
+         FROM transactions e
+         LEFT JOIN categories c ON e.category_id = c.id
+         LEFT JOIN accounts a ON e.account_id = a.id
+         WHERE 1=1{}",
+        where_clause,
+    );
 
     // Use provided sort or default to date DESC
     let order_by = filter.sort_sql.as_deref().unwrap_or("e.date DESC");
@@ -122,35 +134,54 @@ pub fn list_transactions(
 }
 
 pub fn count_transactions(conn: &Connection, filter: &TransactionFilter) -> rusqlite::Result<i64> {
-    let mut sql = String::from("SELECT COUNT(*) FROM transactions e WHERE 1=1");
-    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
-
-    if let Some(ref search) = filter.search {
-        sql.push_str(" AND e.description LIKE ?");
-        params_vec.push(Box::new(format!("%{}%", search)));
-    }
-    if let Some(category_id) = filter.category_id {
-        sql.push_str(" AND e.category_id = ?");
-        params_vec.push(Box::new(category_id));
-    }
-    if let Some(ref from_date) = filter.from_date {
-        sql.push_str(" AND e.date >= ?");
-        params_vec.push(Box::new(from_date.clone()));
-    }
-    if let Some(ref to_date) = filter.to_date {
-        sql.push_str(" AND e.date <= ?");
-        params_vec.push(Box::new(to_date.clone()));
-    }
-    if let Some(tag_id) = filter.tag_id {
-        sql.push_str(" AND EXISTS(SELECT 1 FROM transaction_tags et WHERE et.transaction_id = e.id AND et.tag_id = ?)");
-        params_vec.push(Box::new(tag_id));
-    }
-    if filter.uncategorized_only {
-        sql.push_str(" AND e.category_id IS NULL");
-    }
-
+    let (where_clause, params_vec) = build_filter_where(filter);
+    let sql = format!(
+        "SELECT COUNT(*) FROM transactions e WHERE 1=1{}",
+        where_clause,
+    );
     let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
     conn.query_row(&sql, params_refs.as_slice(), |row| row.get(0))
+}
+
+pub fn bulk_set_category(
+    conn: &Connection,
+    filter: &TransactionFilter,
+    category_id: Option<i64>,
+) -> rusqlite::Result<usize> {
+    let (where_clause, mut params_vec) = build_filter_where(filter);
+    let sql = format!(
+        "UPDATE transactions SET category_id = ?, updated_at = datetime('now') \
+         WHERE id IN (SELECT e.id FROM transactions e WHERE 1=1{})",
+        where_clause,
+    );
+    // The SET value param must come first.
+    params_vec.insert(0, Box::new(category_id));
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let rows = conn.execute(&sql, params_refs.as_slice())?;
+    info!(count = rows, category_id = ?category_id, "Bulk set category on transactions");
+    Ok(rows)
+}
+
+pub fn bulk_add_tag(
+    conn: &Connection,
+    filter: &TransactionFilter,
+    tag_id: i64,
+) -> rusqlite::Result<usize> {
+    let (where_clause, mut params_vec) = build_filter_where(filter);
+    let sql = format!(
+        "INSERT OR IGNORE INTO transaction_tags (transaction_id, tag_id) \
+         SELECT e.id, ? FROM transactions e WHERE 1=1{}",
+        where_clause,
+    );
+    params_vec.insert(0, Box::new(tag_id));
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let rows = conn.execute(&sql, params_refs.as_slice())?;
+    info!(
+        count = rows,
+        tag_id = tag_id,
+        "Bulk added tag to transactions"
+    );
+    Ok(rows)
 }
 
 pub fn get_transaction(

@@ -548,6 +548,118 @@ pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>
     Ok(Html(String::new()))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct BulkCategoryForm {
+    /// Action value: which category to set (0 = clear).
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub set_category_id: Option<i64>,
+    /// Filter fields — included from #filter-form via hx-include.
+    pub search: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub category_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub tag_id: Option<i64>,
+    pub from_date: Option<String>,
+    pub to_date: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BulkTagForm {
+    /// Action value: which tag to add.
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub set_tag_id: Option<i64>,
+    /// Filter fields — included from #filter-form via hx-include.
+    pub search: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub category_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub tag_id: Option<i64>,
+    pub from_date: Option<String>,
+    pub to_date: Option<String>,
+}
+
+fn build_bulk_filter(
+    search: &Option<String>,
+    category_id: Option<i64>,
+    tag_id: Option<i64>,
+    from_date: &Option<String>,
+    to_date: &Option<String>,
+) -> transactions::TransactionFilter {
+    let uncategorized_only = category_id == Some(0);
+    transactions::TransactionFilter {
+        search: search.clone(),
+        category_id: if uncategorized_only {
+            None
+        } else {
+            category_id
+        },
+        tag_id,
+        from_date: from_date.clone(),
+        to_date: to_date.clone(),
+        uncategorized_only,
+        ..Default::default()
+    }
+}
+
+pub async fn bulk_set_category(
+    State(state): State<AppState>,
+    Form(form): Form<BulkCategoryForm>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let filter = build_bulk_filter(
+        &form.search,
+        form.category_id,
+        form.tag_id,
+        &form.from_date,
+        &form.to_date,
+    );
+    // set_category_id=0 means "clear category" (set to NULL)
+    let category_id = form
+        .set_category_id
+        .and_then(|id| if id == 0 { None } else { Some(id) });
+    let count = transactions::bulk_set_category(&conn, &filter, category_id)?;
+    info!(count, "Bulk set category via web");
+    Ok(Html(String::new()))
+}
+
+pub async fn bulk_add_tag(
+    State(state): State<AppState>,
+    Form(form): Form<BulkTagForm>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let tag_id = form
+        .set_tag_id
+        .ok_or_else(|| AppError::Validation("Tag is required".into()))?;
+    let filter = build_bulk_filter(
+        &form.search,
+        form.category_id,
+        form.tag_id,
+        &form.from_date,
+        &form.to_date,
+    );
+    let count = transactions::bulk_add_tag(&conn, &filter, tag_id)?;
+    info!(count, tag_id, "Bulk added tag via web");
+    Ok(Html(String::new()))
+}
+
 #[derive(Serialize)]
 struct TransactionExport {
     date: String,

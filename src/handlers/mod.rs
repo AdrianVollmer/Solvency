@@ -40,6 +40,11 @@ pub fn routes() -> Router<AppState> {
         .route("/transactions/:id/update", post(transactions::update))
         .route("/transactions/:id/delete", delete(transactions::delete))
         .route("/transactions/delete-all", delete(transactions::delete_all))
+        .route(
+            "/transactions/bulk-category",
+            post(transactions::bulk_set_category),
+        )
+        .route("/transactions/bulk-tag", post(transactions::bulk_add_tag))
         .route("/transactions/export", get(transactions::export))
         .route("/transactions/import", post(transactions::import))
         // Category management

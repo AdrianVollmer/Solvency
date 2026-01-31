@@ -303,17 +303,20 @@ function initAlertModal(): void {
 // Custom confirm modal for destructive actions
 function initConfirmModal(): void {
   const modal = document.getElementById("confirm-modal");
+  const titleEl = document.getElementById("confirm-modal-title");
   const messageEl = document.getElementById("confirm-modal-message");
   const cancelBtn = document.getElementById("confirm-cancel-btn");
   const actionBtn = document.getElementById("confirm-action-btn");
   const backdrop = modal?.querySelector("[data-confirm-backdrop]");
 
-  if (!modal || !messageEl || !cancelBtn || !actionBtn) return;
+  if (!modal || !titleEl || !messageEl || !cancelBtn || !actionBtn) return;
 
   let pendingCallback: (() => void) | null = null;
 
-  function openModal(message: string, onConfirm: () => void): void {
+  function openModal(title: string, message: string, action: string, onConfirm: () => void): void {
+    titleEl!.textContent = title;
     messageEl!.textContent = message;
+    actionBtn!.textContent = action;
     pendingCallback = onConfirm;
     modal!.classList.remove("hidden");
     cancelBtn!.focus();
@@ -346,8 +349,10 @@ function initConfirmModal(): void {
 
     event.preventDefault();
     const message = el.getAttribute("data-confirm-modal") || "Are you sure?";
+    const title = el.getAttribute("data-confirm-title") || "Confirm deletion";
+    const action = el.getAttribute("data-confirm-action") || "Delete All";
     const detail = (event as CustomEvent).detail;
-    openModal(message, () => {
+    openModal(title, message, action, () => {
       detail.issueRequest(true);
     });
   });
