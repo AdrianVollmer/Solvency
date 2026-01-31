@@ -7,6 +7,8 @@ use tracing::{info, trace};
 pub struct TransactionFilter {
     pub search: Option<String>,
     pub category_id: Option<i64>,
+    /// Filter by multiple category IDs (OR). Takes precedence over `category_id` when non-empty.
+    pub category_ids: Vec<i64>,
     pub tag_id: Option<i64>,
     pub from_date: Option<String>,
     pub to_date: Option<String>,
@@ -29,7 +31,18 @@ fn build_filter_where(filter: &TransactionFilter) -> (String, Vec<Box<dyn rusqli
         sql.push_str(" AND e.description LIKE ?");
         params_vec.push(Box::new(format!("%{}%", search)));
     }
-    if let Some(category_id) = filter.category_id {
+    if !filter.category_ids.is_empty() {
+        let placeholders: String = filter
+            .category_ids
+            .iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(",");
+        sql.push_str(&format!(" AND e.category_id IN ({})", placeholders));
+        for &id in &filter.category_ids {
+            params_vec.push(Box::new(id));
+        }
+    } else if let Some(category_id) = filter.category_id {
         sql.push_str(" AND e.category_id = ?");
         params_vec.push(Box::new(category_id));
     }

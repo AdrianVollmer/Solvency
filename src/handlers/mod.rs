@@ -28,6 +28,10 @@ pub fn routes() -> Router<AppState> {
         .route("/", get(dashboard::index))
         .route("/balances", get(balances::index))
         .route("/spending", get(spending::index))
+        .route(
+            "/spending/monthly-transactions",
+            get(spending::monthly_transactions),
+        )
         .route("/transactions", get(transactions::index))
         .route("/import", get(import::index))
         .route("/settings", get(settings::index))

@@ -36,6 +36,7 @@ interface MonthlyByCategoryResponse {
 }
 
 let activeChart: any = null;
+let activeMonth: string | null = null;
 
 function showEmptyState(container: HTMLElement): void {
   if (activeChart) {
@@ -327,6 +328,8 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
     };
 
     activeChart.setOption(option);
+    collapseMonthlyTransactions();
+    setupMonthlyBarClick();
   } else {
     // Aggregate mode: single bar series
     const data = await fetchData<MonthlySummary[]>(
@@ -391,7 +394,86 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
     };
 
     activeChart.setOption(option);
+    collapseMonthlyTransactions();
+    setupMonthlyBarClick();
   }
+}
+
+function collapseMonthlyTransactions(): void {
+  const container = document.getElementById("monthly-transactions");
+  if (!container) return;
+  container.style.maxHeight = "0";
+  container.style.opacity = "0";
+  activeMonth = null;
+}
+
+function setupMonthlyBarClick(): void {
+  if (!activeChart) return;
+
+  activeChart.on("click", (params: any) => {
+    const month = params.name;
+    if (!month) return;
+
+    const container = document.getElementById("monthly-transactions");
+    if (!container) return;
+
+    // Clicking the same month again collapses the panel
+    if (month === activeMonth) {
+      collapseMonthlyTransactions();
+      return;
+    }
+
+    const selectedIds = getSelectedCategoryIds();
+    const url = new URL("/spending/monthly-transactions", window.location.origin);
+    url.searchParams.set("month", month);
+    if (selectedIds.length > 0) {
+      url.searchParams.set("category_ids", selectedIds.join(","));
+    }
+
+    // If replacing content, snap to 0 first to re-trigger transition
+    if (activeMonth) {
+      container.style.transition = "none";
+      container.style.maxHeight = "0";
+      container.style.opacity = "0";
+      // Force reflow
+      void container.offsetHeight;
+      container.style.transition = "";
+    }
+
+    fetch(url.toString())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch transactions");
+        return res.text();
+      })
+      .then((html) => {
+        container.innerHTML = html;
+        activeMonth = month;
+
+        // Animate in
+        requestAnimationFrame(() => {
+          container.style.maxHeight = container.scrollHeight + "px";
+          container.style.opacity = "1";
+
+          // Wire up close button
+          const closeBtn = document.getElementById(
+            "monthly-transactions-close",
+          );
+          if (closeBtn) {
+            closeBtn.addEventListener("click", collapseMonthlyTransactions);
+          }
+        });
+
+        // After transition, remove max-height cap so content isn't clipped
+        const onTransitionEnd = () => {
+          if (activeMonth === month) {
+            container.style.maxHeight = "none";
+          }
+          container.removeEventListener("transitionend", onTransitionEnd);
+        };
+        container.addEventListener("transitionend", onTransitionEnd);
+      })
+      .catch((err) => console.error("Monthly transactions fetch error:", err));
+  });
 }
 
 async function updateFlowChart(params: URLSearchParams): Promise<void> {

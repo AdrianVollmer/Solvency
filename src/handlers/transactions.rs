@@ -341,6 +341,7 @@ pub async fn index(
         offset: Some((page - 1) * page_size),
         sort_sql: Some(sort.sql_order_by()),
         uncategorized_only: params.is_uncategorized(),
+        ..Default::default()
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
@@ -399,6 +400,7 @@ pub async fn table_partial(
         offset: Some((page - 1) * page_size),
         sort_sql: Some(sort.sql_order_by()),
         uncategorized_only: params.is_uncategorized(),
+        ..Default::default()
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;

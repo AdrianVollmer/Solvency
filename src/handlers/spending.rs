@@ -1,13 +1,14 @@
 use askama::Template;
 use axum::extract::{Query, State};
 use axum::response::Html;
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use serde::Deserialize;
 
 use crate::date_utils::{DatePreset, DateRange};
-use crate::db::queries::categories;
+use crate::db::queries::{categories, transactions};
 use crate::error::{AppResult, RenderHtml};
 use crate::models::category::CategoryWithPath;
+use crate::models::transaction::TransactionWithRelations;
 use crate::models::Settings;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -94,4 +95,98 @@ pub async fn index(
     };
 
     template.render_html()
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MonthlyTransactionsParams {
+    pub month: String,
+    pub category_ids: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "partials/monthly_transaction_list.html")]
+pub struct MonthlyTransactionListTemplate {
+    pub settings: Settings,
+    pub icons: crate::filters::Icons,
+    pub transactions: Vec<TransactionWithRelations>,
+    pub month_label: String,
+    pub count: usize,
+}
+
+pub async fn monthly_transactions(
+    State(state): State<AppState>,
+    Query(params): Query<MonthlyTransactionsParams>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    // Parse "2024-01" or "Jan 2024" style month strings
+    let (from_date, to_date, month_label) = parse_month_range(&params.month)?;
+
+    let category_ids: Vec<i64> = params
+        .category_ids
+        .as_deref()
+        .unwrap_or("")
+        .split(',')
+        .filter_map(|s| s.trim().parse().ok())
+        .collect();
+
+    let filter = transactions::TransactionFilter {
+        from_date: Some(from_date),
+        to_date: Some(to_date),
+        category_ids,
+        sort_sql: Some("ABS(e.amount_cents) DESC".to_string()),
+        ..Default::default()
+    };
+
+    let transaction_list = transactions::list_transactions(&conn, &filter)?;
+    let count = transaction_list.len();
+
+    let template = MonthlyTransactionListTemplate {
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        transactions: transaction_list,
+        month_label,
+        count,
+    };
+
+    template.render_html()
+}
+
+/// Parse a month string into (from_date, to_date, display_label).
+/// Accepts "2024-01" (ISO) or "Jan 2024" / "January 2024" (chart label) formats.
+fn parse_month_range(month: &str) -> AppResult<(String, String, String)> {
+    let first_day = if let Ok(d) = NaiveDate::parse_from_str(&format!("{}-01", month), "%Y-%m-%d") {
+        d
+    } else {
+        // Try "Jan 2024" or "January 2024" format from chart x-axis labels
+        let formats = ["%b %Y", "%B %Y"];
+        let mut parsed = None;
+        for fmt in &formats {
+            if let Ok(d) = NaiveDate::parse_from_str(month, fmt) {
+                parsed = Some(d);
+                break;
+            }
+        }
+        parsed.ok_or_else(|| {
+            crate::error::AppError::Validation(format!("Invalid month format: {}", month))
+        })?
+    };
+
+    let last_day = if first_day.month() == 12 {
+        NaiveDate::from_ymd_opt(first_day.year() + 1, 1, 1)
+    } else {
+        NaiveDate::from_ymd_opt(first_day.year(), first_day.month() + 1, 1)
+    }
+    .expect("valid date")
+    .pred_opt()
+    .expect("valid date");
+
+    let month_label = first_day.format("%B %Y").to_string();
+
+    Ok((
+        first_day.format("%Y-%m-%d").to_string(),
+        last_day.format("%Y-%m-%d").to_string(),
+        month_label,
+    ))
 }
