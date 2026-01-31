@@ -2,8 +2,8 @@
 {% import "macros/ui.html" as ui %}
 
 {% block content %}
-<div class="space-y-6">
-    {% call ui::page_header(title="Trading CSV Format", subtitle="Specification for importing trading activities") %}{% endcall %}
+<div class="space-y-6 max-w-3xl">
+    {% call ui::page_header(title="Trading CSV Format", back_url="/trading/import", back_label="Import") %}{% endcall %}
 
     {% call ui::card(class="p-6 space-y-6") %}
         <div>
@@ -70,6 +70,11 @@
                             <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Transaction fee</td>
                             <td class="px-4 py-2 font-mono text-sm">5.00</td>
                         </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">account_id</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Numeric account ID (must exist in Solvency)</td>
+                            <td class="px-4 py-2 font-mono text-sm">1, 5</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -107,8 +112,5 @@
         </div>
     {% endcall %}
 
-    <div class="flex justify-end">
-        <a href="/trading/import" class="btn btn-primary">Back to Import</a>
-    </div>
 </div>
 {% endblock %}

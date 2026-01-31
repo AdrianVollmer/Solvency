@@ -5,37 +5,41 @@
 <div class="space-y-6 max-w-3xl">
     {% call ui::page_header(title="CSV Import Format", back_url="/import", back_label="Import") %}{% endcall %}
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+    {% call ui::card(class="p-6 space-y-6") %}
         <section>
-            <h2 class="text-lg font-semibold mb-3">Overview</h2>
-            <p class="text-gray-600 dark:text-gray-400">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Overview</h2>
+            <p class="text-neutral-600 dark:text-neutral-400">
                 Solvency accepts CSV files with a header row. Column names must match exactly
                 (case-insensitive).
             </p>
         </section>
 
         <section>
-            <h2 class="text-lg font-semibold mb-3">Required Columns</h2>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Required Columns</h2>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                     <thead>
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <th class="text-left py-2 pr-4 font-medium">Column</th>
-                            <th class="text-left py-2 font-medium">Format</th>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Column</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Description</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Example</th>
                         </tr>
                     </thead>
-                    <tbody class="text-gray-600 dark:text-gray-400">
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">date</td>
-                            <td class="py-2">ISO 8601: <code>YYYY-MM-DD</code></td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">amount</td>
-                            <td class="py-2">Decimal number (e.g., <code>42.50</code>, <code>-15.00</code>)</td>
+                    <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">date</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">ISO 8601 date (<code>YYYY-MM-DD</code>)</td>
+                            <td class="px-4 py-2 font-mono text-sm">2024-01-15</td>
                         </tr>
                         <tr>
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">description</td>
-                            <td class="py-2">Free text</td>
+                            <td class="px-4 py-2 font-mono text-sm">amount</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Decimal number (negative for expenses)</td>
+                            <td class="px-4 py-2 font-mono text-sm">42.50, -15.00</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">description</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Free text</td>
+                            <td class="px-4 py-2 font-mono text-sm">Weekly groceries</td>
                         </tr>
                     </tbody>
                 </table>
@@ -43,67 +47,86 @@
         </section>
 
         <section>
-            <h2 class="text-lg font-semibold mb-3">Optional Columns</h2>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Optional Columns</h2>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                     <thead>
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <th class="text-left py-2 pr-4 font-medium">Column</th>
-                            <th class="text-left py-2 font-medium">Format</th>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Column</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Description</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Example</th>
                         </tr>
                     </thead>
-                    <tbody class="text-gray-600 dark:text-gray-400">
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">currency</td>
-                            <td class="py-2">ISO 4217 code (e.g., <code>USD</code>, <code>EUR</code>). Defaults to <code>USD</code></td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">category</td>
-                            <td class="py-2">Category name (must exist in Solvency)</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">tags</td>
-                            <td class="py-2">Comma-separated list (e.g., <code>groceries, weekly</code>)</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">notes</td>
-                            <td class="py-2">Additional notes or comments</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">value_date</td>
-                            <td class="py-2">Value/settlement date: <code>YYYY-MM-DD</code></td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">payer</td>
-                            <td class="py-2">Who paid (for incoming transactions)</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">payee</td>
-                            <td class="py-2">Who received payment (for outgoing transactions)</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">reference</td>
-                            <td class="py-2">Payment reference or booking text</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">transaction_type</td>
-                            <td class="py-2">Transaction type (e.g., <code>SEPA</code>, <code>CARD</code>, <code>TRANSFER</code>)</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">counterparty_iban</td>
-                            <td class="py-2">IBAN of the other party</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">creditor_id</td>
-                            <td class="py-2">SEPA creditor identifier</td>
-                        </tr>
-                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">mandate_reference</td>
-                            <td class="py-2">SEPA direct debit mandate reference</td>
+                    <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">currency</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">ISO 4217 code (default: USD)</td>
+                            <td class="px-4 py-2 font-mono text-sm">USD, EUR</td>
                         </tr>
                         <tr>
-                            <td class="py-2 pr-4 font-mono text-primary-600 dark:text-primary-400">customer_reference</td>
-                            <td class="py-2">Customer reference number</td>
+                            <td class="px-4 py-2 font-mono text-sm">category</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Category name (must exist in Solvency)</td>
+                            <td class="px-4 py-2 font-mono text-sm">Food</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">account_id</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Numeric account ID (must exist in Solvency)</td>
+                            <td class="px-4 py-2 font-mono text-sm">1, 5</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">tags</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Comma-separated list</td>
+                            <td class="px-4 py-2 font-mono text-sm">groceries, weekly</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">notes</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Additional notes or comments</td>
+                            <td class="px-4 py-2 font-mono text-sm">Organic store</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">value_date</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Value/settlement date</td>
+                            <td class="px-4 py-2 font-mono text-sm">2024-01-15</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">payer</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Who paid (for incoming transactions)</td>
+                            <td class="px-4 py-2 font-mono text-sm">Employer GmbH</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">payee</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Who received payment (for outgoing transactions)</td>
+                            <td class="px-4 py-2 font-mono text-sm">SuperMarket GmbH</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">reference</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Payment reference or booking text</td>
+                            <td class="px-4 py-2 font-mono text-sm">INV-2024-001</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">transaction_type</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Transaction type</td>
+                            <td class="px-4 py-2 font-mono text-sm">SEPA, CARD, TRANSFER</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">counterparty_iban</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">IBAN of the other party</td>
+                            <td class="px-4 py-2 font-mono text-sm">DE89370400440532013000</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">creditor_id</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">SEPA creditor identifier</td>
+                            <td class="px-4 py-2 font-mono text-sm">DE98ZZZ09999999999</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">mandate_reference</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">SEPA direct debit mandate reference</td>
+                            <td class="px-4 py-2 font-mono text-sm">MREF-12345</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 font-mono text-sm">customer_reference</td>
+                            <td class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">Customer reference number</td>
+                            <td class="px-4 py-2 font-mono text-sm">CUST-67890</td>
                         </tr>
                     </tbody>
                 </table>
@@ -111,33 +134,29 @@
         </section>
 
         <section>
-            <h2 class="text-lg font-semibold mb-3">Minimal Example</h2>
-            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                <pre class="text-sm font-mono text-gray-700 dark:text-gray-300">date,amount,description
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Minimal Example</h2>
+            <pre class="bg-neutral-100 dark:bg-neutral-900 p-4 rounded-lg overflow-x-auto text-sm font-mono">date,amount,description
 2024-01-15,-42.50,Weekly groceries
 2024-01-16,-120.00,Electric bill
 2024-01-17,1500.00,Salary</pre>
-            </div>
         </section>
 
         <section>
-            <h2 class="text-lg font-semibold mb-3">Full Example</h2>
-            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                <pre class="text-sm font-mono text-gray-700 dark:text-gray-300">date,amount,description,currency,category,tags,notes,value_date,payee,transaction_type,counterparty_iban
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Full Example</h2>
+            <pre class="bg-neutral-100 dark:bg-neutral-900 p-4 rounded-lg overflow-x-auto text-sm font-mono">date,amount,description,currency,category,tags,notes,value_date,payee,transaction_type,counterparty_iban
 2024-01-15,-42.50,Weekly groceries,EUR,Food,"groceries, weekly",Organic store,2024-01-15,SuperMarket GmbH,CARD,
 2024-01-16,-120.00,Electric bill,EUR,Utilities,monthly,,2024-01-16,PowerCorp,SEPA,DE89370400440532013000
 2024-01-20,2500.00,January salary,EUR,Income,salary,,2024-01-20,,SEPA,DE89370400440532013001</pre>
-            </div>
         </section>
 
         <section>
-            <h2 class="text-lg font-semibold mb-3">Notes</h2>
-            <ul class="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-2">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Notes</h2>
+            <ul class="list-disc list-inside text-neutral-600 dark:text-neutral-400 space-y-2">
                 <li>Column names are case-insensitive but must match exactly</li>
                 <li>Column order does not matter</li>
                 <li>Currency symbols in amounts (e.g., <code>$50.00</code>) are automatically stripped</li>
                 <li>Thousand separators are handled (e.g., <code>1,234.56</code> becomes <code>1234.56</code>)</li>
-                <li>Use negative amounts for transactions, positive for income</li>
+                <li>Use negative amounts for expenses, positive for income</li>
                 <li>Tags that don't exist will be created automatically on import</li>
                 <li>Categories must be created beforehand in Solvency</li>
                 <li>Empty optional columns are ignored</li>
@@ -145,13 +164,13 @@
         </section>
 
         <section>
-            <h2 class="text-lg font-semibold mb-3">Converting Bank Exports</h2>
-            <p class="text-gray-600 dark:text-gray-400">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Converting Bank Exports</h2>
+            <p class="text-neutral-600 dark:text-neutral-400">
                 Bank exports often use different formats. We recommend using external tools to convert
                 your bank's export to this canonical format before importing. This keeps Solvency
                 focused on transaction tracking rather than parsing hundreds of bank-specific formats.
             </p>
         </section>
-    </div>
+    {% endcall %}
 </div>
 {% endblock %}
