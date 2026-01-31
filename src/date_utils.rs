@@ -47,6 +47,7 @@ enum PeriodType {
     Month,
     Quarter,
     Year,
+    All,
     Custom,
 }
 
@@ -60,6 +61,7 @@ pub enum DatePreset {
     LastMonth,
     LastQuarter,
     LastYear,
+    All,
 }
 
 impl FromStr for DatePreset {
@@ -75,6 +77,7 @@ impl FromStr for DatePreset {
             "last_month" => Ok(Self::LastMonth),
             "last_quarter" => Ok(Self::LastQuarter),
             "last_year" => Ok(Self::LastYear),
+            "all" => Ok(Self::All),
             _ => Err(()),
         }
     }
@@ -91,6 +94,7 @@ impl DatePreset {
             Self::LastMonth => "last_month",
             Self::LastQuarter => "last_quarter",
             Self::LastYear => "last_year",
+            Self::All => "all",
         }
     }
 
@@ -104,6 +108,7 @@ impl DatePreset {
             Self::LastMonth => "Last Month",
             Self::LastQuarter => "Last Quarter",
             Self::LastYear => "Last Year",
+            Self::All => "All",
         }
     }
 
@@ -117,6 +122,7 @@ impl DatePreset {
             Self::LastMonth,
             Self::LastQuarter,
             Self::LastYear,
+            Self::All,
         ]
     }
 }
@@ -177,6 +183,11 @@ impl DateRange {
                 let end = year_end(last_year);
                 (start, end)
             }
+            DatePreset::All => {
+                let start = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+                let end = NaiveDate::from_ymd_opt(2099, 12, 31).unwrap();
+                (start, end)
+            }
         };
         Self {
             from,
@@ -203,6 +214,11 @@ impl DateRange {
     }
 
     fn detect_period_type(&self) -> PeriodType {
+        // Check if it's "All" (the widest possible range)
+        if self.preset == Some(DatePreset::All) {
+            return PeriodType::All;
+        }
+
         // Check if it's a week (7 days, starts on Monday)
         let start = week_start(self.from);
         let end = week_end(self.from);
@@ -273,6 +289,7 @@ impl DateRange {
                 format!("Q{} {}", q, self.from.year())
             }
             PeriodType::Year => self.from.format("%Y").to_string(),
+            PeriodType::All => "All Time".to_string(),
             PeriodType::Custom => {
                 let from_fmt = self.from.format("%b %-d");
                 if self.from.year() == self.to.year() {
@@ -408,6 +425,10 @@ fn shift_by_period(
             let new_from = NaiveDate::from_ymd_opt(new_year, 1, 1).unwrap();
             let new_to = NaiveDate::from_ymd_opt(new_year, 12, 31).unwrap();
             (new_from, new_to)
+        }
+        PeriodType::All => {
+            // "All" covers everything; navigation is a no-op
+            (from, to)
         }
         PeriodType::Custom => {
             // For custom ranges, shift by the range duration
