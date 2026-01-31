@@ -1,5 +1,6 @@
 use crate::models::market_data::{MarketData, NewMarketData, SymbolDataCoverage, SymbolMetadata};
 use rusqlite::{params, Connection, OptionalExtension};
+use tracing::{info, warn};
 
 /// Maximum gap in days that's considered acceptable (weekends + holidays)
 pub const MAX_GAP_DAYS: i64 = 5;
@@ -27,6 +28,9 @@ pub fn upsert_market_data(conn: &Connection, data: &NewMarketData) -> rusqlite::
 pub fn insert_market_data_batch(conn: &Connection, data: &[NewMarketData]) -> rusqlite::Result<()> {
     for item in data {
         upsert_market_data(conn, item)?;
+    }
+    if let Some(first) = data.first() {
+        info!(symbol = %first.symbol, count = data.len(), "Inserted market data batch");
     }
     Ok(())
 }
@@ -270,12 +274,16 @@ pub fn get_symbols_needing_data(
 
 /// Delete all market data for a symbol
 pub fn delete_market_data_for_symbol(conn: &Connection, symbol: &str) -> rusqlite::Result<usize> {
-    conn.execute("DELETE FROM market_data WHERE symbol = ?1", [symbol])
+    let rows = conn.execute("DELETE FROM market_data WHERE symbol = ?1", [symbol])?;
+    info!(symbol = %symbol, count = rows, "Deleted market data for symbol");
+    Ok(rows)
 }
 
 /// Delete all market data
 pub fn delete_all_market_data(conn: &Connection) -> rusqlite::Result<usize> {
-    conn.execute("DELETE FROM market_data", [])
+    let rows = conn.execute("DELETE FROM market_data", [])?;
+    warn!(count = rows, "Deleted all market data");
+    Ok(rows)
 }
 
 /// Get the count of market data points
@@ -338,5 +346,6 @@ pub fn upsert_symbol_metadata(
          fetched_at = datetime('now')",
         params![symbol, short_name, long_name, exchange, quote_type],
     )?;
+    info!(symbol = %symbol, "Updated symbol metadata");
     Ok(())
 }

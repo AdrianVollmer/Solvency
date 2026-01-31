@@ -1,6 +1,6 @@
 use crate::models::tag::{NewTag, Tag, TagStyle, TagWithUsage};
 use rusqlite::{params, Connection, OptionalExtension};
-use tracing::{debug, warn};
+use tracing::{info, warn};
 
 pub fn list_tags(conn: &Connection) -> rusqlite::Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
@@ -124,7 +124,7 @@ pub fn create_tag(conn: &Connection, tag: &NewTag) -> rusqlite::Result<i64> {
         params![tag.name, tag.color, tag.style.as_str()],
     )?;
     let id = conn.last_insert_rowid();
-    debug!(tag_id = id, name = %tag.name, "Created tag");
+    info!(tag_id = id, name = %tag.name, "Created tag");
     Ok(id)
 }
 
@@ -155,7 +155,7 @@ pub fn update_tag(conn: &Connection, id: i64, tag: &NewTag) -> rusqlite::Result<
         params![tag.name, tag.color, tag.style.as_str(), id],
     )?;
     if rows > 0 {
-        debug!(tag_id = id, name = %tag.name, "Updated tag");
+        info!(tag_id = id, name = %tag.name, "Updated tag");
     }
     Ok(rows > 0)
 }
@@ -163,7 +163,7 @@ pub fn update_tag(conn: &Connection, id: i64, tag: &NewTag) -> rusqlite::Result<
 pub fn delete_tag(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM tags WHERE id = ?", [id])?;
     if rows > 0 {
-        debug!(tag_id = id, "Deleted tag");
+        info!(tag_id = id, "Deleted tag");
     }
     Ok(rows > 0)
 }

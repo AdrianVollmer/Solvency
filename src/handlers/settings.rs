@@ -6,7 +6,7 @@ use axum::Form;
 use serde::Deserialize;
 use std::fs;
 
-use tracing::warn;
+use tracing::{info, warn};
 
 use crate::db::queries::settings;
 use crate::error::{AppError, AppResult, RenderHtml};
@@ -265,6 +265,11 @@ pub async fn import_database(
     let conn = state.db.get()?;
     conn.execute_batch(&sql_content)?;
 
+    info!(
+        size_bytes = sql_content.len(),
+        "Database imported from SQL file"
+    );
+
     let template = SettingsSavedTemplate {
         icons: crate::filters::Icons,
         message: "Database imported successfully. Please refresh the page.".into(),
@@ -293,6 +298,8 @@ pub async fn clear_database(State(state): State<AppState>) -> AppResult<Html<Str
     for table in &tables {
         conn.execute(&format!("DELETE FROM \"{}\"", table), [])?;
     }
+
+    warn!(tables_cleared = tables.len(), "Database cleared");
 
     Ok(Html(String::new()))
 }

@@ -6,7 +6,7 @@ use crate::models::trading::{
 use crate::services::trading_csv_parser::ParsedTradingActivity;
 use rusqlite::{params, Connection, OptionalExtension};
 use std::collections::HashMap;
-use tracing::debug;
+use tracing::{debug, info};
 
 /// Raw activity row for position calculations: (symbol, activity_type, quantity, unit_price_cents, fee_cents, currency)
 type ActivityRow = (String, String, Option<f64>, Option<i64>, i64, String);
@@ -176,7 +176,7 @@ pub fn create_activity(conn: &Connection, activity: &NewTradingActivity) -> rusq
         ],
     )?;
     let id = conn.last_insert_rowid();
-    debug!(
+    info!(
         activity_id = id,
         symbol = %activity.symbol,
         activity_type = %activity.activity_type.as_str(),
@@ -207,14 +207,14 @@ pub fn update_activity(
             id,
         ],
     )?;
-    debug!(activity_id = id, symbol = %activity.symbol, "Updated trading activity");
+    info!(activity_id = id, symbol = %activity.symbol, "Updated trading activity");
     Ok(())
 }
 
 pub fn delete_activity(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM trading_activities WHERE id = ?", [id])?;
     if rows > 0 {
-        debug!(activity_id = id, "Deleted trading activity");
+        info!(activity_id = id, "Deleted trading activity");
     }
     Ok(rows > 0)
 }
@@ -581,6 +581,7 @@ pub fn create_import_session(conn: &Connection, id: &str) -> AppResult<TradingIm
         "INSERT INTO trading_import_sessions (id, status) VALUES (?1, ?2)",
         params![id, TradingImportStatus::Parsing.as_str()],
     )?;
+    info!(session_id = %id, "Created trading import session");
     get_import_session(conn, id)
 }
 
@@ -623,6 +624,7 @@ pub fn update_import_session_status(
         "UPDATE trading_import_sessions SET status = ?2, updated_at = datetime('now') WHERE id = ?1",
         params![id, status.as_str()],
     )?;
+    info!(session_id = %id, status = %status.as_str(), "Updated trading import session status");
     Ok(())
 }
 
@@ -674,6 +676,7 @@ pub fn delete_import_session(conn: &Connection, id: &str) -> AppResult<()> {
         "DELETE FROM trading_import_sessions WHERE id = ?1",
         params![id],
     )?;
+    debug!(session_id = %id, "Deleted trading import session");
     Ok(())
 }
 
@@ -835,7 +838,7 @@ pub fn apply_split_to_past_activities(
         .filter_map(|r| r.ok())
         .collect();
 
-    for (target_id, original_qty, original_price) in targets {
+    for (target_id, original_qty, original_price) in &targets {
         conn.execute(
             "INSERT INTO trading_split_adjustments
              (split_activity_id, target_activity_id, original_quantity, original_unit_price_cents, split_ratio)
@@ -859,6 +862,15 @@ pub fn apply_split_to_past_activities(
             original_qty = original_qty,
             new_qty = new_qty,
             "Applied split adjustment"
+        );
+    }
+
+    if !targets.is_empty() {
+        info!(
+            symbol = %symbol,
+            ratio = ratio,
+            adjusted_count = targets.len(),
+            "Applied split to past activities"
         );
     }
 
@@ -960,6 +972,7 @@ pub fn reverse_split_adjustments(
         .collect();
     drop(target_stmt);
 
+    let target_count = target_ids.len();
     for target_id in target_ids {
         recompute_target_without_split(conn, target_id, split_activity_id)?;
     }
@@ -969,6 +982,12 @@ pub fn reverse_split_adjustments(
         "DELETE FROM trading_split_adjustments WHERE split_activity_id = ?1",
         [split_activity_id],
     )?;
+
+    info!(
+        split_activity_id = split_activity_id,
+        reversed_count = target_count,
+        "Reversed split adjustments"
+    );
 
     Ok(())
 }

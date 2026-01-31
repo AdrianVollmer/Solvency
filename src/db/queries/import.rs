@@ -51,7 +51,7 @@ pub fn update_session_status(conn: &Connection, id: &str, status: ImportStatus) 
         "UPDATE import_sessions SET status = ?2, updated_at = datetime('now') WHERE id = ?1",
         params![id, status.as_str()],
     )?;
-    debug!(session_id = %id, status = %status.as_str(), "Updated import session status");
+    info!(session_id = %id, status = %status.as_str(), "Updated import session status");
     Ok(())
 }
 

@@ -1,6 +1,6 @@
 use crate::models::account::{Account, AccountType, NewAccount};
 use rusqlite::{params, Connection, OptionalExtension};
-use tracing::{debug, warn};
+use tracing::{info, warn};
 
 pub fn list_accounts(conn: &Connection) -> rusqlite::Result<Vec<Account>> {
     let mut stmt = conn.prepare(
@@ -78,7 +78,7 @@ pub fn create_account(conn: &Connection, account: &NewAccount) -> rusqlite::Resu
         params![account.name, account.account_type.as_str()],
     )?;
     let id = conn.last_insert_rowid();
-    debug!(account_id = id, name = %account.name, "Created account");
+    info!(account_id = id, name = %account.name, "Created account");
     Ok(id)
 }
 
@@ -88,7 +88,7 @@ pub fn update_account(conn: &Connection, id: i64, account: &NewAccount) -> rusql
         params![account.name, account.account_type.as_str(), id],
     )?;
     if rows > 0 {
-        debug!(account_id = id, name = %account.name, "Updated account");
+        info!(account_id = id, name = %account.name, "Updated account");
     }
     Ok(rows > 0)
 }
@@ -96,7 +96,7 @@ pub fn update_account(conn: &Connection, id: i64, account: &NewAccount) -> rusql
 pub fn delete_account(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM accounts WHERE id = ?", [id])?;
     if rows > 0 {
-        debug!(account_id = id, "Deleted account");
+        info!(account_id = id, "Deleted account");
     }
     Ok(rows > 0)
 }

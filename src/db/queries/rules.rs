@@ -1,6 +1,6 @@
 use crate::models::rule::{NewRule, Rule, RuleActionType};
 use rusqlite::{params, Connection, OptionalExtension};
-use tracing::{debug, warn};
+use tracing::{info, warn};
 
 pub fn list_rules(conn: &Connection) -> rusqlite::Result<Vec<Rule>> {
     let mut stmt = conn.prepare(
@@ -62,7 +62,7 @@ pub fn create_rule(conn: &Connection, rule: &NewRule) -> rusqlite::Result<i64> {
         ],
     )?;
     let id = conn.last_insert_rowid();
-    debug!(rule_id = id, name = %rule.name, pattern = %rule.pattern, "Created rule");
+    info!(rule_id = id, name = %rule.name, pattern = %rule.pattern, "Created rule");
     Ok(id)
 }
 
@@ -78,7 +78,7 @@ pub fn update_rule(conn: &Connection, id: i64, rule: &NewRule) -> rusqlite::Resu
         ],
     )?;
     if rows > 0 {
-        debug!(rule_id = id, name = %rule.name, "Updated rule");
+        info!(rule_id = id, name = %rule.name, "Updated rule");
     }
     Ok(rows > 0)
 }
@@ -86,7 +86,7 @@ pub fn update_rule(conn: &Connection, id: i64, rule: &NewRule) -> rusqlite::Resu
 pub fn delete_rule(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM rules WHERE id = ?", [id])?;
     if rows > 0 {
-        debug!(rule_id = id, "Deleted rule");
+        info!(rule_id = id, "Deleted rule");
     }
     Ok(rows > 0)
 }
@@ -122,7 +122,7 @@ pub fn apply_rule_category(
     }
     let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
     let rows = conn.execute(&sql, params_refs.as_slice())?;
-    debug!(count = rows, category_id, "Applied rule: assigned category");
+    info!(count = rows, category_id, "Applied rule: assigned category");
     Ok(rows)
 }
 
@@ -142,6 +142,6 @@ pub fn apply_rule_tag(
             params![tx_id, tag_id],
         )?;
     }
-    debug!(count, tag_id, "Applied rule: assigned tag");
+    info!(count, tag_id, "Applied rule: assigned tag");
     Ok(count)
 }

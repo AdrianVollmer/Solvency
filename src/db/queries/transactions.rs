@@ -1,7 +1,7 @@
 use crate::models::tag::{Tag, TagStyle};
 use crate::models::transaction::{NewTransaction, Transaction, TransactionWithRelations};
 use rusqlite::{params, Connection, OptionalExtension};
-use tracing::{debug, trace};
+use tracing::{info, trace};
 
 #[derive(Default)]
 pub struct TransactionFilter {
@@ -117,7 +117,7 @@ pub fn list_transactions(
             .unwrap_or_default();
     }
 
-    debug!(count = transactions.len(), "Listed transactions");
+    trace!(count = transactions.len(), "Listed transactions");
     Ok(transactions)
 }
 
@@ -248,7 +248,7 @@ pub fn create_transaction(
         )?;
     }
 
-    debug!(
+    info!(
         transaction_id = id,
         amount_cents = transaction.amount_cents,
         "Created transaction"
@@ -301,14 +301,14 @@ pub fn update_transaction(
         )?;
     }
 
-    debug!(transaction_id = id, "Updated transaction");
+    info!(transaction_id = id, "Updated transaction");
     Ok(())
 }
 
 pub fn delete_transaction(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
     let rows = conn.execute("DELETE FROM transactions WHERE id = ?", [id])?;
     if rows > 0 {
-        debug!(transaction_id = id, "Deleted transaction");
+        info!(transaction_id = id, "Deleted transaction");
     }
     Ok(rows > 0)
 }
@@ -318,7 +318,7 @@ pub fn unset_category(conn: &Connection, category_id: i64) -> rusqlite::Result<u
         "UPDATE transactions SET category_id = NULL, updated_at = datetime('now') WHERE category_id = ?",
         [category_id],
     )?;
-    debug!(
+    info!(
         category_id = category_id,
         count = rows,
         "Unset category from transactions"
