@@ -254,6 +254,23 @@ function initSidebar(): void {
   });
 
   backdrop.addEventListener("click", closeSidebar);
+
+  // Collapsible sidebar sections (mobile only)
+  for (const btn of sidebar.querySelectorAll<HTMLButtonElement>(
+    ".sidebar-section-toggle",
+  )) {
+    btn.addEventListener("click", () => {
+      const section = btn.closest("[data-sidebar-section]");
+      if (!section) return;
+      const items = section.querySelector(".sidebar-section-items");
+      const chevron = btn.querySelector(".sidebar-section-chevron");
+      if (!items) return;
+      const isExpanded = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!isExpanded));
+      items.classList.toggle("hidden", isExpanded);
+      chevron?.classList.toggle("rotate-180", !isExpanded);
+    });
+  }
 }
 
 function registerServiceWorker(): void {
