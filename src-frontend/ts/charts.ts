@@ -7,6 +7,12 @@ interface CategoryTreeNode {
   children: CategoryTreeNode[];
 }
 
+interface CategoryTreeResponse {
+  categories: CategoryTreeNode[];
+  from_date?: string;
+  to_date?: string;
+}
+
 interface TimeSeriesData {
   date: string;
   amount_cents: number;
@@ -120,12 +126,12 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
   const container = document.getElementById("category-chart");
   if (!container) return;
 
-  const data = await fetchData<CategoryTreeNode[]>(
+  const data = await fetchData<CategoryTreeResponse>(
     "/api/analytics/spending-by-category-tree",
     params,
   );
 
-  if (data.length === 0) {
+  if (data.categories.length === 0) {
     showEmptyState(container);
     return;
   }
@@ -138,6 +144,7 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
 
   const dark = isDarkMode();
   const borderColor = dark ? "#262626" : "#ffffff";
+  const months = getMonthSpan(data.from_date, data.to_date);
 
   const option = {
     backgroundColor: "transparent",
@@ -148,21 +155,26 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
         if (value == null) {
           return `<strong>${params.name}</strong>`;
         }
-        return `${params.name}: ${formatCurrency(value * 100)}`;
+        const amount = formatCurrency(value * 100);
+        const perMonth = formatCurrency((value * 100) / months);
+        return (
+          `${params.name}: ${amount}` +
+          `<br/><span style="font-size:0.85em;opacity:0.7">${perMonth}/mo</span>`
+        );
       },
     },
     series: [
       {
         type: "sunburst",
         radius: ["0%", "90%"],
-        data: mapTreeToSunburst(data),
+        data: mapTreeToSunburst(data.categories),
         sort: "desc",
         itemStyle: {
           borderRadius: 4,
           borderWidth: 2,
           borderColor: borderColor,
         },
-        levels: buildSunburstLevels(Math.max(1, treeMaxDepth(data))),
+        levels: buildSunburstLevels(Math.max(1, treeMaxDepth(data.categories))),
         label: {
           show: true,
           color: dark ? "#e5e5e5" : "#262626",
@@ -424,7 +436,10 @@ function setupMonthlyBarClick(): void {
     }
 
     const selectedIds = getSelectedCategoryIds();
-    const url = new URL("/spending/monthly-transactions", window.location.origin);
+    const url = new URL(
+      "/spending/monthly-transactions",
+      window.location.origin,
+    );
     url.searchParams.set("month", month);
     if (selectedIds.length > 0) {
       url.searchParams.set("category_ids", selectedIds.join(","));
@@ -507,9 +522,7 @@ async function updateFlowChart(params: URLSearchParams): Promise<void> {
         if (params.dataType === "edge") {
           const amount = formatCurrency(params.data.value * 100);
           const months = getMonthSpan(data.from_date, data.to_date);
-          const perMonth = formatCurrency(
-            (params.data.value * 100) / months,
-          );
+          const perMonth = formatCurrency((params.data.value * 100) / months);
           return (
             `${params.data.source} → ${params.data.target}: ${amount}` +
             `<br/><span style="font-size:0.85em;opacity:0.7">${perMonth}/mo</span>`
@@ -560,8 +573,7 @@ function getMonthSpan(fromDate?: string, toDate?: string): number {
     fromDate ||
     (document.getElementById("from_date") as HTMLInputElement)?.value;
   const toStr =
-    toDate ||
-    (document.getElementById("to_date") as HTMLInputElement)?.value;
+    toDate || (document.getElementById("to_date") as HTMLInputElement)?.value;
   if (!fromStr || !toStr) return 1;
   const from = new Date(fromStr + "T00:00:00");
   const to = new Date(toStr + "T00:00:00");

@@ -297,10 +297,21 @@ fn build_subtree(
     }
 }
 
+#[derive(Debug, Serialize)]
+pub struct CategoryTreeResponse {
+    pub categories: Vec<CategoryTreeNode>,
+    /// Earliest transaction date in the result set (YYYY-MM-DD)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_date: Option<String>,
+    /// Latest transaction date in the result set (YYYY-MM-DD)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to_date: Option<String>,
+}
+
 pub async fn spending_by_category_tree(
     State(state): State<AppState>,
     Query(params): Query<AnalyticsParams>,
-) -> AppResult<Json<Vec<CategoryTreeNode>>> {
+) -> AppResult<Json<CategoryTreeResponse>> {
     debug!(
         from_date = ?params.from_date,
         to_date = ?params.to_date,
@@ -315,6 +326,18 @@ pub async fn spending_by_category_tree(
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
+
+    let actual_from = transaction_list
+        .iter()
+        .map(|t| t.transaction.date.as_str())
+        .min()
+        .map(String::from);
+    let actual_to = transaction_list
+        .iter()
+        .map(|t| t.transaction.date.as_str())
+        .max()
+        .map(String::from);
+
     let all_categories = categories::list_categories(&conn)?;
     debug!(
         transactions = transaction_list.len(),
@@ -400,7 +423,11 @@ pub async fn spending_by_category_tree(
         );
     }
 
-    Ok(Json(result))
+    Ok(Json(CategoryTreeResponse {
+        categories: result,
+        from_date: actual_from,
+        to_date: actual_to,
+    }))
 }
 
 #[derive(Debug, Deserialize)]
