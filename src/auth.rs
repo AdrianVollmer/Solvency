@@ -129,6 +129,9 @@ pub async fn login_submit(
             .unwrap_or_else(|e| e.into_inner())
             .insert(session_token.clone());
 
+        // Rotate the XSRF token so it is bound to this session
+        state.xsrf_token.regenerate();
+
         let cookie = Cookie::build((SESSION_COOKIE, session_token))
             .path("/")
             .http_only(true)

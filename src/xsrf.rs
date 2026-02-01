@@ -8,7 +8,7 @@ use axum::http::header::CONTENT_TYPE;
 use axum::http::{Method, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use uuid::Uuid;
 
 /// The header name for XSRF tokens in AJAX/HTMX requests.
@@ -18,18 +18,26 @@ pub const XSRF_HEADER: &str = "X-XSRF-Token";
 pub const XSRF_FORM_FIELD: &str = "_xsrf_token";
 
 /// XSRF token storage that can be shared across the application.
+///
+/// The token is regenerated on each login so it is bound to the current
+/// session.  All clones share the same inner value via `Arc<RwLock>`.
 #[derive(Clone)]
-pub struct XsrfToken(Arc<String>);
+pub struct XsrfToken(Arc<RwLock<String>>);
 
 impl XsrfToken {
     /// Generate a new random XSRF token.
     pub fn generate() -> Self {
-        Self(Arc::new(Uuid::new_v4().to_string()))
+        Self(Arc::new(RwLock::new(Uuid::new_v4().to_string())))
     }
 
-    /// Get the token value as a string.
-    pub fn value(&self) -> &str {
-        &self.0
+    /// Get the current token value.
+    pub fn value(&self) -> String {
+        self.0.read().unwrap_or_else(|e| e.into_inner()).clone()
+    }
+
+    /// Replace the token with a fresh random value.
+    pub fn regenerate(&self) {
+        *self.0.write().unwrap_or_else(|e| e.into_inner()) = Uuid::new_v4().to_string();
     }
 }
 
