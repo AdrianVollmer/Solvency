@@ -20,6 +20,7 @@ use solvency::handlers;
 use solvency::models::TradingActivity;
 use solvency::state::{AppState, JsManifest, MarketDataRefreshState};
 use solvency::xsrf::{xsrf_middleware, XsrfToken};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tower::ServiceExt;
@@ -62,6 +63,7 @@ impl TestClient {
             xsrf_token: XsrfToken::generate(),
             market_data_refresh: Arc::new(Mutex::new(MarketDataRefreshState::default())),
             cache: Arc::new(AppCache::new()),
+            sessions: Arc::new(Mutex::new(HashSet::new())),
         };
 
         Self { state }

@@ -5,7 +5,7 @@ use crate::error::AppResult;
 use crate::models::{Account, Category, CategoryWithPath, Settings, Tag};
 use crate::xsrf::XsrfToken;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -28,6 +28,9 @@ impl MarketDataRefreshState {
     }
 }
 
+/// Server-side session store holding valid session tokens.
+pub type SessionStore = Arc<Mutex<HashSet<String>>>;
+
 #[derive(Clone)]
 pub struct AppState {
     pub db: DbPool,
@@ -36,6 +39,7 @@ pub struct AppState {
     pub xsrf_token: XsrfToken,
     pub market_data_refresh: Arc<Mutex<MarketDataRefreshState>>,
     pub cache: Arc<AppCache>,
+    pub sessions: SessionStore,
 }
 
 impl AppState {

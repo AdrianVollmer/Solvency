@@ -3,6 +3,9 @@
 //! This module provides password-based authentication using Argon2 hashed passwords.
 //! Authentication can be disabled by setting `PASSWORD_HASH` to
 //! `DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS` or by not setting it at all.
+//!
+//! Session tokens are cryptographically random UUIDs, validated against a
+//! server-side session store. Tokens are invalidated on logout or server restart.
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use askama::Template;
@@ -14,6 +17,7 @@ use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use serde::Deserialize;
 use tower_cookies::{Cookie, Cookies};
+use uuid::Uuid;
 
 use crate::config::AuthMode;
 use crate::error::RenderHtml;
@@ -47,18 +51,20 @@ pub async fn auth_middleware(
     request: Request<Body>,
     next: Next,
 ) -> Response {
-    // Check if authentication is required
-    let password_hash = match &state.config.auth_mode {
-        AuthMode::Unauthenticated => return next.run(request).await,
-        AuthMode::Password(hash) => hash,
-    };
+    // Skip auth entirely when no password is configured
+    if matches!(state.config.auth_mode, AuthMode::Unauthenticated) {
+        return next.run(request).await;
+    }
 
-    // Check for valid session cookie
+    // Check for valid session cookie against server-side store
     if let Some(session_cookie) = cookies.get(SESSION_COOKIE) {
-        // Verify the session token matches the expected format
-        // We use a hash of the password hash + a fixed prefix as the session token
-        let expected_token = generate_session_token(password_hash);
-        if session_cookie.value() == expected_token {
+        let token = session_cookie.value().to_string();
+        let is_valid = state
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .contains(&token);
+        if is_valid {
             return next.run(request).await;
         }
     }
@@ -115,8 +121,14 @@ pub async fn login_submit(
 
     // Verify the password
     if verify_password(&form.password, password_hash) {
-        // Set session cookie
-        let session_token = generate_session_token(password_hash);
+        // Generate a cryptographically random session token
+        let session_token = Uuid::new_v4().to_string();
+        state
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(session_token.clone());
+
         let cookie = Cookie::build((SESSION_COOKIE, session_token))
             .path("/")
             .http_only(true)
@@ -143,7 +155,16 @@ pub async fn login_submit(
 }
 
 /// Handle logout.
-pub async fn logout(cookies: Cookies) -> impl IntoResponse {
+pub async fn logout(State(state): State<AppState>, cookies: Cookies) -> impl IntoResponse {
+    // Remove the token from the server-side session store
+    if let Some(session_cookie) = cookies.get(SESSION_COOKIE) {
+        state
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(session_cookie.value());
+    }
+
     // Remove the session cookie
     let cookie = Cookie::build((SESSION_COOKIE, ""))
         .path("/")
@@ -166,15 +187,3 @@ fn verify_password(password: &str, hash: &str) -> bool {
         .is_ok()
 }
 
-/// Generate a session token from the password hash.
-/// This is a simple approach where the session is tied to the password hash,
-/// meaning all sessions are invalidated when the password changes.
-fn generate_session_token(password_hash: &str) -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
-    let mut hasher = DefaultHasher::new();
-    "solvency_session_v1".hash(&mut hasher);
-    password_hash.hash(&mut hasher);
-    format!("{:x}", hasher.finish())
-}

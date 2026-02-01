@@ -43,6 +43,7 @@ pub fn build_app(config: Config) -> Result<(AppState, Router), Box<dyn std::erro
         xsrf_token: xsrf_token.clone(),
         market_data_refresh: Arc::new(Mutex::new(MarketDataRefreshState::default())),
         cache: Arc::new(AppCache::new()),
+        sessions: Arc::new(Mutex::new(std::collections::HashSet::new())),
     };
 
     let app = Router::new()
