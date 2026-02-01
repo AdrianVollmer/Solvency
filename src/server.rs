@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 use tower_cookies::CookieManagerLayer;
+use axum::extract::DefaultBodyLimit;
 use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
@@ -67,6 +68,7 @@ pub fn build_app(config: Config) -> Result<(AppState, Router), Box<dyn std::erro
             state.clone(),
             error_page_middleware,
         ))
+        .layer(DefaultBodyLimit::max(256 * 1024 * 1024))
         .layer(CookieManagerLayer::new())
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
