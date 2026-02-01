@@ -1,6 +1,6 @@
 {
   "name": "solvency",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "build:static": "node scripts/copy-static.js",
