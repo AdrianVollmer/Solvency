@@ -58,6 +58,8 @@
             || title == "Trading Activities"
             || title == "Market Data"
             || title == "Import" || title == "Import Transactions" || title == "Import Trading Activities"
+            || title == "Manage" || title == "Add Category" || title == "Edit Category"
+            || title == "Add Tag" || title == "Add Rule" || title == "Edit Rule"
         ) %}
             <a href="/accounts" class="nav-item {% if title == "Accounts" || title == "Add Account" || title == "Edit Account" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("credit-card")|safe }}</span>
@@ -83,26 +85,10 @@
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
                 <span class="text-sm font-medium">Bulk Import</span>
             </a>
-        {% endcall %}
 
-        {% call sidebar_section("Manage", "manage", title, icons,
-            title == "Categories" || title == "Add Category"
-            || title == "Tags"
-            || title == "Rules"
-        ) %}
-            <a href="/categories" class="nav-item {% if title == "Categories" || title == "Add Category" %}nav-item-active{% endif %}">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("folder")|safe }}</span>
-                <span class="text-sm font-medium">Categories</span>
-            </a>
-
-            <a href="/tags" class="nav-item {% if title == "Tags" %}nav-item-active{% endif %}">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("tag")|safe }}</span>
-                <span class="text-sm font-medium">Tags</span>
-            </a>
-
-            <a href="/rules" class="nav-item {% if title == "Rules" %}nav-item-active{% endif %}">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("list-checks")|safe }}</span>
-                <span class="text-sm font-medium">Rules</span>
+            <a href="/manage" class="nav-item {% if title == "Manage" || title == "Add Category" || title == "Edit Category" || title == "Add Tag" || title == "Add Rule" || title == "Edit Rule" %}nav-item-active{% endif %}">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span>
+                <span class="text-sm font-medium">Manage</span>
             </a>
         {% endcall %}
 

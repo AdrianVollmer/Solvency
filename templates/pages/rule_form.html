@@ -3,7 +3,7 @@
 
 {% block content %}
 {% call ui::page_container() %}
-    {% call ui::page_header(title="Add Rule", back_url="/rules", back_label="Rules", subtitle="Create a rule to automatically categorize transactions") %}{% endcall %}
+    {% call ui::page_header(title="Add Rule", back_url="/manage?tab=rules", back_label="Rules", subtitle="Create a rule to automatically categorize transactions") %}{% endcall %}
 
     {% call ui::card() %}
         <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
@@ -49,7 +49,7 @@
             </div>
 
             <div class="flex gap-3 pt-4">
-                <a href="/rules" class="btn btn-secondary flex-1 text-center">
+                <a href="/manage?tab=rules" class="btn btn-secondary flex-1 text-center">
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary flex-1">

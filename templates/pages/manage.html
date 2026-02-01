@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block head %}
+{% if active_tab == "categories" %}
+<style>
+    .tree-node {
+        position: relative;
+    }
+    .tree-children {
+        margin-left: 1.5rem;
+        padding-left: 1rem;
+        border-left: 2px solid transparent;
+        min-height: 4px;
+    }
+    .tree-children:not(:empty) {
+        border-left-color: #e7e5e4;
+    }
+    .dark .tree-children:not(:empty) {
+        border-left-color: #44403c;
+    }
+    .category-row {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        transition: background-color 0.15s;
+    }
+    .category-row:hover {
+        background-color: rgb(245 245 244);
+    }
+    .dark .category-row:hover {
+        background-color: rgb(68 64 60 / 0.5);
+    }
+    .sortable-ghost {
+        opacity: 0.4;
+    }
+    .sortable-drag {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-radius: 0.5rem;
+    }
+    .dark .sortable-drag {
+        background: #292524;
+    }
+    .drop-zone-active {
+        background-color: rgb(224 231 255) !important;
+    }
+    .dark .drop-zone-active {
+        background-color: rgb(49 46 129 / 0.3) !important;
+    }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {# Page header with unified Export/Import #}
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        {% call ui::page_header(title="Manage", subtitle="Categories, tags, and rules") %}{% endcall %}
+        <div class="flex items-center gap-2">
+            <a href="/manage/export" download class="hidden md:inline-flex btn btn-secondary items-center gap-2">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
+                Export
+            </a>
+            <button onclick="document.getElementById('manage-import-file').click()" class="hidden md:inline-flex btn btn-secondary items-center gap-2">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
+                Import
+            </button>
+            {# Mobile overflow menu #}
+            <div class="relative md:hidden" data-dropdown>
+                <button type="button" class="btn btn-secondary flex items-center justify-center !px-2.5" aria-haspopup="true" data-dropdown-toggle aria-label="More actions">
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("ellipsis-vertical")|safe }}</span>
+                </button>
+                <div class="dropdown-menu hidden absolute right-0 top-full mt-1 w-48 py-1 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-lg z-20" role="menu">
+                    <a href="/manage/export" download class="dropdown-item" role="menuitem">
+                        <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
+                        Export All
+                    </a>
+                    <button type="button" onclick="document.getElementById('manage-import-file').click()" class="dropdown-item w-full" role="menuitem">
+                        <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
+                        Import
+                    </button>
+                </div>
+            </div>
+            <input type="file" id="manage-import-file" accept=".json" class="hidden" onchange="importResource(this.files[0], '/manage/import')" aria-label="Import from JSON file">
+        </div>
+    </div>
+
+    {# Tab row #}
+    <div class="flex gap-1 border-b border-neutral-200 dark:border-neutral-700" role="tablist">
+        <a href="/manage?tab=categories" role="tab" aria-selected="{{ active_tab == "categories" }}"
+            class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px {% if active_tab == "categories" %}border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400{% else %}border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600{% endif %}">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("folder")|safe }}</span>
+            Categories
+        </a>
+        <a href="/manage?tab=tags" role="tab" aria-selected="{{ active_tab == "tags" }}"
+            class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px {% if active_tab == "tags" %}border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400{% else %}border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600{% endif %}">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("tag")|safe }}</span>
+            Tags
+        </a>
+        <a href="/manage?tab=rules" role="tab" aria-selected="{{ active_tab == "rules" }}"
+            class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px {% if active_tab == "rules" %}border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400{% else %}border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600{% endif %}">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("list-checks")|safe }}</span>
+            Rules
+        </a>
+    </div>
+
+    {# Tab content #}
+    {% if active_tab == "categories" %}
+    {# Categories tab #}
+    <div class="flex items-center justify-end gap-2">
+        <button
+            hx-delete="/categories/delete-all"
+            data-confirm-modal="{% if category_count > 0 %}Are you sure you want to delete ALL categories? This cannot be undone. ({{ category_count }} records){% else %}Are you sure you want to delete ALL categories? This cannot be undone.{% endif %}"
+            hx-target="body"
+            hx-swap="none"
+            hx-on::after-request="if(event.detail.successful) window.location.reload()"
+            hx-disabled-elt="this"
+            class="btn btn-danger-outline inline-flex items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+            <span class="hidden sm:inline">Delete All</span>
+        </button>
+        <a href="/categories/new" class="btn btn-primary flex items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
+            Add Category
+        </a>
+    </div>
+
+    {% call ui::card(class="") %}
+        <div id="categories-tree" class="p-4">
+            {# Tree is built by JavaScript #}
+        </div>
+        <div id="empty-state" class="px-6 py-12 text-center text-neutral-500 dark:text-neutral-400 hidden">
+            <span class="icon-xl mx-auto mb-4 text-neutral-300 dark:text-neutral-600" aria-hidden="true">{{ icons.get("folder")|safe }}</span>
+            <p class="font-medium">No categories yet</p>
+            <p class="text-sm mt-1">Create one to get started</p>
+        </div>
+    {% endcall %}
+
+    {% else if active_tab == "tags" %}
+    {# Tags tab #}
+    <div class="flex items-center justify-end gap-2">
+        <button
+            hx-delete="/tags/delete-all"
+            data-confirm-modal="{% if tag_count > 0 %}Are you sure you want to delete ALL tags? This cannot be undone. ({{ tag_count }} records){% else %}Are you sure you want to delete ALL tags? This cannot be undone.{% endif %}"
+            hx-target="body"
+            hx-swap="none"
+            hx-on::after-request="if(event.detail.successful) window.location.reload()"
+            hx-disabled-elt="this"
+            class="btn btn-danger-outline inline-flex items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+            <span class="hidden sm:inline">Delete All</span>
+        </button>
+        <a href="/tags/new" class="btn btn-primary flex items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
+            Add Tag
+        </a>
+    </div>
+
+    {% call ui::card(class="", overflow="overflow-hidden") %}
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <caption class="sr-only">Tags list</caption>
+            <thead class="bg-neutral-50 dark:bg-neutral-900">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Tag</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Transactions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-neutral-100 dark:divide-neutral-700">
+                {% for tw in tags_with_usage %}
+                <tr onclick="window.location.href='/tags/{{ tw.tag.id }}/edit'"
+                    class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer row-hover">
+                    <td class="px-6 py-4">
+                        {% call ui::tag_badge_auto(style=tw.tag.style.as_str(), color=tw.tag.color.as_str(), name=tw.tag.name.as_str(), text_color=tw.tag.text_color(), ghost_text_color=tw.tag.ghost_text_color()) %}{% endcall %}
+                    </td>
+                    <td class="px-6 py-4 text-right tabular-nums{% if tw.usage_count == 0 %} text-neutral-400 dark:text-neutral-500{% else %} text-neutral-700 dark:text-neutral-300{% endif %}">
+                        {{ tw.usage_count }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400">
+                        No tags yet. Click "Add Tag" to create one.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endcall %}
+
+    {% else %}
+    {# Rules tab #}
+    <div class="flex items-center justify-end gap-2">
+        <button
+            hx-delete="/rules/delete-all"
+            data-confirm-modal="{% if rule_count > 0 %}Are you sure you want to delete ALL rules? This cannot be undone. ({{ rule_count }} records){% else %}Are you sure you want to delete ALL rules? This cannot be undone.{% endif %}"
+            hx-target="body"
+            hx-swap="none"
+            hx-on::after-request="if(event.detail.successful) window.location.reload()"
+            hx-disabled-elt="this"
+            class="btn btn-danger-outline inline-flex items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+            <span class="hidden sm:inline">Delete All</span>
+        </button>
+        <a href="/rules/new" class="btn btn-primary flex items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
+            Add Rule
+        </a>
+    </div>
+
+    {% call ui::card(class="", overflow="overflow-hidden") %}
+    <div id="rules-table" class="overflow-x-auto">
+        <table class="w-full">
+            <caption class="sr-only">Rules list</caption>
+            <thead class="bg-neutral-50 dark:bg-neutral-900">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Name</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Pattern</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-neutral-100 dark:divide-neutral-700">
+                {% for rule in rules %}
+                {% include "components/rule_row.html" %}
+                {% else %}
+                <tr id="no-rules-row">
+                    <td colspan="3" class="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400">
+                        No rules yet. Click "Add Rule" to automatically categorize your transactions.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endcall %}
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% if active_tab == "categories" %}
+<script src="/static/js/dist/{{ manifest.get("categories.js") }}" defer></script>
+<script type="application/json" id="categories-data">
+[{% for cat in categories %}{"id":{{ cat.category.id }},"name":"{{ cat.category.name }}","parentId":{% match cat.category.parent_id %}{% when Some with (id) %}{{ id }}{% when None %}null{% endmatch %},"color":"{{ cat.category.color }}","icon":"{{ cat.category.icon }}","builtIn":{{ cat.category.built_in }}}{% if !loop.last %},{% endif %}{% endfor %}]
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var dataEl = document.getElementById('categories-data');
+    if (dataEl && window.categoriesPage) {
+        var categories = JSON.parse(dataEl.textContent);
+        window.categoriesPage.init(categories);
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

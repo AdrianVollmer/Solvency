@@ -6,6 +6,7 @@ pub mod categories;
 pub mod dashboard;
 pub mod import;
 pub mod import_preview;
+pub mod manage;
 pub mod market_data;
 pub mod net_worth;
 pub mod rules;
@@ -56,16 +57,14 @@ pub fn routes() -> Router<AppState> {
         )
         .route("/transactions/export", get(transactions::export))
         .route("/transactions/import", post(transactions::import))
+        // Manage (unified categories/tags/rules)
+        .route("/manage", get(manage::index))
+        .route("/manage/export", get(manage::export))
+        .route("/manage/import", post(manage::import))
+        .route("/manage/import/preview", post(manage::import_preview))
         // Category management
-        .route("/categories", get(categories::index))
         .route("/categories/new", get(categories::new_form))
         .route("/categories/create", post(categories::create))
-        .route("/categories/export", get(categories::export))
-        .route("/categories/import", post(categories::import))
-        .route(
-            "/categories/import/preview",
-            post(categories::import_preview),
-        )
         .route("/categories/delete-all", delete(categories::delete_all))
         .route("/categories/:id", get(categories::show))
         .route("/categories/:id/edit", get(categories::edit_form))
@@ -88,24 +87,16 @@ pub fn routes() -> Router<AppState> {
         .route("/accounts/:id", delete(accounts::delete))
         .route("/accounts/delete-all", delete(accounts::delete_all))
         // Tag management
-        .route("/tags", get(tags::index))
         .route("/tags/new", get(tags::new_form))
         .route("/tags/create", post(tags::create))
-        .route("/tags/export", get(tags::export))
-        .route("/tags/import", post(tags::import))
-        .route("/tags/import/preview", post(tags::import_preview))
         .route("/tags/search", get(tags::search))
         .route("/tags/:id/edit", get(tags::edit_form))
         .route("/tags/:id/update", post(tags::update))
         .route("/tags/:id", delete(tags::delete))
         .route("/tags/delete-all", delete(tags::delete_all))
         // Rule management
-        .route("/rules", get(rules::index))
         .route("/rules/new", get(rules::new_form))
         .route("/rules/create", post(rules::create))
-        .route("/rules/export", get(rules::export))
-        .route("/rules/import", post(rules::import))
-        .route("/rules/import/preview", post(rules::import_preview))
         .route("/rules/:id", get(rules::detail))
         .route("/rules/:id/edit", get(rules::edit_form))
         .route("/rules/:id/update", post(rules::update))

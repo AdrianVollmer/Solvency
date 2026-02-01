@@ -334,8 +334,8 @@ async fn test_category_visible_after_creation() {
     .await;
     assert_eq!(status, StatusCode::SEE_OTHER);
 
-    // The category should appear on the categories index.
-    let (status, body) = request(client.router_with_cache(), "GET", "/categories").await;
+    // The category should appear on the manage page (categories tab).
+    let (status, body) = request(client.router_with_cache(), "GET", "/manage?tab=categories").await;
     assert_eq!(status, StatusCode::OK);
     assert!(
         body.contains("Groceries"),

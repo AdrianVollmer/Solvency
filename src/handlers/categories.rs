@@ -1,32 +1,15 @@
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::http::header;
-use axum::response::{Html, IntoResponse, Json, Redirect};
+use axum::response::{Html, IntoResponse, Redirect};
 use axum::Form;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::HashMap;
 
 use crate::db::queries::{categories, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::handlers::import_preview::{
-    ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus, ImportPreviewTemplate,
-};
 use crate::models::{Category, CategoryWithPath, NewCategory, Settings, TAG_PALETTE};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
-
-#[derive(Template)]
-#[template(path = "pages/categories.html")]
-pub struct CategoriesTemplate {
-    pub title: String,
-    pub settings: Settings,
-    pub icons: crate::filters::Icons,
-    pub manifest: JsManifest,
-    pub version: &'static str,
-    pub xsrf_token: String,
-    pub categories: Vec<CategoryWithPath>,
-    pub delete_count: i64,
-}
 
 #[derive(Template)]
 #[template(path = "pages/category_form.html")]
@@ -83,7 +66,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         categories: cats,
         editing: None,
         palette: TAG_PALETTE,
-        back_url: "/categories".into(),
+        back_url: "/manage?tab=categories".into(),
     };
 
     template.render_html()
@@ -99,7 +82,7 @@ pub async fn edit_form(
         .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
 
     if category.built_in {
-        return Ok(Redirect::to("/categories").into_response());
+        return Ok(Redirect::to("/manage?tab=categories").into_response());
     }
 
     let app_settings = state.load_settings()?;
@@ -120,25 +103,6 @@ pub async fn edit_form(
     };
 
     Ok(template.render_html()?.into_response())
-}
-
-pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
-
-    let cats = state.cached_categories_with_path()?;
-
-    let template = CategoriesTemplate {
-        title: "Categories".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
-        delete_count: cats.len() as i64,
-        categories: cats,
-    };
-
-    template.render_html()
 }
 
 pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
@@ -191,7 +155,7 @@ pub async fn create(
 
     categories::create_category(&conn, &new_category)?;
 
-    Ok(Redirect::to("/categories"))
+    Ok(Redirect::to("/manage?tab=categories"))
 }
 
 /// Walk the ancestor chain of `proposed_parent_id`; if we encounter
@@ -311,218 +275,4 @@ pub async fn unset_transactions(
     transactions::unset_category(&conn, id)?;
 
     Ok(Html(String::new()))
-}
-
-#[derive(Serialize)]
-struct CategoryExport {
-    name: String,
-    parent_name: Option<String>,
-    color: String,
-    icon: String,
-}
-
-pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
-    let cats = state.cached_categories()?;
-
-    // Build a map of id -> name for parent lookups
-    let id_to_name: HashMap<i64, String> = cats.iter().map(|c| (c.id, c.name.clone())).collect();
-
-    // Export with parent names instead of IDs for portability
-    // Exclude built-in categories from export (they always exist)
-    let export_data: Vec<CategoryExport> = cats
-        .iter()
-        .filter(|c| !c.built_in)
-        .map(|c| CategoryExport {
-            name: c.name.clone(),
-            parent_name: c.parent_id.and_then(|pid| id_to_name.get(&pid).cloned()),
-            color: c.color.clone(),
-            icon: c.icon.clone(),
-        })
-        .collect();
-
-    let json = serde_json::to_string_pretty(&export_data)
-        .map_err(|e| AppError::Internal(format!("Failed to serialize: {}", e)))?;
-
-    Ok((
-        [
-            (header::CONTENT_TYPE, "application/json"),
-            (
-                header::CONTENT_DISPOSITION,
-                "attachment; filename=\"categories.json\"",
-            ),
-        ],
-        json,
-    ))
-}
-
-#[derive(Deserialize)]
-struct CategoryImport {
-    name: String,
-    parent_name: Option<String>,
-    #[serde(default = "default_color")]
-    color: String,
-    #[serde(default = "default_icon")]
-    icon: String,
-}
-
-fn default_color() -> String {
-    "#6b7280".to_string()
-}
-
-fn default_icon() -> String {
-    "folder".to_string()
-}
-
-pub async fn import(
-    State(state): State<AppState>,
-    Json(value): Json<serde_json::Value>,
-) -> AppResult<Json<serde_json::Value>> {
-    let data: Vec<CategoryImport> = serde_json::from_value(value)
-        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
-
-    let conn = state.db.get()?;
-
-    let mut name_to_id: HashMap<String, i64> = HashMap::new();
-
-    // Seed map with existing categories
-    let existing = state.cached_categories()?;
-    for cat in &existing {
-        name_to_id.insert(cat.name.clone(), cat.id);
-    }
-
-    // Iteratively create categories in dependency order: each pass creates
-    // items whose parent already exists in name_to_id.  Repeat until no
-    // progress is made (remaining items have broken/missing parent refs).
-    let mut remaining: Vec<&CategoryImport> = data.iter().collect();
-    let mut created = 0;
-    loop {
-        let mut next_remaining: Vec<&CategoryImport> = Vec::new();
-        let mut progress = false;
-        for item in remaining {
-            if name_to_id.contains_key(&item.name) {
-                continue;
-            }
-            let parent_resolved = match &item.parent_name {
-                None => true,
-                Some(pn) => name_to_id.contains_key(pn),
-            };
-            if parent_resolved {
-                let parent_id = item
-                    .parent_name
-                    .as_ref()
-                    .and_then(|pn| name_to_id.get(pn).copied());
-                let new_cat = NewCategory {
-                    name: item.name.clone(),
-                    parent_id,
-                    color: item.color.clone(),
-                    icon: item.icon.clone(),
-                };
-                let id = categories::create_category(&conn, &new_cat)?;
-                name_to_id.insert(item.name.clone(), id);
-                created += 1;
-                progress = true;
-            } else {
-                next_remaining.push(item);
-            }
-        }
-        if !progress {
-            break;
-        }
-        remaining = next_remaining;
-    }
-
-    Ok(Json(serde_json::json!({
-        "imported": created,
-        "message": format!("Successfully imported {} categories", created)
-    })))
-}
-
-pub async fn import_preview(
-    State(state): State<AppState>,
-    Form(form): Form<ImportPreviewForm>,
-) -> AppResult<Html<String>> {
-    let data: Vec<CategoryImport> = serde_json::from_str(&form.data)
-        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
-
-    let app_settings = state.load_settings()?;
-
-    let existing = state.cached_categories()?;
-    let existing_names: std::collections::HashSet<String> =
-        existing.iter().map(|c| c.name.clone()).collect();
-
-    // Collect all names that will exist after import (existing + new from file).
-    let all_names: std::collections::HashSet<String> = existing_names
-        .iter()
-        .cloned()
-        .chain(data.iter().map(|c| c.name.clone()))
-        .collect();
-
-    let mut items = Vec::new();
-    let mut ok_count = 0;
-    let mut skip_count = 0;
-
-    for item in &data {
-        let cells = vec![
-            item.name.clone(),
-            item.parent_name.clone().unwrap_or_default(),
-            item.color.clone(),
-            item.icon.clone(),
-        ];
-
-        if existing_names.contains(&item.name) {
-            skip_count += 1;
-            items.push(ImportPreviewItem {
-                status: ImportPreviewStatus::Skipped,
-                reason: "already exists".to_string(),
-                cells,
-            });
-        } else if let Some(ref pn) = item.parent_name {
-            if !all_names.contains(pn) {
-                skip_count += 1;
-                items.push(ImportPreviewItem {
-                    status: ImportPreviewStatus::Skipped,
-                    reason: format!("parent \"{}\" not found", pn),
-                    cells,
-                });
-            } else {
-                ok_count += 1;
-                items.push(ImportPreviewItem {
-                    status: ImportPreviewStatus::Ok,
-                    reason: String::new(),
-                    cells,
-                });
-            }
-        } else {
-            ok_count += 1;
-            items.push(ImportPreviewItem {
-                status: ImportPreviewStatus::Ok,
-                reason: String::new(),
-                cells,
-            });
-        }
-    }
-
-    let template = ImportPreviewTemplate {
-        title: "Import Categories — Preview".to_string(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
-        resource_name: "Categories".to_string(),
-        back_url: "/categories".to_string(),
-        import_url: "/categories/import".to_string(),
-        columns: vec![
-            "Name".to_string(),
-            "Parent".to_string(),
-            "Color".to_string(),
-            "Icon".to_string(),
-        ],
-        items,
-        ok_count,
-        skip_count,
-        raw_json: form.data,
-    };
-
-    template.render_html()
 }

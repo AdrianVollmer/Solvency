@@ -391,7 +391,7 @@
     hx-confirm="{{ confirm }}"
     hx-target="body"
     hx-swap="none"
-    hx-on::after-request="if(event.detail.successful) window.location.href='/categories'"
+    hx-on::after-request="if(event.detail.successful) window.location.href='/manage?tab=categories'"
     hx-disabled-elt="this"
     class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
     <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
@@ -406,7 +406,7 @@
     hx-confirm="{{ confirm }}"
     hx-target="body"
     hx-swap="none"
-    hx-on::after-request="if(event.detail.successful) window.location.href='/rules'"
+    hx-on::after-request="if(event.detail.successful) window.location.href='/manage?tab=rules'"
     hx-disabled-elt="this"
     class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors inline-flex items-center gap-2">
     <span class="icon-xs" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>

@@ -1,38 +1,18 @@
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::http::header;
-use axum::response::{Html, IntoResponse, Json, Redirect};
+use axum::response::{Html, Redirect};
 use axum::Form;
 use regex::RegexBuilder;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use serde::Deserialize;
 
 use crate::db::queries::transactions::TransactionFilter;
 use crate::db::queries::{rules, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::handlers::import_preview::{
-    ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus, ImportPreviewTemplate,
-};
 use crate::models::{
     CategoryWithPath, NewRule, Rule, RuleActionType, Settings, Tag, TransactionWithRelations,
 };
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
-
-#[derive(Template)]
-#[template(path = "pages/rules.html")]
-pub struct RulesTemplate {
-    pub title: String,
-    pub settings: Settings,
-    pub icons: crate::filters::Icons,
-    pub manifest: JsManifest,
-    pub version: &'static str,
-    pub xsrf_token: String,
-    pub rules: Vec<Rule>,
-    pub delete_count: i64,
-    pub categories: Vec<CategoryWithPath>,
-    pub tags: Vec<Tag>,
-}
 
 #[derive(Template)]
 #[template(path = "pages/rule_form.html")]
@@ -116,31 +96,6 @@ pub struct PreviewQuery {
 #[derive(Debug, Deserialize)]
 pub struct ApplyFormData {
     pub scope: String,
-}
-
-pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
-    let app_settings = state.load_settings()?;
-
-    let rule_list = rules::list_rules(&conn)?;
-    let category_list = state.cached_categories_with_path()?;
-    let tag_list = state.cached_tags()?;
-
-    let template = RulesTemplate {
-        title: "Rules".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
-        delete_count: rule_list.len() as i64,
-        rules: rule_list,
-        categories: category_list,
-        tags: tag_list,
-    };
-
-    template.render_html()
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -231,7 +186,7 @@ pub async fn create(
 
     rules::create_rule(&conn, &new_rule)?;
 
-    Ok(Redirect::to("/rules"))
+    Ok(Redirect::to("/manage?tab=rules"))
 }
 
 pub async fn update(
@@ -270,254 +225,6 @@ pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>
     rules::delete_all_rules(&conn)?;
 
     Ok(Html(String::new()))
-}
-
-#[derive(Serialize)]
-struct RuleExport {
-    name: String,
-    pattern: String,
-    action_type: RuleActionType,
-    action_value: String, // Name of category or tag
-}
-
-pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
-    let conn = state.db.get()?;
-
-    let rule_list = rules::list_rules(&conn)?;
-    let cat_list = state.cached_categories()?;
-    let tag_list = state.cached_tags()?;
-
-    // Build maps of id -> name
-    let cat_id_to_name: HashMap<String, String> = cat_list
-        .iter()
-        .map(|c| (c.id.to_string(), c.name.clone()))
-        .collect();
-    let tag_id_to_name: HashMap<String, String> = tag_list
-        .iter()
-        .map(|t| (t.id.to_string(), t.name.clone()))
-        .collect();
-
-    let export_data: Vec<RuleExport> = rule_list
-        .iter()
-        .map(|r| {
-            let action_value = match r.action_type {
-                RuleActionType::AssignCategory => cat_id_to_name
-                    .get(&r.action_value)
-                    .cloned()
-                    .unwrap_or_else(|| r.action_value.clone()),
-                RuleActionType::AssignTag => tag_id_to_name
-                    .get(&r.action_value)
-                    .cloned()
-                    .unwrap_or_else(|| r.action_value.clone()),
-            };
-            RuleExport {
-                name: r.name.clone(),
-                pattern: r.pattern.clone(),
-                action_type: r.action_type,
-                action_value,
-            }
-        })
-        .collect();
-
-    let json = serde_json::to_string_pretty(&export_data)
-        .map_err(|e| AppError::Internal(format!("Failed to serialize: {}", e)))?;
-
-    Ok((
-        [
-            (header::CONTENT_TYPE, "application/json"),
-            (
-                header::CONTENT_DISPOSITION,
-                "attachment; filename=\"rules.json\"",
-            ),
-        ],
-        json,
-    ))
-}
-
-#[derive(Deserialize)]
-struct RuleImport {
-    name: String,
-    pattern: String,
-    action_type: RuleActionType,
-    action_value: String, // Name of category or tag
-}
-
-pub async fn import(
-    State(state): State<AppState>,
-    Json(value): Json<serde_json::Value>,
-) -> AppResult<Json<serde_json::Value>> {
-    let data: Vec<RuleImport> = serde_json::from_value(value)
-        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
-
-    let conn = state.db.get()?;
-
-    let cat_list = state.cached_categories()?;
-    let tag_list = state.cached_tags()?;
-
-    // Build maps of name -> id
-    let cat_name_to_id: HashMap<String, i64> =
-        cat_list.iter().map(|c| (c.name.clone(), c.id)).collect();
-    let tag_name_to_id: HashMap<String, i64> =
-        tag_list.iter().map(|t| (t.name.clone(), t.id)).collect();
-
-    let existing_rules = rules::list_rules(&conn)?;
-    let existing_names: std::collections::HashSet<_> =
-        existing_rules.iter().map(|r| r.name.clone()).collect();
-
-    let mut created = 0;
-    let mut skipped = 0;
-    let mut errors: Vec<String> = Vec::new();
-
-    for item in data {
-        if existing_names.contains(&item.name) {
-            skipped += 1;
-            errors.push(format!(
-                "\"{}\": a rule with this name already exists",
-                item.name
-            ));
-            continue;
-        }
-
-        // Resolve action_value name to id
-        let action_value = match item.action_type {
-            RuleActionType::AssignCategory => {
-                if let Some(id) = cat_name_to_id.get(&item.action_value) {
-                    id.to_string()
-                } else {
-                    skipped += 1;
-                    errors.push(format!(
-                        "\"{}\": category \"{}\" not found",
-                        item.name, item.action_value
-                    ));
-                    continue;
-                }
-            }
-            RuleActionType::AssignTag => {
-                if let Some(id) = tag_name_to_id.get(&item.action_value) {
-                    id.to_string()
-                } else {
-                    skipped += 1;
-                    errors.push(format!(
-                        "\"{}\": tag \"{}\" not found",
-                        item.name, item.action_value
-                    ));
-                    continue;
-                }
-            }
-        };
-
-        let new_rule = NewRule {
-            name: item.name,
-            pattern: item.pattern,
-            action_type: item.action_type,
-            action_value,
-        };
-        rules::create_rule(&conn, &new_rule)?;
-        created += 1;
-    }
-
-    Ok(Json(serde_json::json!({
-        "imported": created,
-        "skipped": skipped,
-        "errors": errors,
-        "message": format!("Imported {} rules, skipped {}", created, skipped)
-    })))
-}
-
-pub async fn import_preview(
-    State(state): State<AppState>,
-    Form(form): Form<ImportPreviewForm>,
-) -> AppResult<Html<String>> {
-    let data: Vec<RuleImport> = serde_json::from_str(&form.data)
-        .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
-
-    let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
-
-    let cat_list = state.cached_categories()?;
-    let tag_list = state.cached_tags()?;
-    let cat_names: std::collections::HashSet<String> =
-        cat_list.iter().map(|c| c.name.clone()).collect();
-    let tag_names: std::collections::HashSet<String> =
-        tag_list.iter().map(|t| t.name.clone()).collect();
-
-    let existing_rules = rules::list_rules(&conn)?;
-    let existing_names: std::collections::HashSet<String> =
-        existing_rules.iter().map(|r| r.name.clone()).collect();
-
-    let mut items = Vec::new();
-    let mut ok_count = 0;
-    let mut skip_count = 0;
-
-    for item in &data {
-        let action_label = match item.action_type {
-            RuleActionType::AssignCategory => "Assign Category",
-            RuleActionType::AssignTag => "Assign Tag",
-        };
-        let cells = vec![
-            item.name.clone(),
-            item.pattern.clone(),
-            action_label.to_string(),
-            item.action_value.clone(),
-        ];
-
-        if existing_names.contains(&item.name) {
-            skip_count += 1;
-            items.push(ImportPreviewItem {
-                status: ImportPreviewStatus::Skipped,
-                reason: "already exists".to_string(),
-                cells,
-            });
-        } else {
-            let target_exists = match item.action_type {
-                RuleActionType::AssignCategory => cat_names.contains(&item.action_value),
-                RuleActionType::AssignTag => tag_names.contains(&item.action_value),
-            };
-            if !target_exists {
-                let kind = match item.action_type {
-                    RuleActionType::AssignCategory => "category",
-                    RuleActionType::AssignTag => "tag",
-                };
-                skip_count += 1;
-                items.push(ImportPreviewItem {
-                    status: ImportPreviewStatus::Skipped,
-                    reason: format!("{} \"{}\" not found", kind, item.action_value),
-                    cells,
-                });
-            } else {
-                ok_count += 1;
-                items.push(ImportPreviewItem {
-                    status: ImportPreviewStatus::Ok,
-                    reason: String::new(),
-                    cells,
-                });
-            }
-        }
-    }
-
-    let template = ImportPreviewTemplate {
-        title: "Import Rules — Preview".to_string(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
-        resource_name: "Rules".to_string(),
-        back_url: "/rules".to_string(),
-        import_url: "/rules/import".to_string(),
-        columns: vec![
-            "Name".to_string(),
-            "Pattern".to_string(),
-            "Action".to_string(),
-            "Target".to_string(),
-        ],
-        items,
-        ok_count,
-        skip_count,
-        raw_json: form.data,
-    };
-
-    template.render_html()
 }
 
 /// Fetch transactions matching a rule's regex pattern, filtered by scope.

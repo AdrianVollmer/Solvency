@@ -4,7 +4,7 @@
 {% block content %}
 {% call ui::page_container(max_width="max-w-4xl") %}
     <div class="flex items-start justify-between gap-4">
-        {% call ui::page_header(title=category.category.name.as_str(), back_url="/categories", back_label="Categories") %}{% endcall %}
+        {% call ui::page_header(title=category.category.name.as_str(), back_url="/manage?tab=categories", back_label="Categories") %}{% endcall %}
         {% if !category.category.built_in %}
         <div class="flex gap-2">
             <a href="/categories/{{ category.category.id }}/edit"

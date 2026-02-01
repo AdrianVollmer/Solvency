@@ -69,15 +69,15 @@ async fn test_accounts_requires_auth() {
     );
 }
 
-/// Test that categories page redirects to login when auth is required.
+/// Test that manage page redirects to login when auth is required.
 #[tokio::test]
 async fn test_categories_requires_auth() {
     let client = auth_client();
-    let (status, body) = client.get_with_auth("/categories").await;
+    let (status, body) = client.get_with_auth("/manage").await;
 
     assert!(
         status == StatusCode::SEE_OTHER || body.contains("login"),
-        "Categories page should redirect to login"
+        "Manage page should redirect to login"
     );
 }
 
