@@ -175,7 +175,7 @@ pub async fn import_database(
         return Err(AppError::Validation("No file uploaded".to_string()));
     }
 
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
 
     // Only accept SQLite binary files
     let is_sqlite = file_bytes.len() >= 16 && file_bytes[..16] == *b"SQLite format 3\0";
@@ -190,7 +190,7 @@ pub async fn import_database(
         std::env::temp_dir().join(format!("solvency-import-{}.db", std::process::id()));
     fs::write(&temp_path, &file_bytes)?;
 
-    let result = restore_from_db_file(&conn, &temp_path);
+    let result = restore_from_db_file(&mut conn, &temp_path, &state.config.migrations_path);
     let _ = fs::remove_file(&temp_path);
     result?;
 
@@ -209,66 +209,35 @@ pub async fn import_database(
     template.render_html()
 }
 
-/// Restore the live database from an uploaded .db file using ATTACH + data copy.
+/// Restore the live database from an uploaded .db file using SQLite's backup API.
 ///
-/// Only copies data into tables that already exist in the main schema (from
-/// migrations). No SQL from the uploaded file's `sqlite_master` is executed --
-/// schema objects (CREATE TABLE, triggers, indexes) come exclusively from the
-/// application's own migrations.
-fn restore_from_db_file(conn: &rusqlite::Connection, src_path: &Path) -> AppResult<()> {
-    let path_str = src_path.display().to_string().replace('\'', "''");
-    conn.execute_batch(&format!("ATTACH DATABASE '{}' AS src", path_str))?;
+/// This performs a page-level copy from the source into the live database.
+/// All existing pool connections see the new data immediately. After the
+/// backup completes, migrations are re-run to bring the schema up to date
+/// (handles importing backups from older versions).
+fn restore_from_db_file(
+    conn: &mut rusqlite::Connection,
+    src_path: &Path,
+    migrations_path: &Path,
+) -> AppResult<()> {
+    let src = rusqlite::Connection::open(src_path)?;
+    let backup = rusqlite::backup::Backup::new(&src, conn)?;
+    backup
+        .run_to_completion(100, std::time::Duration::ZERO, None)
+        .map_err(|e| AppError::Internal(format!("Backup failed: {}", e)))?;
+    drop(backup);
+    drop(src);
 
-    let result = (|| -> AppResult<()> {
-        // Get tables from the MAIN schema (our trusted migration-managed schema)
-        let mut stmt = conn.prepare(
-            "SELECT name FROM main.sqlite_master \
-             WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != '_migrations'",
-        )?;
-        let main_tables: Vec<String> = stmt
-            .query_map([], |row| row.get(0))?
-            .collect::<Result<_, _>>()?;
-        drop(stmt);
+    // Re-run migrations so the schema matches the current app version
+    crate::db::migrations::run_migrations(conn, migrations_path)?;
 
-        // Get tables present in the source database
-        let mut stmt = conn.prepare(
-            "SELECT name FROM src.sqlite_master \
-             WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
-        )?;
-        let src_tables: std::collections::HashSet<String> = stmt
-            .query_map([], |row| row.get(0))?
-            .collect::<Result<_, _>>()?;
-        drop(stmt);
+    // Restore WAL mode and FK checks (backup copies source pragmas)
+    conn.execute_batch(
+        "PRAGMA journal_mode = WAL;\
+         PRAGMA foreign_keys = ON;",
+    )?;
 
-        conn.execute_batch("PRAGMA foreign_keys = OFF")?;
-        conn.execute_batch("BEGIN")?;
-
-        // For each table in our schema that also exists in the source, clear
-        // and copy data.  We never execute CREATE TABLE / trigger / index SQL
-        // from the uploaded file.
-        for name in &main_tables {
-            if !src_tables.contains(name) {
-                continue;
-            }
-            conn.execute_batch(&format!("DELETE FROM main.\"{}\"", name))?;
-            conn.execute_batch(&format!(
-                "INSERT INTO main.\"{}\" SELECT * FROM src.\"{}\"",
-                name, name
-            ))?;
-        }
-
-        conn.execute_batch("COMMIT")?;
-        Ok(())
-    })();
-
-    if result.is_err() {
-        let _ = conn.execute_batch("ROLLBACK");
-    }
-
-    let _ = conn.execute_batch("PRAGMA foreign_keys = ON");
-    let _ = conn.execute_batch("DETACH DATABASE src");
-
-    result
+    Ok(())
 }
 
 pub async fn clear_database(State(state): State<AppState>) -> AppResult<Html<String>> {
