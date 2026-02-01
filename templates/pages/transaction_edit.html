@@ -73,6 +73,69 @@
                     class="input w-full">{{ transaction.notes_text() }}</textarea>
             </div>
 
+            {# Extended Details #}
+            <div class="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+                <h3 class="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-4">Extended Details</h3>
+
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Value Date (optional)</label>
+                            <input type="date" name="value_date" value="{{ transaction.value_date.as_deref().unwrap_or("") }}"
+                                class="input w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Transaction Type (optional)</label>
+                            <input type="text" name="transaction_type" value="{{ transaction.transaction_type.as_deref().unwrap_or("") }}"
+                                class="input w-full">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Payer (optional)</label>
+                            <input type="text" name="payer" value="{{ transaction.payer.as_deref().unwrap_or("") }}"
+                                class="input w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Payee (optional)</label>
+                            <input type="text" name="payee" value="{{ transaction.payee.as_deref().unwrap_or("") }}"
+                                class="input w-full">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Reference (optional)</label>
+                        <textarea name="reference" rows="2"
+                            class="input w-full">{{ transaction.reference.as_deref().unwrap_or("") }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Counterparty IBAN (optional)</label>
+                        <input type="text" name="counterparty_iban" value="{{ transaction.counterparty_iban.as_deref().unwrap_or("") }}"
+                            class="input w-full">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Creditor ID (optional)</label>
+                            <input type="text" name="creditor_id" value="{{ transaction.creditor_id.as_deref().unwrap_or("") }}"
+                                class="input w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Mandate Reference (optional)</label>
+                            <input type="text" name="mandate_reference" value="{{ transaction.mandate_reference.as_deref().unwrap_or("") }}"
+                                class="input w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Customer Reference (optional)</label>
+                            <input type="text" name="customer_reference" value="{{ transaction.customer_reference.as_deref().unwrap_or("") }}"
+                                class="input w-full">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Tags</label>
                 <div class="flex flex-wrap gap-2">

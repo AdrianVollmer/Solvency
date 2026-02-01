@@ -309,9 +309,35 @@ pub struct TransactionFormData {
     pub notes: Option<String>,
     #[serde(default)]
     pub tag_ids: Vec<i64>,
+    // Extended fields
+    #[serde(default)]
+    pub value_date: Option<String>,
+    #[serde(default)]
+    pub payer: Option<String>,
+    #[serde(default)]
+    pub payee: Option<String>,
+    #[serde(default)]
+    pub reference: Option<String>,
+    #[serde(default)]
+    pub transaction_type: Option<String>,
+    #[serde(default)]
+    pub counterparty_iban: Option<String>,
+    #[serde(default)]
+    pub creditor_id: Option<String>,
+    #[serde(default)]
+    pub mandate_reference: Option<String>,
+    #[serde(default)]
+    pub customer_reference: Option<String>,
 }
 
 impl TransactionFormData {
+    /// Normalize an optional string: treat empty/whitespace-only as None.
+    fn non_empty(s: &Option<String>) -> Option<String> {
+        s.as_ref()
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+    }
+
     fn to_new_transaction(&self) -> Result<NewTransaction, AppError> {
         let amount: f64 = self
             .amount
@@ -327,16 +353,15 @@ impl TransactionFormData {
             account_id: self.account_id,
             notes: self.notes.clone(),
             tag_ids: self.tag_ids.clone(),
-            // Extended fields are not editable via the simple form
-            value_date: None,
-            payer: None,
-            payee: None,
-            reference: None,
-            transaction_type: None,
-            counterparty_iban: None,
-            creditor_id: None,
-            mandate_reference: None,
-            customer_reference: None,
+            value_date: Self::non_empty(&self.value_date),
+            payer: Self::non_empty(&self.payer),
+            payee: Self::non_empty(&self.payee),
+            reference: Self::non_empty(&self.reference),
+            transaction_type: Self::non_empty(&self.transaction_type),
+            counterparty_iban: Self::non_empty(&self.counterparty_iban),
+            creditor_id: Self::non_empty(&self.creditor_id),
+            mandate_reference: Self::non_empty(&self.mandate_reference),
+            customer_reference: Self::non_empty(&self.customer_reference),
         })
     }
 }

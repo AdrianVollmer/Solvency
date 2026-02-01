@@ -58,6 +58,12 @@
                     </dd>
                 </div>
 
+                {% match transaction.account_name %}
+                {% when Some with (name) %}
+                {% call ui::detail_field(label="Account") %}{{ name }}{% endcall %}
+                {% when None %}
+                {% endmatch %}
+
                 {% if !transaction.tags.is_empty() %}
                 <div>
                     <dt class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Tags</dt>
