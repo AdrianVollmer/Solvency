@@ -360,7 +360,7 @@ impl DateRange {
 
 impl Default for DateRange {
     fn default() -> Self {
-        Self::from_preset(DatePreset::ThisMonth)
+        Self::from_preset(DatePreset::All)
     }
 }
 
