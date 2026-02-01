@@ -364,6 +364,31 @@ pub fn get_positions_for_account(
     Ok(calculate_positions_from_activities(activities))
 }
 
+pub fn get_positions_without_account(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
+    let mut stmt = conn.prepare(
+        "SELECT symbol, activity_type, quantity, unit_price_cents, fee_cents, currency
+         FROM trading_activities
+         WHERE account_id IS NULL
+         ORDER BY symbol, date ASC, id ASC",
+    )?;
+
+    let activities: Vec<ActivityRow> = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+                row.get(5)?,
+            ))
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    Ok(calculate_positions_from_activities(activities))
+}
+
 /// Get closed positions (where all securities have been sold)
 pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPosition>> {
     // Get all activities grouped by symbol

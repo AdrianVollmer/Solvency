@@ -10,7 +10,7 @@ use crate::filters;
 use crate::handlers::transactions::TransactionPreviewTemplate;
 use crate::models::account::AccountType;
 use crate::models::net_worth::NetWorthDataPoint;
-use crate::models::trading::PositionWithMarketData;
+use crate::models::trading::{Position, PositionWithMarketData};
 use crate::models::Settings;
 use crate::services::net_worth::{calculate_net_worth_history, decimate_for_display};
 use crate::state::{AppState, JsManifest};
@@ -224,6 +224,8 @@ pub struct AllocationNode {
 
 /// Returns the account allocation tree for the sunburst chart.
 /// Cash accounts are leaf nodes; securities accounts have children for each position.
+/// Transactions and trading activities not linked to any account are shown under
+/// virtual "Other Cash" / "Other Securities" nodes.
 pub async fn account_allocation(
     State(state): State<AppState>,
 ) -> AppResult<Json<Vec<AllocationNode>>> {
@@ -233,9 +235,11 @@ pub async fn account_allocation(
     let cash_balances = balances::get_cash_account_balances(&conn)?;
 
     let mut nodes: Vec<AllocationNode> = Vec::new();
+    let mut color_index = 0;
 
-    for (i, account) in all_accounts.iter().enumerate() {
-        let color = PALETTE[i % PALETTE.len()].to_string();
+    for account in all_accounts.iter() {
+        let color = PALETTE[color_index % PALETTE.len()].to_string();
+        color_index += 1;
 
         match account.account_type {
             AccountType::Cash => {
@@ -250,41 +254,11 @@ pub async fn account_allocation(
                 }
             }
             AccountType::Securities => {
-                let positions = trading::get_positions_for_account(&conn, account.id)?;
-                let mut children: Vec<AllocationNode> = Vec::new();
-
-                for pos in &positions {
-                    let enriched =
-                        if let Ok(Some(data)) = market_data::get_latest_price(&conn, &pos.symbol) {
-                            PositionWithMarketData::with_market_data(
-                                pos.clone(),
-                                data.close_price_cents,
-                                data.date,
-                            )
-                        } else if let Ok(Some((price_cents, date))) =
-                            trading::get_last_trade_price(&conn, &pos.symbol)
-                        {
-                            PositionWithMarketData::with_approximated_price(
-                                pos.clone(),
-                                price_cents,
-                                date,
-                            )
-                        } else {
-                            PositionWithMarketData::from_position(pos.clone())
-                        };
-
-                    let value = enriched
-                        .current_value_cents
-                        .unwrap_or(enriched.position.total_cost_cents);
-                    if value > 0 {
-                        children.push(AllocationNode {
-                            name: pos.symbol.clone(),
-                            color: color.clone(),
-                            amount_cents: Some(value),
-                            children: vec![],
-                        });
-                    }
-                }
+                let children = positions_to_allocation_nodes(
+                    &conn,
+                    &trading::get_positions_for_account(&conn, account.id)?,
+                    &color,
+                )?;
 
                 if !children.is_empty() {
                     nodes.push(AllocationNode {
@@ -298,5 +272,73 @@ pub async fn account_allocation(
         }
     }
 
+    // Virtual node for unassociated cash transactions
+    let unassociated_cash = balances::get_unassociated_cash_balance(&conn)?;
+    if unassociated_cash > 0 {
+        let color = PALETTE[color_index % PALETTE.len()].to_string();
+        color_index += 1;
+        nodes.push(AllocationNode {
+            name: "Other Cash".into(),
+            color,
+            amount_cents: Some(unassociated_cash),
+            children: vec![],
+        });
+    }
+
+    // Virtual node for unassociated trading positions
+    let unassociated_positions = trading::get_positions_without_account(&conn)?;
+    let color = PALETTE[color_index % PALETTE.len()].to_string();
+    let children = positions_to_allocation_nodes(&conn, &unassociated_positions, &color)?;
+    if !children.is_empty() {
+        nodes.push(AllocationNode {
+            name: "Other Securities".into(),
+            color,
+            amount_cents: None,
+            children,
+        });
+    }
+
     Ok(Json(nodes))
+}
+
+/// Convert a list of positions into allocation child nodes, enriching with market data.
+fn positions_to_allocation_nodes(
+    conn: &rusqlite::Connection,
+    positions: &[Position],
+    color: &str,
+) -> AppResult<Vec<AllocationNode>> {
+    let mut children = Vec::new();
+    for pos in positions {
+        let enriched =
+            if let Ok(Some(data)) = market_data::get_latest_price(conn, &pos.symbol) {
+                PositionWithMarketData::with_market_data(
+                    pos.clone(),
+                    data.close_price_cents,
+                    data.date,
+                )
+            } else if let Ok(Some((price_cents, date))) =
+                trading::get_last_trade_price(conn, &pos.symbol)
+            {
+                PositionWithMarketData::with_approximated_price(
+                    pos.clone(),
+                    price_cents,
+                    date,
+                )
+            } else {
+                PositionWithMarketData::from_position(pos.clone())
+            };
+
+        let value = enriched
+            .current_value_cents
+            .unwrap_or(enriched.position.total_cost_cents);
+        if value > 0 {
+            children.push(AllocationNode {
+                name: pos.symbol.clone(),
+                color: color.to_string(),
+                amount_cents: Some(value),
+                children: vec![],
+            });
+        }
+    }
+    Ok(children)
 }

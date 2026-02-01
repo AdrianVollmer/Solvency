@@ -21,3 +21,12 @@ pub fn get_cash_account_balances(conn: &Connection) -> rusqlite::Result<HashMap<
     }
     Ok(map)
 }
+
+/// Returns the sum of amount_cents for all transactions without an account.
+pub fn get_unassociated_cash_balance(conn: &Connection) -> rusqlite::Result<i64> {
+    conn.query_row(
+        "SELECT COALESCE(SUM(amount_cents), 0) FROM transactions WHERE account_id IS NULL",
+        [],
+        |row| row.get(0),
+    )
+}
