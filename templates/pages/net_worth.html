@@ -73,33 +73,7 @@
     {% endcall %}
 
     {# Top Transactions (shown when shift+dragging on chart) #}
-    <div id="top-transactions-container" class="hidden">
-    {% call ui::card(class="", overflow="overflow-hidden") %}
-        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
-            <div>
-                <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Largest Transactions</h2>
-                <p id="top-transactions-period" class="text-sm text-neutral-500 dark:text-neutral-400"></p>
-            </div>
-            <button id="top-transactions-close" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" aria-label="Close">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("x")|safe }}</span>
-            </button>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                <thead class="bg-neutral-50 dark:bg-neutral-900">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Date</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Description</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Category</th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Amount</th>
-                    </tr>
-                </thead>
-                <tbody id="top-transactions-body" class="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                </tbody>
-            </table>
-        </div>
-    {% endcall %}
-    </div>
+    <div id="top-transactions-container" class="hidden"></div>
 
     {% else if active_tab == "allocation" %}
     {# Sunburst Allocation Chart #}

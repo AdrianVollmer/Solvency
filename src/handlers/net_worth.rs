@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::db::queries::{accounts, balances, market_data, trading, transactions};
 use crate::error::{AppResult, RenderHtml};
 use crate::filters;
+use crate::handlers::transactions::TransactionPreviewTemplate;
 use crate::models::account::AccountType;
 use crate::models::net_worth::NetWorthDataPoint;
 use crate::models::trading::PositionWithMarketData;
@@ -174,61 +175,41 @@ pub struct TopTransactionsParams {
     pub to_date: String,
 }
 
-/// Single transaction in the response
-#[derive(Serialize)]
-pub struct TransactionItem {
-    pub id: i64,
-    pub date: String,
-    pub description: String,
-    pub amount_cents: i64,
-    pub currency: String,
-    pub category_name: Option<String>,
-    pub category_color: Option<String>,
-}
-
-/// Response for top transactions endpoint
-#[derive(Serialize)]
-pub struct TopTransactionsResponse {
-    pub transactions: Vec<TransactionItem>,
-    pub from_date: String,
-    pub to_date: String,
-}
-
-/// Get top 10 transactions by absolute value in a date range
+/// Get top transactions by absolute value in a date range (returns HTML partial)
 pub async fn top_transactions(
     State(state): State<AppState>,
     Query(params): Query<TopTransactionsParams>,
-) -> AppResult<Json<TopTransactionsResponse>> {
+) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
 
     let filter = transactions::TransactionFilter {
         from_date: Some(params.from_date.clone()),
         to_date: Some(params.to_date.clone()),
         sort_sql: Some("ABS(e.amount_cents) DESC".to_string()),
-        limit: Some(10),
+        limit: Some(20),
         ..Default::default()
     };
 
+    let total_count = transactions::count_transactions(&conn, &filter)?;
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
 
-    let response = TopTransactionsResponse {
-        transactions: transaction_list
-            .into_iter()
-            .map(|e| TransactionItem {
-                id: e.transaction.id,
-                date: e.transaction.date,
-                description: e.transaction.description,
-                amount_cents: e.transaction.amount_cents,
-                currency: e.transaction.currency,
-                category_name: e.category_name,
-                category_color: e.category_color,
-            })
-            .collect(),
-        from_date: params.from_date,
-        to_date: params.to_date,
+    let view_all_url = format!(
+        "/transactions?from_date={}&to_date={}",
+        params.from_date, params.to_date
+    );
+
+    let template = TransactionPreviewTemplate {
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        title: "Largest Transactions".to_string(),
+        subtitle: format!("{} to {}", params.from_date, params.to_date),
+        transactions: transaction_list,
+        count: total_count as usize,
+        view_all_url,
     };
 
-    Ok(Json(response))
+    template.render_html()
 }
 
 /// A node in the account allocation tree for the sunburst chart.

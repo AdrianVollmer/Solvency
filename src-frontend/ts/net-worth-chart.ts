@@ -7,22 +7,6 @@ interface NetWorthChartResponse {
   portfolio_component: number[];
 }
 
-interface TransactionItem {
-  id: number;
-  date: string;
-  description: string;
-  amount_cents: number;
-  currency: string;
-  category_name: string | null;
-  category_color: string | null;
-}
-
-interface TopTransactionsResponse {
-  transactions: TransactionItem[];
-  from_date: string;
-  to_date: string;
-}
-
 interface AllocationNode {
   name: string;
   color: string;
@@ -107,54 +91,28 @@ function updateBrushMode(): void {
   }
 }
 
-async function fetchTopTransactions(
+async function fetchTopTransactionsHtml(
   fromDate: string,
   toDate: string,
-): Promise<TopTransactionsResponse> {
+): Promise<string> {
   const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
   const response = await fetch(`/api/net-worth/top-transactions?${params}`);
   if (!response.ok) throw new Error("Failed to fetch transactions");
-  return response.json();
+  return response.text();
 }
 
-function showTopTransactions(
-  data: TopTransactionsResponse,
-  currency: string,
-  locale: string,
-): void {
+function showTopTransactions(html: string): void {
   const container = document.getElementById("top-transactions-container");
-  const periodEl = document.getElementById("top-transactions-period");
-  const tbody = document.getElementById("top-transactions-body");
+  if (!container) return;
 
-  if (!container || !periodEl || !tbody) return;
-
-  periodEl.textContent = `${data.from_date} to ${data.to_date}`;
-
-  tbody.innerHTML = data.transactions
-    .map((transaction) => {
-      const amountClass =
-        transaction.amount_cents >= 0
-          ? "text-green-600 dark:text-green-400"
-          : "text-red-600 dark:text-red-400";
-      const categoryBadge = transaction.category_name
-        ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" style="background-color: ${transaction.category_color || "#6b7280"}20; color: ${transaction.category_color || "#6b7280"}">${transaction.category_name}</span>`
-        : '<span class="text-neutral-400">-</span>';
-
-      return `
-        <tr>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-white">${transaction.date}</td>
-          <td class="px-6 py-4 text-sm text-neutral-900 dark:text-white">
-            <a href="/transactions/${transaction.id}" class="hover:text-blue-600 dark:hover:text-blue-400">${transaction.description}</a>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm">${categoryBadge}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${amountClass}">${formatMoney(transaction.amount_cents, currency, locale)}</td>
-        </tr>
-      `;
-    })
-    .join("");
-
+  container.innerHTML = html;
   container.classList.remove("hidden");
   container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  const closeBtn = container.querySelector(".preview-close-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", hideTopTransactions);
+  }
 }
 
 function hideTopTransactions(): void {
@@ -348,8 +306,8 @@ async function loadNetWorthChart(): Promise<void> {
 
       if (fromDate && toDate) {
         try {
-          const transactionsData = await fetchTopTransactions(fromDate, toDate);
-          showTopTransactions(transactionsData, currency, locale);
+          const html = await fetchTopTransactionsHtml(fromDate, toDate);
+          showTopTransactions(html);
         } catch (error) {
           console.error("Failed to fetch top transactions:", error);
         }
@@ -381,11 +339,7 @@ async function loadNetWorthChart(): Promise<void> {
       }
     });
 
-    // Close button for transactions table
-    const closeBtn = document.getElementById("top-transactions-close");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", hideTopTransactions);
-    }
+    // Close button wired dynamically in showTopTransactions()
   } catch (error) {
     console.error("Failed to load net worth chart:", error);
     container.innerHTML = `

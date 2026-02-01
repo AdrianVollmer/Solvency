@@ -541,6 +541,68 @@ function decorateColorSelect(select: HTMLSelectElement): void {
   applyDot();
 }
 
+function initPreviewTableSort(): void {
+  document.addEventListener("click", (event: MouseEvent) => {
+    const th = (event.target as HTMLElement).closest(
+      "th[data-sort-key]",
+    ) as HTMLElement | null;
+    if (!th) return;
+
+    const table = th.closest("table[data-sortable-preview]");
+    if (!table) return;
+
+    const tbody = table.querySelector("tbody");
+    if (!tbody) return;
+
+    const colIndex = parseInt(th.dataset.sortKey || "0", 10);
+
+    // Determine sort direction: toggle if same column, else ascending
+    const currentDir = th.dataset.sortDir || "";
+    const newDir = currentDir === "asc" ? "desc" : "asc";
+
+    // Clear indicators on all headers in this table
+    for (const header of table.querySelectorAll<HTMLElement>(
+      "th[data-sort-key]",
+    )) {
+      header.dataset.sortDir = "";
+      const indicator = header.querySelector(".sort-indicator");
+      if (indicator) indicator.textContent = "";
+    }
+
+    // Set new direction
+    th.dataset.sortDir = newDir;
+    const indicator = th.querySelector(".sort-indicator");
+    if (indicator) indicator.textContent = newDir === "asc" ? " \u25B2" : " \u25BC";
+
+    // Collect rows and sort
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    rows.sort((a, b) => {
+      const cellA = a.querySelectorAll("td")[colIndex];
+      const cellB = b.querySelectorAll("td")[colIndex];
+      if (!cellA || !cellB) return 0;
+
+      const valA = cellA.dataset.sortValue || cellA.textContent || "";
+      const valB = cellB.dataset.sortValue || cellB.textContent || "";
+
+      // Try numeric comparison first
+      const numA = parseFloat(valA);
+      const numB = parseFloat(valB);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return newDir === "asc" ? numA - numB : numB - numA;
+      }
+
+      // String comparison
+      const cmp = valA.localeCompare(valB);
+      return newDir === "asc" ? cmp : -cmp;
+    });
+
+    // Re-append in sorted order
+    for (const row of rows) {
+      tbody.appendChild(row);
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initSidebar();
@@ -552,6 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initScrollHints();
   initColorSelects();
   registerServiceWorker();
+  initPreviewTableSort();
 
   // Initialize XSRF protection
   injectXsrfTokenToAllForms();

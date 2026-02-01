@@ -7,8 +7,8 @@ use serde::Deserialize;
 use crate::date_utils::{DatePreset, DateRange};
 use crate::db::queries::{categories, transactions};
 use crate::error::{AppResult, RenderHtml};
+use crate::handlers::transactions::TransactionPreviewTemplate;
 use crate::models::category::CategoryWithPath;
-use crate::models::transaction::TransactionWithRelations;
 use crate::models::Settings;
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -105,16 +105,6 @@ pub struct MonthlyTransactionsParams {
     pub category_ids: Option<String>,
 }
 
-#[derive(Template)]
-#[template(path = "partials/monthly_transaction_list.html")]
-pub struct MonthlyTransactionListTemplate {
-    pub settings: Settings,
-    pub icons: crate::filters::Icons,
-    pub transactions: Vec<TransactionWithRelations>,
-    pub month_label: String,
-    pub count: usize,
-}
-
 pub async fn monthly_transactions(
     State(state): State<AppState>,
     Query(params): Query<MonthlyTransactionsParams>,
@@ -134,22 +124,27 @@ pub async fn monthly_transactions(
         .collect();
 
     let filter = transactions::TransactionFilter {
-        from_date: Some(from_date),
-        to_date: Some(to_date),
+        from_date: Some(from_date.clone()),
+        to_date: Some(to_date.clone()),
         category_ids,
         sort_sql: Some("ABS(e.amount_cents) DESC".to_string()),
+        limit: Some(20),
         ..Default::default()
     };
 
+    let total_count = transactions::count_transactions(&conn, &filter)?;
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
-    let count = transaction_list.len();
 
-    let template = MonthlyTransactionListTemplate {
+    let view_all_url = format!("/transactions?from_date={}&to_date={}", from_date, to_date);
+
+    let template = TransactionPreviewTemplate {
         settings: app_settings,
         icons: crate::filters::Icons,
+        title: "Monthly Transactions".to_string(),
+        subtitle: month_label,
         transactions: transaction_list,
-        month_label,
-        count,
+        count: total_count as usize,
+        view_all_url,
     };
 
     template.render_html()

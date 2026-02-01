@@ -470,9 +470,7 @@ function setupMonthlyBarClick(): void {
           container.style.opacity = "1";
 
           // Wire up close button
-          const closeBtn = document.getElementById(
-            "monthly-transactions-close",
-          );
+          const closeBtn = container.querySelector(".preview-close-btn");
           if (closeBtn) {
             closeBtn.addEventListener("click", collapseMonthlyTransactions);
           }

@@ -99,9 +99,11 @@
             </div>
         </div>
         <div id="monthly-chart" class="aspect-[2/1]" role="img" aria-label="Bar chart showing monthly spending summary"></div>
-        <div id="monthly-transactions" class="overflow-hidden transition-all duration-300 ease-in-out" style="max-height:0;opacity:0"></div>
         {% endif %}
     </div>
     {% endcall %}
+    {% if active_tab == "monthly" %}
+    <div id="monthly-transactions" class="overflow-hidden transition-all duration-300 ease-in-out" style="max-height:0;opacity:0"></div>
+    {% endif %}
 </div>
 {% endblock %}

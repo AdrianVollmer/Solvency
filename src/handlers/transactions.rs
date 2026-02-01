@@ -145,6 +145,18 @@ pub struct TransactionRowTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "partials/transaction_preview.html")]
+pub struct TransactionPreviewTemplate {
+    pub settings: Settings,
+    pub icons: crate::filters::Icons,
+    pub title: String,
+    pub subtitle: String,
+    pub transactions: Vec<TransactionWithRelations>,
+    pub count: usize,
+    pub view_all_url: String,
+}
+
+#[derive(Template)]
 #[template(path = "pages/transaction_detail.html")]
 pub struct TransactionDetailTemplate {
     pub title: String,
