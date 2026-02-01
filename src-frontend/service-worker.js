@@ -1,7 +1,7 @@
 const CACHE_NAME = "solvency-v1";
 const STATIC_ASSETS = [
   "/static/css/tailwind.css",
-  "/static/js/dist/htmx.min.js",
+  "/static/vendor/htmx/htmx.min.js",
   "/static/vendor/sortablejs/Sortable.min.js",
   "/static/favicon.svg",
   "/static/icons/icon-192x192.png",
