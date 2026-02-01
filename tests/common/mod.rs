@@ -119,6 +119,19 @@ impl TestClient {
             .with_state(self.state.clone())
     }
 
+    /// Make a GET request and return status and raw bytes.
+    pub async fn get_bytes(&self, uri: &str) -> (StatusCode, Vec<u8>) {
+        let response = self
+            .router()
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        (status, body.to_vec())
+    }
+
     /// Make a GET request and return status and body.
     pub async fn get(&self, uri: &str) -> (StatusCode, String) {
         let response = self
