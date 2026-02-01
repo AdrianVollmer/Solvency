@@ -102,6 +102,19 @@ pub fn list_activities(
     Ok(activities)
 }
 
+/// Returns the earliest and latest trading activity dates, or `None` when the table is empty.
+pub fn date_extent(conn: &Connection) -> rusqlite::Result<Option<(String, String)>> {
+    conn.query_row(
+        "SELECT MIN(date), MAX(date) FROM trading_activities",
+        [],
+        |row| {
+            let min: Option<String> = row.get(0)?;
+            let max: Option<String> = row.get(1)?;
+            Ok(min.zip(max))
+        },
+    )
+}
+
 pub fn count_activities(
     conn: &Connection,
     filter: &TradingActivityFilter,

@@ -146,6 +146,15 @@ pub fn list_transactions(
     Ok(transactions)
 }
 
+/// Returns the earliest and latest transaction dates, or `None` when the table is empty.
+pub fn date_extent(conn: &Connection) -> rusqlite::Result<Option<(String, String)>> {
+    conn.query_row("SELECT MIN(date), MAX(date) FROM transactions", [], |row| {
+        let min: Option<String> = row.get(0)?;
+        let max: Option<String> = row.get(1)?;
+        Ok(min.zip(max))
+    })
+}
+
 pub fn count_transactions(conn: &Connection, filter: &TransactionFilter) -> rusqlite::Result<i64> {
     let (where_clause, params_vec) = build_filter_where(filter);
     let sql = format!(

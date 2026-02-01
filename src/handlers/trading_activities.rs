@@ -329,7 +329,9 @@ pub async fn index(
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
 
-    let date_range = params.resolve_date_range();
+    let date_range = params
+        .resolve_date_range()
+        .resolve_all(trading::date_extent(&conn)?);
     let sort: TableSort<ActivitySortColumn> = params.resolve_sort();
 
     let activity_type = params
@@ -385,7 +387,9 @@ pub async fn table_partial(
     let page = params.page.unwrap_or(1).max(1);
     let page_size = app_settings.page_size;
 
-    let date_range = params.resolve_date_range();
+    let date_range = params
+        .resolve_date_range()
+        .resolve_all(trading::date_extent(&conn)?);
     let sort: TableSort<ActivitySortColumn> = params.resolve_sort();
 
     let activity_type = params

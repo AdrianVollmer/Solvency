@@ -324,6 +324,28 @@ impl DateRange {
         self.preset == Some(*preset)
     }
 
+    /// For the "All" preset, narrow the range to the actual data extent.
+    /// `extent` should be `Some((min_date, max_date))` with `"YYYY-MM-DD"` strings,
+    /// typically from a `SELECT MIN(date), MAX(date)` query.
+    /// For other presets or when `extent` is `None`, returns `self` unchanged.
+    pub fn resolve_all(self, extent: Option<(String, String)>) -> Self {
+        if self.preset != Some(DatePreset::All) {
+            return self;
+        }
+        match extent {
+            Some((min_date, max_date)) => {
+                let from = NaiveDate::parse_from_str(&min_date, "%Y-%m-%d").unwrap_or(self.from);
+                let to = NaiveDate::parse_from_str(&max_date, "%Y-%m-%d").unwrap_or(self.to);
+                Self {
+                    from,
+                    to,
+                    preset: Some(DatePreset::All),
+                }
+            }
+            None => self,
+        }
+    }
+
     /// Returns query string for preserving date range state in URLs.
     /// Format: `from_date=YYYY-MM-DD&to_date=YYYY-MM-DD` with optional `&preset=X`
     pub fn query_string(&self) -> String {

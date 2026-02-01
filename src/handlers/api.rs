@@ -208,6 +208,9 @@ pub async fn monthly_summary(
     );
     let conn = state.db.get()?;
 
+    let from_date_str = params.from_date.clone();
+    let to_date_str = params.to_date.clone();
+
     let filter = transactions::TransactionFilter {
         from_date: params.from_date,
         to_date: params.to_date,
@@ -223,6 +226,13 @@ pub async fn monthly_summary(
     let mut monthly_data: std::collections::HashMap<String, (i64, i64)> =
         std::collections::HashMap::new();
 
+    // Seed all months in the requested date range so gaps show as zero bars.
+    if let (Some(from), Some(to)) = (&from_date_str, &to_date_str) {
+        for month in all_months_in_range(from, to) {
+            monthly_data.entry(month).or_insert((0, 0));
+        }
+    }
+
     for transaction in &transaction_list {
         let month = if transaction.transaction.date.len() >= 7 {
             transaction.transaction.date[..7].to_string()
@@ -233,19 +243,6 @@ pub async fn monthly_summary(
         let entry = monthly_data.entry(month).or_insert((0, 0));
         entry.0 += transaction.transaction.amount_cents;
         entry.1 += 1;
-    }
-
-    // Fill gaps between the first and last month so zero-spending months
-    // still appear as bars instead of being skipped.
-    if monthly_data.len() >= 2 {
-        if let (Some(first), Some(last)) = (
-            monthly_data.keys().min().cloned(),
-            monthly_data.keys().max().cloned(),
-        ) {
-            for month in all_months_in_range(&format!("{first}-01"), &format!("{last}-01")) {
-                monthly_data.entry(month).or_insert((0, 0));
-            }
-        }
     }
 
     let mut result: Vec<MonthlySummary> = monthly_data
@@ -521,6 +518,9 @@ pub async fn monthly_by_category(
         }));
     }
 
+    let from_date_str = params.from_date.clone();
+    let to_date_str = params.to_date.clone();
+
     let filter = transactions::TransactionFilter {
         from_date: params.from_date,
         to_date: params.to_date,
@@ -538,6 +538,13 @@ pub async fn monthly_by_category(
         std::collections::HashMap::new();
     let mut all_months: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
 
+    // Seed all months in the requested date range so gaps show as zero bars.
+    if let (Some(from), Some(to)) = (&from_date_str, &to_date_str) {
+        for month in all_months_in_range(from, to) {
+            all_months.insert(month);
+        }
+    }
+
     for transaction in &transaction_list {
         let cat_id = match transaction.transaction.category_id {
             Some(id) if selected_ids.contains(&id) => id,
@@ -553,16 +560,6 @@ pub async fn monthly_by_category(
         all_months.insert(month.clone());
         *data.entry(cat_id).or_default().entry(month).or_insert(0) +=
             transaction.transaction.amount_cents;
-    }
-
-    // Fill gaps between the first and last month so zero-spending months
-    // still appear as bars instead of being skipped.
-    if all_months.len() >= 2 {
-        let first = all_months.iter().next().unwrap().clone();
-        let last = all_months.iter().next_back().unwrap().clone();
-        for month in all_months_in_range(&format!("{first}-01"), &format!("{last}-01")) {
-            all_months.insert(month);
-        }
     }
 
     let months: Vec<String> = all_months.into_iter().collect();

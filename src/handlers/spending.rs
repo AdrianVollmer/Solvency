@@ -67,7 +67,9 @@ pub async fn index(
 
     let app_settings = state.load_settings()?;
 
-    let date_range = params.resolve_date_range();
+    let date_range = params
+        .resolve_date_range()
+        .resolve_all(transactions::date_extent(&conn)?);
 
     let active_tab = match params.tab.as_deref() {
         Some("time") => "time".to_string(),
