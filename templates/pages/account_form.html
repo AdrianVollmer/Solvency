@@ -69,23 +69,24 @@
 
 {% if account.is_some() %}
 <script>
-async function deleteAccount(id) {
-    if (!confirm('Are you sure you want to delete this account?')) return;
-    try {
-        const response = await fetch('/accounts/' + id, {
-            method: 'DELETE',
-            headers: {
-                'X-XSRF-TOKEN': '{{ xsrf_token }}'
+function deleteAccount(id) {
+    openConfirmModal('Delete Account', 'Are you sure you want to delete this account?', 'Delete', async function() {
+        try {
+            const response = await fetch('/accounts/' + id, {
+                method: 'DELETE',
+                headers: {
+                    'X-XSRF-TOKEN': '{{ xsrf_token }}'
+                }
+            });
+            if (response.ok) {
+                window.location.href = '/accounts';
+            } else {
+                showAlertModal('Failed to delete account');
             }
-        });
-        if (response.ok) {
-            window.location.href = '/accounts';
-        } else {
-            showAlertModal('Failed to delete account');
+        } catch (e) {
+            showAlertModal('Failed to delete account: ' + e.message);
         }
-    } catch (e) {
-        showAlertModal('Failed to delete account: ' + e.message);
-    }
+    });
 }
 </script>
 {% endif %}

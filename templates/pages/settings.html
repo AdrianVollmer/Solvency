@@ -109,7 +109,8 @@
             <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                 Restore from a backup file. <strong class="text-red-600 dark:text-red-400">Warning:</strong> This will overwrite all existing data.
             </p>
-            <form hx-post="/settings/import-database" hx-target="#import-message" hx-swap="innerHTML" hx-encoding="multipart/form-data" hx-disabled-elt="find button[type='submit']">
+            <form hx-post="/settings/import-database" hx-target="#import-message" hx-swap="innerHTML" hx-encoding="multipart/form-data" hx-disabled-elt="find button[type='submit']"
+                hx-confirm="Are you sure? This will overwrite ALL existing data.">
                 <div class="flex items-center gap-4">
                     <input type="file" name="file" accept=".db,.sql" required
                         class="text-sm text-neutral-600 dark:text-neutral-400
@@ -120,8 +121,7 @@
                             dark:file:bg-neutral-700 dark:file:text-neutral-200
                             file:cursor-pointer file:transition-colors
                             hover:file:bg-neutral-200 dark:hover:file:bg-neutral-600">
-                    <button type="submit" class="btn btn-danger border border-red-700"
-                        onclick="return confirm('Are you sure? This will overwrite ALL existing data.')">
+                    <button type="submit" class="btn btn-danger border border-red-700">
                         <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
                         <span class="btn-label">Restore Backup</span>
                     </button>

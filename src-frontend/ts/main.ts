@@ -359,20 +359,24 @@ function initConfirmModal(): void {
     }
   });
 
-  // Intercept HTMX requests on elements with data-confirm-modal
+  // Intercept HTMX confirm on elements with data-confirm-modal or hx-confirm
   document.body.addEventListener("htmx:confirm", (event: Event) => {
     const el = event.target as HTMLElement;
-    if (!el.hasAttribute("data-confirm-modal")) return;
+    const customMsg = el.getAttribute("data-confirm-modal");
+    const hxMsg = el.getAttribute("hx-confirm");
+    if (!customMsg && !hxMsg) return;
 
     event.preventDefault();
-    const message = el.getAttribute("data-confirm-modal") || "Are you sure?";
-    const title = el.getAttribute("data-confirm-title") || "Confirm deletion";
-    const action = el.getAttribute("data-confirm-action") || "Delete All";
+    const message = customMsg || hxMsg || "Are you sure?";
+    const title = el.getAttribute("data-confirm-title") || "Confirm";
+    const action = el.getAttribute("data-confirm-action") || "Confirm";
     const detail = (event as CustomEvent).detail;
     openModal(title, message, action, () => {
       detail.issueRequest(true);
     });
   });
+
+  (window as unknown as Record<string, unknown>).openConfirmModal = openModal;
 }
 
 function initHtmx(): void {
