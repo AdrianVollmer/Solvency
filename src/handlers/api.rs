@@ -235,7 +235,19 @@ pub async fn monthly_summary(
         }
     }
 
+    let income_mode = params.mode.as_deref() == Some("income");
+
     for transaction in &transaction_list {
+        let amount = transaction.transaction.amount_cents;
+
+        // In expense mode keep only negatives (negate to positive).
+        // In income mode keep only positives as-is.
+        let filtered = if income_mode {
+            if amount > 0 { amount } else { continue }
+        } else {
+            if amount < 0 { -amount } else { continue }
+        };
+
         let month = if transaction.transaction.date.len() >= 7 {
             transaction.transaction.date[..7].to_string()
         } else {
@@ -243,7 +255,7 @@ pub async fn monthly_summary(
         };
 
         let entry = monthly_data.entry(month).or_insert((0, 0));
-        entry.0 += transaction.transaction.amount_cents;
+        entry.0 += filtered;
         entry.1 += 1;
     }
 
@@ -488,6 +500,8 @@ pub struct MonthlyByCategoryParams {
     pub from_date: Option<String>,
     pub to_date: Option<String>,
     pub category_ids: Option<String>,
+    /// "expenses" (default) or "income".
+    pub mode: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -577,7 +591,9 @@ pub async fn monthly_by_category(
 
     let months: Vec<String> = all_months.into_iter().collect();
 
-    // Build series, filtering to spending (negative) and negating
+    let income_mode = params.mode.as_deref() == Some("income");
+
+    // Build series, filtering by sign and normalising to positive values
     let mut series: Vec<MonthlyCategorySeries> = Vec::new();
     for &cat_id in &selected_ids {
         let cat = match cat_map.get(&cat_id) {
@@ -594,7 +610,9 @@ pub async fn monthly_by_category(
             .iter()
             .map(|m| {
                 let raw = month_totals.get(m).copied().unwrap_or(0);
-                if raw < 0 {
+                if income_mode {
+                    raw.max(0)
+                } else if raw < 0 {
                     -raw
                 } else {
                     0
@@ -602,7 +620,7 @@ pub async fn monthly_by_category(
             })
             .collect();
 
-        // Skip categories with no spending at all
+        // Skip categories with no data at all
         if totals.iter().all(|&v| v == 0) {
             continue;
         }

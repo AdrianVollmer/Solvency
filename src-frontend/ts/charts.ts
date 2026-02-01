@@ -46,6 +46,7 @@ let activeChart: any = null;
 let activeMonth: string | null = null;
 let activeCategory: number | null = null;
 let categoryMode: string = "expenses";
+let monthlyMode: string = "expenses";
 
 function showEmptyState(container: HTMLElement): void {
   if (activeChart) {
@@ -387,6 +388,9 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
     // Multi-bar mode: one series per selected category
     const catParams = new URLSearchParams(params);
     catParams.set("category_ids", selectedIds.join(","));
+    if (monthlyMode !== "expenses") {
+      catParams.set("mode", monthlyMode);
+    }
 
     const data = await fetchData<MonthlyByCategoryResponse>(
       "/api/analytics/monthly-by-category",
@@ -453,9 +457,14 @@ async function updateMonthlyChart(params: URLSearchParams): Promise<void> {
     setupMonthlyBarClick();
   } else {
     // Aggregate mode: single bar series
+    const summaryParams = new URLSearchParams(params);
+    if (monthlyMode !== "expenses") {
+      summaryParams.set("mode", monthlyMode);
+    }
+
     const data = await fetchData<MonthlySummary[]>(
       "/api/analytics/monthly-summary",
-      params,
+      summaryParams,
     );
 
     if (data.length === 0) {
@@ -903,11 +912,53 @@ function setupCategoryModeFilter(): void {
   }
 }
 
+function setupMonthlyModeFilter(): void {
+  const btn = document.getElementById("monthly-mode-btn");
+  const dropdown = document.getElementById("monthly-mode-dropdown");
+  const label = document.getElementById("monthly-mode-label");
+  const title = document.getElementById("monthly-chart-title");
+
+  if (!btn || !dropdown || !label) return;
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("hidden");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!dropdown.contains(e.target as Node) && e.target !== btn) {
+      dropdown.classList.add("hidden");
+    }
+  });
+
+  const options = dropdown.querySelectorAll<HTMLButtonElement>(
+    ".monthly-mode-option",
+  );
+  for (const opt of options) {
+    opt.addEventListener("click", () => {
+      const mode = opt.dataset.mode || "expenses";
+      if (mode === monthlyMode) {
+        dropdown.classList.add("hidden");
+        return;
+      }
+      monthlyMode = mode;
+      label.textContent = mode === "income" ? "Income" : "Expenses";
+      if (title) {
+        title.textContent =
+          mode === "income" ? "Monthly Income" : "Monthly Summary";
+      }
+      dropdown.classList.add("hidden");
+      updateMonthlyChart(getFilterParams());
+    });
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (document.querySelector("[data-active-tab]")) {
     updateNavLinks();
     setupCategoryFilter();
     setupCategoryModeFilter();
+    setupMonthlyModeFilter();
     updateCharts();
     window.addEventListener("resize", handleResize);
   }
