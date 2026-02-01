@@ -184,6 +184,24 @@ pub fn bulk_set_category(
     Ok(rows)
 }
 
+pub fn bulk_set_account(
+    conn: &Connection,
+    filter: &TransactionFilter,
+    account_id: Option<i64>,
+) -> rusqlite::Result<usize> {
+    let (where_clause, mut params_vec) = build_filter_where(filter);
+    let sql = format!(
+        "UPDATE transactions SET account_id = ?, updated_at = datetime('now') \
+         WHERE id IN (SELECT e.id FROM transactions e WHERE 1=1{})",
+        where_clause,
+    );
+    params_vec.insert(0, Box::new(account_id));
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let rows = conn.execute(&sql, params_refs.as_slice())?;
+    info!(count = rows, account_id = ?account_id, "Bulk set account on transactions");
+    Ok(rows)
+}
+
 pub fn bulk_add_tag(
     conn: &Connection,
     filter: &TransactionFilter,

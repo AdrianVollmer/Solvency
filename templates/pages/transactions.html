@@ -19,17 +19,6 @@
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("layers")|safe }}</span>
                 Bulk Operations
             </a>
-            <button
-                hx-delete="/transactions/delete-all"
-                data-confirm-modal="{% if delete_count > 0 %}Are you sure you want to delete ALL transactions? This cannot be undone. ({{ delete_count }} records){% else %}Are you sure you want to delete ALL transactions? This cannot be undone.{% endif %}"
-                hx-target="body"
-                hx-swap="none"
-                hx-on::after-request="if(event.detail.successful) window.location.reload()"
-                hx-disabled-elt="this"
-                class="hidden md:inline-flex btn btn-danger-outline items-center gap-2">
-                <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
-                Delete All
-            </button>
 
             {# Mobile: overflow menu for secondary actions (hidden on desktop) #}
             <div class="relative md:hidden" data-dropdown>
@@ -49,18 +38,6 @@
                         <span class="icon-sm" aria-hidden="true">{{ icons.get("layers")|safe }}</span>
                         Bulk Operations
                     </a>
-                    <hr class="my-1 border-neutral-200 dark:border-neutral-700">
-                    <button type="button"
-                        hx-delete="/transactions/delete-all"
-                        data-confirm-modal="{% if delete_count > 0 %}Are you sure you want to delete ALL transactions? This cannot be undone. ({{ delete_count }} records){% else %}Are you sure you want to delete ALL transactions? This cannot be undone.{% endif %}"
-                        hx-target="body"
-                        hx-swap="none"
-                        hx-on::after-request="if(event.detail.successful) window.location.reload()"
-                        hx-disabled-elt="this"
-                        class="dropdown-item w-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" role="menuitem">
-                        <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
-                        Delete All
-                    </button>
                 </div>
             </div>
 

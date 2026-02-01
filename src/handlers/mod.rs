@@ -50,6 +50,10 @@ pub fn routes() -> Router<AppState> {
             post(transactions::bulk_set_category),
         )
         .route("/transactions/bulk-tag", post(transactions::bulk_add_tag))
+        .route(
+            "/transactions/bulk-account",
+            post(transactions::bulk_set_account),
+        )
         .route("/transactions/export", get(transactions::export))
         .route("/transactions/import", post(transactions::import))
         // Category management

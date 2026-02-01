@@ -85,6 +85,61 @@
                 class="btn btn-secondary">Apply</button>
         </form>
     {% endcall %}
+
+    {% call ui::section(title="Set Account") %}
+        <form class="flex flex-col sm:flex-row sm:items-end gap-4">
+            {% if filter.search.is_some() %}
+            <input type="hidden" name="search" value="{{ filter.search.as_deref().unwrap_or("") }}">
+            {% endif %}
+            {% if filter.category_id.is_some() %}
+            <input type="hidden" name="category_id" value="{{ filter.category_id.unwrap() }}">
+            {% endif %}
+            {% if filter.tag_id.is_some() %}
+            <input type="hidden" name="tag_id" value="{{ filter.tag_id.unwrap() }}">
+            {% endif %}
+            <input type="hidden" name="from_date" value="{{ date_range.from_str() }}">
+            <input type="hidden" name="to_date" value="{{ date_range.to_str() }}">
+
+            <div class="flex-1">
+                <label for="bulk_account" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Account</label>
+                <select id="bulk_account" name="set_account_id" class="input w-full">
+                    <option value="">-- select --</option>
+                    <option value="0">Clear account</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}">{{ account.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                hx-post="/transactions/bulk-account"
+                data-confirm-modal="Set account on all {{ total_count }} matching transaction{% if total_count != 1 %}s{% endif %}?"
+                data-confirm-title="Bulk set account"
+                data-confirm-action="Apply"
+                hx-target="body"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) window.location.reload()"
+                class="btn btn-secondary">Apply</button>
+        </form>
+    {% endcall %}
+
+    {% call ui::section(title="Delete All") %}
+        <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+            Permanently delete all <strong class="text-red-600 dark:text-red-400">{{ total_count }}</strong> matching transaction{% if total_count != 1 %}s{% endif %}. This cannot be undone.
+        </p>
+        <button
+            hx-delete="/transactions/delete-all"
+            data-confirm-modal="Are you sure you want to delete ALL {{ total_count }} matching transaction{% if total_count != 1 %}s{% endif %}? This cannot be undone."
+            data-confirm-title="Delete all transactions"
+            data-confirm-action="Delete"
+            hx-target="body"
+            hx-swap="none"
+            hx-on::after-request="if(event.detail.successful) window.location.href='/transactions'"
+            hx-disabled-elt="this"
+            class="btn btn-danger-outline items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+            Delete All Transactions
+        </button>
+    {% endcall %}
     {% endif %}
 {% endcall %}
 {% endblock %}

@@ -72,7 +72,6 @@ pub struct TransactionsTemplate {
     pub transactions: Vec<TransactionWithRelations>,
     pub categories: Vec<CategoryWithPath>,
     pub total_count: i64,
-    pub delete_count: i64,
     pub page: i64,
     pub page_size: i64,
     pub filter: TransactionFilterParams,
@@ -92,6 +91,7 @@ pub struct TransactionBulkTemplate {
     pub xsrf_token: String,
     pub categories: Vec<CategoryWithPath>,
     pub tags: Vec<Tag>,
+    pub accounts: Vec<Account>,
     pub total_count: i64,
     pub filter: TransactionFilterParams,
     pub date_range: DateRange,
@@ -376,7 +376,6 @@ pub async fn index(
         transactions: transaction_list,
         categories: cats,
         total_count,
-        delete_count: total_count,
         page,
         page_size,
         filter: params,
@@ -467,6 +466,7 @@ pub async fn bulk_page(
     let total_count = transactions::count_transactions(&conn, &filter)?;
     let cats = categories::list_categories_with_path(&conn)?;
     let tag_list = tags::list_tags(&conn)?;
+    let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
 
     let back_qs = params.preserve_query_string(&date_range);
     let back_url = if back_qs.is_empty() {
@@ -484,6 +484,7 @@ pub async fn bulk_page(
         xsrf_token: state.xsrf_token.value().to_string(),
         categories: cats,
         tags: tag_list,
+        accounts: cash_accounts,
         total_count,
         filter: params,
         date_range,
@@ -670,6 +671,30 @@ pub struct BulkTagForm {
     pub to_date: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct BulkAccountForm {
+    /// Action value: which account to set (0 = clear).
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub set_account_id: Option<i64>,
+    /// Filter fields — included from #filter-form via hx-include.
+    pub search: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub category_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub tag_id: Option<i64>,
+    pub from_date: Option<String>,
+    pub to_date: Option<String>,
+}
+
 fn build_bulk_filter(
     search: &Option<String>,
     category_id: Option<i64>,
@@ -731,6 +756,27 @@ pub async fn bulk_add_tag(
     );
     let count = transactions::bulk_add_tag(&conn, &filter, tag_id)?;
     info!(count, tag_id, "Bulk added tag via web");
+    Ok(Html(String::new()))
+}
+
+pub async fn bulk_set_account(
+    State(state): State<AppState>,
+    Form(form): Form<BulkAccountForm>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let filter = build_bulk_filter(
+        &form.search,
+        form.category_id,
+        form.tag_id,
+        &form.from_date,
+        &form.to_date,
+    );
+    // set_account_id=0 means "clear account" (set to NULL)
+    let account_id = form
+        .set_account_id
+        .and_then(|id| if id == 0 { None } else { Some(id) });
+    let count = transactions::bulk_set_account(&conn, &filter, account_id)?;
+    info!(count, "Bulk set account via web");
     Ok(Html(String::new()))
 }
 
