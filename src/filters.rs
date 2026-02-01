@@ -230,7 +230,7 @@ fn format_with_thousands(n: i64, sep: char) -> String {
 }
 
 /// Get currency symbol for a currency code.
-fn currency_symbol(currency: &str) -> &'static str {
+pub fn currency_symbol(currency: &str) -> &'static str {
     match currency.to_uppercase().as_str() {
         "USD" => "$",
         "EUR" => "\u{20ac}",

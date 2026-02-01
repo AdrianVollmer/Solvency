@@ -3,6 +3,38 @@ use crate::models::transaction::{NewTransaction, Transaction, TransactionWithRel
 use rusqlite::{params, Connection, OptionalExtension};
 use tracing::{info, trace};
 
+fn transaction_with_relations_from_row(
+    row: &rusqlite::Row,
+) -> rusqlite::Result<TransactionWithRelations> {
+    Ok(TransactionWithRelations {
+        transaction: Transaction {
+            id: row.get(0)?,
+            date: row.get(1)?,
+            amount_cents: row.get(2)?,
+            currency: row.get(3)?,
+            description: row.get(4)?,
+            category_id: row.get(5)?,
+            account_id: row.get(6)?,
+            notes: row.get(7)?,
+            created_at: row.get(8)?,
+            updated_at: row.get(9)?,
+            value_date: row.get(10)?,
+            payer: row.get(11)?,
+            payee: row.get(12)?,
+            reference: row.get(13)?,
+            transaction_type: row.get(14)?,
+            counterparty_iban: row.get(15)?,
+            creditor_id: row.get(16)?,
+            mandate_reference: row.get(17)?,
+            customer_reference: row.get(18)?,
+        },
+        category_name: row.get(19)?,
+        category_color: row.get(20)?,
+        account_name: row.get(21)?,
+        tags: Vec::new(),
+    })
+}
+
 #[derive(Default)]
 pub struct TransactionFilter {
     pub search: Option<String>,
@@ -101,33 +133,7 @@ pub fn list_transactions(
     let mut stmt = conn.prepare(&sql)?;
 
     let transaction_iter = stmt.query_map(params_refs.as_slice(), |row| {
-        Ok(TransactionWithRelations {
-            transaction: Transaction {
-                id: row.get(0)?,
-                date: row.get(1)?,
-                amount_cents: row.get(2)?,
-                currency: row.get(3)?,
-                description: row.get(4)?,
-                category_id: row.get(5)?,
-                account_id: row.get(6)?,
-                notes: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-                value_date: row.get(10)?,
-                payer: row.get(11)?,
-                payee: row.get(12)?,
-                reference: row.get(13)?,
-                transaction_type: row.get(14)?,
-                counterparty_iban: row.get(15)?,
-                creditor_id: row.get(16)?,
-                mandate_reference: row.get(17)?,
-                customer_reference: row.get(18)?,
-            },
-            category_name: row.get(19)?,
-            category_color: row.get(20)?,
-            account_name: row.get(21)?,
-            tags: Vec::new(),
-        })
+        transaction_with_relations_from_row(row)
     })?;
 
     let mut transactions: Vec<TransactionWithRelations> =
@@ -241,35 +247,7 @@ pub fn get_transaction(
              LEFT JOIN accounts a ON e.account_id = a.id
              WHERE e.id = ?",
             [id],
-            |row| {
-                Ok(TransactionWithRelations {
-                    transaction: Transaction {
-                        id: row.get(0)?,
-                        date: row.get(1)?,
-                        amount_cents: row.get(2)?,
-                        currency: row.get(3)?,
-                        description: row.get(4)?,
-                        category_id: row.get(5)?,
-                        account_id: row.get(6)?,
-                        notes: row.get(7)?,
-                        created_at: row.get(8)?,
-                        updated_at: row.get(9)?,
-                        value_date: row.get(10)?,
-                        payer: row.get(11)?,
-                        payee: row.get(12)?,
-                        reference: row.get(13)?,
-                        transaction_type: row.get(14)?,
-                        counterparty_iban: row.get(15)?,
-                        creditor_id: row.get(16)?,
-                        mandate_reference: row.get(17)?,
-                        customer_reference: row.get(18)?,
-                    },
-                    category_name: row.get(19)?,
-                    category_color: row.get(20)?,
-                    account_name: row.get(21)?,
-                    tags: Vec::new(),
-                })
-            },
+            transaction_with_relations_from_row,
         )
         .optional()?;
 

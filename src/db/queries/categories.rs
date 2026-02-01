@@ -2,6 +2,19 @@ use crate::models::category::{Category, CategoryWithPath, NewCategory};
 use rusqlite::{params, Connection, OptionalExtension};
 use tracing::{info, warn};
 
+fn category_from_row(row: &rusqlite::Row) -> rusqlite::Result<Category> {
+    Ok(Category {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        parent_id: row.get(2)?,
+        color: row.get(3)?,
+        icon: row.get(4)?,
+        built_in: row.get(5)?,
+        created_at: row.get(6)?,
+        updated_at: row.get(7)?,
+    })
+}
+
 pub fn list_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at
@@ -10,18 +23,7 @@ pub fn list_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
     )?;
 
     let categories = stmt
-        .query_map([], |row| {
-            Ok(Category {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                parent_id: row.get(2)?,
-                color: row.get(3)?,
-                icon: row.get(4)?,
-                built_in: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?
+        .query_map([], category_from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(categories)
@@ -47,16 +49,7 @@ pub fn list_categories_with_path(conn: &Connection) -> rusqlite::Result<Vec<Cate
     let categories = stmt
         .query_map([], |row| {
             Ok(CategoryWithPath {
-                category: Category {
-                    id: row.get(0)?,
-                    name: row.get(1)?,
-                    parent_id: row.get(2)?,
-                    color: row.get(3)?,
-                    icon: row.get(4)?,
-                    built_in: row.get(5)?,
-                    created_at: row.get(6)?,
-                    updated_at: row.get(7)?,
-                },
+                category: category_from_row(row)?,
                 path: row.get(8)?,
                 depth: row.get(9)?,
             })
@@ -71,18 +64,7 @@ pub fn get_category(conn: &Connection, id: i64) -> rusqlite::Result<Option<Categ
         "SELECT id, name, parent_id, color, icon, built_in, created_at, updated_at
          FROM categories WHERE id = ?",
         [id],
-        |row| {
-            Ok(Category {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                parent_id: row.get(2)?,
-                color: row.get(3)?,
-                icon: row.get(4)?,
-                built_in: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        },
+        category_from_row,
     )
     .optional()
 }
@@ -141,18 +123,7 @@ pub fn get_top_level_categories(conn: &Connection) -> rusqlite::Result<Vec<Categ
     )?;
 
     let categories = stmt
-        .query_map([], |row| {
-            Ok(Category {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                parent_id: row.get(2)?,
-                color: row.get(3)?,
-                icon: row.get(4)?,
-                built_in: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?
+        .query_map([], category_from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(categories)
@@ -185,16 +156,7 @@ pub fn get_category_with_path(
         [id],
         |row| {
             Ok(CategoryWithPath {
-                category: Category {
-                    id: row.get(0)?,
-                    name: row.get(1)?,
-                    parent_id: row.get(2)?,
-                    color: row.get(3)?,
-                    icon: row.get(4)?,
-                    built_in: row.get(5)?,
-                    created_at: row.get(6)?,
-                    updated_at: row.get(7)?,
-                },
+                category: category_from_row(row)?,
                 path: row.get(8)?,
                 depth: row.get(9)?,
             })
@@ -212,18 +174,7 @@ pub fn get_child_categories(conn: &Connection, parent_id: i64) -> rusqlite::Resu
     )?;
 
     let categories = stmt
-        .query_map([parent_id], |row| {
-            Ok(Category {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                parent_id: row.get(2)?,
-                color: row.get(3)?,
-                icon: row.get(4)?,
-                built_in: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?
+        .query_map([parent_id], category_from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(categories)

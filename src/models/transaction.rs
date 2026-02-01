@@ -1,3 +1,4 @@
+use crate::filters::currency_symbol;
 use crate::models::tag::Tag;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
@@ -161,19 +162,3 @@ impl NewTransaction {
     }
 }
 
-fn currency_symbol(currency: &str) -> &'static str {
-    match currency.to_uppercase().as_str() {
-        "USD" => "$",
-        "EUR" => "€",
-        "GBP" => "£",
-        "JPY" => "¥",
-        "CNY" => "¥",
-        "CAD" => "C$",
-        "AUD" => "A$",
-        "CHF" => "CHF ",
-        "INR" => "₹",
-        "BRL" => "R$",
-        "MXN" => "MX$",
-        _ => "$",
-    }
-}

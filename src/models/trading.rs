@@ -1,3 +1,4 @@
+use crate::filters::currency_symbol;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -589,19 +590,3 @@ pub struct TradingImportRow {
     pub error: Option<String>,
 }
 
-fn currency_symbol(currency: &str) -> &'static str {
-    match currency.to_uppercase().as_str() {
-        "USD" => "$",
-        "EUR" => "€",
-        "GBP" => "£",
-        "JPY" => "¥",
-        "CNY" => "¥",
-        "CAD" => "C$",
-        "AUD" => "A$",
-        "CHF" => "CHF ",
-        "INR" => "₹",
-        "BRL" => "R$",
-        "MXN" => "MX$",
-        _ => "$",
-    }
-}

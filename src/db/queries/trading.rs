@@ -17,6 +17,26 @@ type ClosedPositionActivityRow = (String, String, Option<f64>, Option<i64>, Stri
 /// Accumulator for position tracking: (quantity, total_cost, total_proceeds, total_fees, total_taxes, total_dividends, currency, first_date, last_date)
 type PositionAccumulator = (f64, i64, i64, i64, i64, i64, String, String, String);
 
+fn trading_activity_from_row(row: &rusqlite::Row) -> rusqlite::Result<TradingActivity> {
+    let activity_type_str: String = row.get(4)?;
+    Ok(TradingActivity {
+        id: row.get(0)?,
+        date: row.get(1)?,
+        symbol: row.get(2)?,
+        quantity: row.get(3)?,
+        activity_type: activity_type_str
+            .parse()
+            .unwrap_or(TradingActivityType::Buy),
+        unit_price_cents: row.get(5)?,
+        currency: row.get(6)?,
+        fee_cents: row.get(7)?,
+        account_id: row.get(8)?,
+        notes: row.get(9)?,
+        created_at: row.get(10)?,
+        updated_at: row.get(11)?,
+    })
+}
+
 // Activity operations
 
 #[derive(Default)]
@@ -78,23 +98,7 @@ pub fn list_activities(
 
     let activities = stmt
         .query_map(params_refs.as_slice(), |row| {
-            let activity_type_str: String = row.get(4)?;
-            Ok(TradingActivity {
-                id: row.get(0)?,
-                date: row.get(1)?,
-                symbol: row.get(2)?,
-                quantity: row.get(3)?,
-                activity_type: activity_type_str
-                    .parse()
-                    .unwrap_or(TradingActivityType::Buy),
-                unit_price_cents: row.get(5)?,
-                currency: row.get(6)?,
-                fee_cents: row.get(7)?,
-                account_id: row.get(8)?,
-                notes: row.get(9)?,
-                created_at: row.get(10)?,
-                updated_at: row.get(11)?,
-            })
+            trading_activity_from_row(row)
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -148,25 +152,7 @@ pub fn get_activity(conn: &Connection, id: i64) -> rusqlite::Result<Option<Tradi
                 currency, fee_cents, account_id, notes, created_at, updated_at
          FROM trading_activities WHERE id = ?",
         [id],
-        |row| {
-            let activity_type_str: String = row.get(4)?;
-            Ok(TradingActivity {
-                id: row.get(0)?,
-                date: row.get(1)?,
-                symbol: row.get(2)?,
-                quantity: row.get(3)?,
-                activity_type: activity_type_str
-                    .parse()
-                    .unwrap_or(TradingActivityType::Buy),
-                unit_price_cents: row.get(5)?,
-                currency: row.get(6)?,
-                fee_cents: row.get(7)?,
-                account_id: row.get(8)?,
-                notes: row.get(9)?,
-                created_at: row.get(10)?,
-                updated_at: row.get(11)?,
-            })
-        },
+        trading_activity_from_row,
     )
     .optional()
 }
@@ -536,25 +522,7 @@ pub fn get_activities_for_symbol(
     )?;
 
     let activities = stmt
-        .query_map([symbol], |row| {
-            let activity_type_str: String = row.get(4)?;
-            Ok(TradingActivity {
-                id: row.get(0)?,
-                date: row.get(1)?,
-                symbol: row.get(2)?,
-                quantity: row.get(3)?,
-                activity_type: activity_type_str
-                    .parse()
-                    .unwrap_or(TradingActivityType::Buy),
-                unit_price_cents: row.get(5)?,
-                currency: row.get(6)?,
-                fee_cents: row.get(7)?,
-                account_id: row.get(8)?,
-                notes: row.get(9)?,
-                created_at: row.get(10)?,
-                updated_at: row.get(11)?,
-            })
-        })?
+        .query_map([symbol], trading_activity_from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(activities)
