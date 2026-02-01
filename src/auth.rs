@@ -14,8 +14,10 @@ use axum::extract::State;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::Form;
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::sync::Mutex;
+use std::time::Instant;
 use tower_cookies::{Cookie, Cookies};
 use uuid::Uuid;
 
@@ -26,6 +28,67 @@ use crate::VERSION;
 
 /// Cookie name for the session token.
 const SESSION_COOKIE: &str = "session";
+
+/// Maximum number of failed login attempts before rate-limiting kicks in.
+const MAX_ATTEMPTS: u32 = 5;
+/// Cooldown period after exceeding the attempt limit.
+const LOCKOUT_SECS: u64 = 60;
+
+/// Simple per-IP login rate limiter.
+pub struct LoginRateLimiter {
+    /// Maps IP string → (failed_count, first_failure_time).
+    attempts: Mutex<HashMap<String, (u32, Instant)>>,
+}
+
+impl Default for LoginRateLimiter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl LoginRateLimiter {
+    pub fn new() -> Self {
+        Self {
+            attempts: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Returns `true` if the IP is currently locked out.
+    fn is_locked_out(&self, ip: &str) -> bool {
+        let mut map = self.attempts.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((count, first_time)) = map.get(ip) {
+            if *count >= MAX_ATTEMPTS {
+                if first_time.elapsed().as_secs() < LOCKOUT_SECS {
+                    return true;
+                }
+                // Lockout expired, reset
+                map.remove(ip);
+            }
+        }
+        false
+    }
+
+    /// Record a failed login attempt for the given IP.
+    fn record_failure(&self, ip: &str) {
+        let mut map = self.attempts.lock().unwrap_or_else(|e| e.into_inner());
+        let entry = map
+            .entry(ip.to_string())
+            .or_insert((0, Instant::now()));
+        // Reset window if the previous window has expired
+        if entry.1.elapsed().as_secs() >= LOCKOUT_SECS {
+            *entry = (0, Instant::now());
+        }
+        entry.0 += 1;
+    }
+
+    /// Clear attempts for the given IP (call on successful login).
+    fn reset(&self, ip: &str) {
+        self.attempts
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(ip);
+    }
+}
 
 /// Template for the login page.
 #[derive(Template)]
@@ -108,19 +171,68 @@ pub async fn login_page(State(state): State<AppState>) -> impl IntoResponse {
     }
 }
 
+/// Extract a client identifier from request headers for rate-limiting.
+/// Checks X-Forwarded-For and X-Real-Ip headers, falling back to "unknown".
+fn client_ip(request: &Request<Body>) -> String {
+    request
+        .headers()
+        .get("X-Forwarded-For")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.split(',').next())
+        .map(|s| s.trim().to_string())
+        .or_else(|| {
+            request
+                .headers()
+                .get("X-Real-Ip")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.trim().to_string())
+        })
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
 /// Handle login form submission.
 pub async fn login_submit(
     State(state): State<AppState>,
     cookies: Cookies,
-    Form(form): Form<LoginFormData>,
+    request: Request<Body>,
 ) -> impl IntoResponse {
     let password_hash = match &state.config.auth_mode {
         AuthMode::Unauthenticated => return Redirect::to("/").into_response(),
         AuthMode::Password(hash) => hash,
     };
 
+    let ip = client_ip(&request);
+
+    // Rate-limit check
+    if state.login_rate_limiter.is_locked_out(&ip) {
+        tracing::warn!(ip = %ip, "Login rate-limited");
+        let template = LoginTemplate {
+            title: "Login".into(),
+            manifest: state.manifest.clone(),
+            version: VERSION,
+            xsrf_token: state.xsrf_token.value().to_string(),
+            error: Some("Too many failed attempts. Please try again later.".into()),
+        };
+        return match template.render_html() {
+            Ok(html) => html.into_response(),
+            Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        };
+    }
+
+    // Parse the form body
+    let body_bytes = match axum::body::to_bytes(request.into_body(), 1024 * 16).await {
+        Ok(b) => b,
+        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid request").into_response(),
+    };
+    let form: LoginFormData = match serde_urlencoded::from_bytes(&body_bytes) {
+        Ok(f) => f,
+        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid form data").into_response(),
+    };
+
     // Verify the password
     if verify_password(&form.password, password_hash) {
+        state.login_rate_limiter.reset(&ip);
+
         // Generate a cryptographically random session token
         let session_token = Uuid::new_v4().to_string();
         state
@@ -135,12 +247,16 @@ pub async fn login_submit(
         let cookie = Cookie::build((SESSION_COOKIE, session_token))
             .path("/")
             .http_only(true)
+            .secure(state.config.secure_cookies)
             .same_site(tower_cookies::cookie::SameSite::Strict)
             .build();
         cookies.add(cookie);
 
         return Redirect::to("/").into_response();
     }
+
+    // Record failed attempt
+    state.login_rate_limiter.record_failure(&ip);
 
     // Invalid password - show error
     let template = LoginTemplate {

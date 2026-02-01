@@ -44,6 +44,7 @@ pub fn build_app(config: Config) -> Result<(AppState, Router), Box<dyn std::erro
         market_data_refresh: Arc::new(Mutex::new(MarketDataRefreshState::default())),
         cache: Arc::new(AppCache::new()),
         sessions: Arc::new(Mutex::new(std::collections::HashSet::new())),
+        login_rate_limiter: Arc::new(crate::auth::LoginRateLimiter::new()),
     };
 
     let app = Router::new()

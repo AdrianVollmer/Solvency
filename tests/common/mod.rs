@@ -53,6 +53,7 @@ impl TestClient {
             database_path: PathBuf::from(":memory:"),
             migrations_path: PathBuf::from("migrations"),
             static_path: PathBuf::from("static"),
+            secure_cookies: false,
             auth_mode,
         };
 
@@ -64,6 +65,7 @@ impl TestClient {
             market_data_refresh: Arc::new(Mutex::new(MarketDataRefreshState::default())),
             cache: Arc::new(AppCache::new()),
             sessions: Arc::new(Mutex::new(HashSet::new())),
+            login_rate_limiter: Arc::new(solvency::auth::LoginRateLimiter::new()),
         };
 
         Self { state }

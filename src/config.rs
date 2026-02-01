@@ -18,6 +18,9 @@ pub struct Config {
     pub migrations_path: PathBuf,
     pub static_path: PathBuf,
     pub auth_mode: AuthMode,
+    /// Whether to set the Secure flag on session cookies (requires HTTPS).
+    /// Defaults to true. Set `SOLVENCY_SECURE_COOKIES=false` for local HTTP dev.
+    pub secure_cookies: bool,
 }
 
 /// The magic value that disables authentication.
@@ -75,6 +78,9 @@ impl Config {
             static_path: env::var("SOLVENCY_STATIC_PATH")
                 .map(PathBuf::from)
                 .unwrap_or_else(|_| PathBuf::from("static")),
+            secure_cookies: env::var("SOLVENCY_SECURE_COOKIES")
+                .map(|v| v != "false" && v != "0")
+                .unwrap_or(true),
             auth_mode,
         }
     }

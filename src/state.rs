@@ -1,3 +1,4 @@
+use crate::auth::LoginRateLimiter;
 use crate::cache::AppCache;
 use crate::config::Config;
 use crate::db::DbPool;
@@ -40,6 +41,7 @@ pub struct AppState {
     pub market_data_refresh: Arc<Mutex<MarketDataRefreshState>>,
     pub cache: Arc<AppCache>,
     pub sessions: SessionStore,
+    pub login_rate_limiter: Arc<LoginRateLimiter>,
 }
 
 impl AppState {
