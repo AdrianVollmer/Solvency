@@ -45,8 +45,10 @@ interface MonthlyByCategoryResponse {
 let activeChart: any = null;
 let activeMonth: string | null = null;
 let activeCategory: number | null = null;
-let categoryMode: string = "expenses";
-let monthlyMode: string = "expenses";
+
+const initialParams = new URLSearchParams(window.location.search);
+let categoryMode: string = initialParams.get("category_mode") || "expenses";
+let monthlyMode: string = initialParams.get("monthly_mode") || "expenses";
 
 function showEmptyState(container: HTMLElement): void {
   if (activeChart) {
@@ -136,10 +138,7 @@ function collapseCategoryTransactions(): void {
   activeCategory = null;
 }
 
-function setupCategoryShiftClick(
-  fromDate?: string,
-  toDate?: string,
-): void {
+function setupCategoryShiftClick(fromDate?: string, toDate?: string): void {
   if (!activeChart) return;
 
   activeChart.on("click", (params: any) => {
@@ -147,7 +146,8 @@ function setupCategoryShiftClick(
 
     const categoryId: number | undefined = params.data?.categoryId;
     const hasChildren = params.data?.children?.length > 0;
-    const isUncategorized = params.name === "Uncategorized" && categoryId == null;
+    const isUncategorized =
+      params.name === "Uncategorized" && categoryId == null;
 
     const container = document.getElementById("category-transactions");
     if (!container) return;
@@ -202,10 +202,7 @@ function setupCategoryShiftClick(
 
           const closeBtn = container.querySelector(".preview-close-btn");
           if (closeBtn) {
-            closeBtn.addEventListener(
-              "click",
-              collapseCategoryTransactions,
-            );
+            closeBtn.addEventListener("click", collapseCategoryTransactions);
           }
         });
 
@@ -218,9 +215,7 @@ function setupCategoryShiftClick(
         };
         container.addEventListener("transitionend", onTransitionEnd);
       })
-      .catch((err) =>
-        console.error("Category transactions fetch error:", err),
-      );
+      .catch((err) => console.error("Category transactions fetch error:", err));
   });
 }
 
@@ -735,6 +730,17 @@ function handleResize(): void {
   if (activeChart) activeChart.resize();
 }
 
+// Update a single URL param via replaceState, omitting defaults.
+function setUrlParam(key: string, value: string, defaultValue: string): void {
+  const url = new URL(window.location.href);
+  if (value === defaultValue) {
+    url.searchParams.delete(key);
+  } else {
+    url.searchParams.set(key, value);
+  }
+  history.replaceState(null, "", url.toString());
+}
+
 // Rewrite [data-nav] links so every href carries the full current state.
 // Each link declares only the params it *changes*; this function merges
 // those overrides with the current URL, resolving preset/date conflicts.
@@ -760,6 +766,64 @@ function updateNavLinks(): void {
     }
 
     link.href = `/spending?${merged.toString()}`;
+  }
+}
+
+// Intercept date-filter controls (arrow links, preset dropdown, custom form)
+// so navigating always carries the full current URL state.
+function setupDateNav(): void {
+  // Convert prev/next arrow links into data-nav links so updateNavLinks()
+  // keeps them in sync with mode/category state.
+  const arrows = document.querySelectorAll<HTMLAnchorElement>(
+    'a[aria-label="Previous period"], a[aria-label="Next period"]',
+  );
+  for (const arrow of arrows) {
+    const arrowUrl = new URL(arrow.href, window.location.origin);
+    const navParts: string[] = [];
+    for (const key of ["from_date", "to_date", "preset"]) {
+      const val = arrowUrl.searchParams.get(key);
+      if (val)
+        navParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+    }
+    arrow.dataset.nav = navParts.join("&");
+  }
+
+  // Override preset <select> inline handler so it navigates with full state.
+  const presetSelect = document.getElementById(
+    "date-preset-select",
+  ) as HTMLSelectElement | null;
+  if (presetSelect) {
+    presetSelect.removeAttribute("onchange");
+    presetSelect.addEventListener("change", () => {
+      if (presetSelect.value === "custom") {
+        document.getElementById("custom-date-row")?.classList.remove("hidden");
+      } else {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("from_date");
+        url.searchParams.delete("to_date");
+        url.searchParams.set("preset", presetSelect.value);
+        window.location.href = url.toString();
+      }
+    });
+  }
+
+  // Override the custom date form so it carries current state.
+  const dateForm = document.getElementById(
+    "custom-date-row",
+  ) as HTMLFormElement | null;
+  if (dateForm) {
+    dateForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const url = new URL(window.location.href);
+      url.searchParams.delete("preset");
+      const fromInput =
+        dateForm.querySelector<HTMLInputElement>('[name="from_date"]');
+      const toInput =
+        dateForm.querySelector<HTMLInputElement>('[name="to_date"]');
+      if (fromInput?.value) url.searchParams.set("from_date", fromInput.value);
+      if (toInput?.value) url.searchParams.set("to_date", toInput.value);
+      window.location.href = url.toString();
+    });
   }
 }
 
@@ -963,12 +1027,14 @@ function setupCategoryModeFilter(): void {
         return;
       }
       categoryMode = mode;
+      setUrlParam("category_mode", mode, "expenses");
       label.textContent = mode === "income" ? "Income" : "Expenses";
       if (title) {
         title.textContent =
           mode === "income" ? "Income by Category" : "Spending by Category";
       }
       dropdown.classList.add("hidden");
+      updateNavLinks();
       updateCategoryChart(getFilterParams());
     });
   }
@@ -1004,12 +1070,14 @@ function setupMonthlyModeFilter(): void {
         return;
       }
       monthlyMode = mode;
+      setUrlParam("monthly_mode", mode, "expenses");
       label.textContent = mode === "income" ? "Income" : "Expenses";
       if (title) {
         title.textContent =
           mode === "income" ? "Monthly Income" : "Monthly Summary";
       }
       dropdown.classList.add("hidden");
+      updateNavLinks();
       filterCategoryDropdown();
       updateMonthlyChart(getFilterParams());
     });
@@ -1018,6 +1086,7 @@ function setupMonthlyModeFilter(): void {
 
 document.addEventListener("DOMContentLoaded", () => {
   if (document.querySelector("[data-active-tab]")) {
+    setupDateNav();
     updateNavLinks();
     setupCategoryFilter();
     setupCategoryModeFilter();

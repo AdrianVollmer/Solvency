@@ -8,12 +8,10 @@ use std::collections::HashMap;
 
 use crate::db::queries::{rules, tags};
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::handlers::import_preview::{
-    ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus,
-};
+use crate::handlers::import_preview::{ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus};
 use crate::models::{
-    CategoryWithPath, NewCategory, NewRule, NewTag, Rule, RuleActionType, Settings, Tag,
-    TagStyle, TagWithUsage, TAG_PALETTE,
+    CategoryWithPath, NewCategory, NewRule, NewTag, Rule, RuleActionType, Settings, Tag, TagStyle,
+    TagWithUsage, TAG_PALETTE,
 };
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -374,8 +372,10 @@ pub async fn import(
     let cat_name_to_id: HashMap<String, i64> =
         fresh_cats.iter().map(|c| (c.name.clone(), c.id)).collect();
     let fresh_tags_2 = tags::list_tags(&conn)?;
-    let tag_name_to_id: HashMap<String, i64> =
-        fresh_tags_2.iter().map(|t| (t.name.clone(), t.id)).collect();
+    let tag_name_to_id: HashMap<String, i64> = fresh_tags_2
+        .iter()
+        .map(|t| (t.name.clone(), t.id))
+        .collect();
 
     let existing_rules = rules::list_rules(&conn)?;
     let existing_rule_names: std::collections::HashSet<String> =

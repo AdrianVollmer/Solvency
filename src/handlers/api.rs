@@ -243,9 +243,17 @@ pub async fn monthly_summary(
         // In expense mode keep only negatives (negate to positive).
         // In income mode keep only positives as-is.
         let filtered = if income_mode {
-            if amount > 0 { amount } else { continue }
+            if amount > 0 {
+                amount
+            } else {
+                continue;
+            }
         } else {
-            if amount < 0 { -amount } else { continue }
+            if amount < 0 {
+                -amount
+            } else {
+                continue;
+            }
         };
 
         let month = if transaction.transaction.date.len() >= 7 {

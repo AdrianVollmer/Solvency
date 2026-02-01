@@ -13,6 +13,8 @@
     {# Date filters #}
     {% call ui::date_filter(page_url="/spending", date_range=date_range, presets=presets, base_qs=base_qs) %}
         <input type="hidden" name="tab" value="{{ active_tab }}">
+        {% if category_mode != "expenses" %}<input type="hidden" name="category_mode" value="{{ category_mode }}">{% endif %}
+        {% if monthly_mode != "expenses" %}<input type="hidden" name="monthly_mode" value="{{ monthly_mode }}">{% endif %}
     {% endcall %}
     <input type="hidden" id="from_date" value="{{ date_range.from_str() }}">
     <input type="hidden" id="to_date" value="{{ date_range.to_str() }}">
@@ -61,11 +63,11 @@
     <div data-active-tab="{{ active_tab }}">
         {% if active_tab == "category" %}
         <div class="flex items-center justify-between mb-4">
-            <h2 class="section-title" id="category-chart-title">Spending by Category</h2>
+            <h2 class="section-title" id="category-chart-title">{% if category_mode == "income" %}Income by Category{% else %}Spending by Category{% endif %}</h2>
             <div class="relative" id="category-mode-filter">
                 <button type="button" id="category-mode-btn"
                     class="btn-ghost px-3 py-2 text-sm rounded-lg inline-flex items-center gap-2 border border-neutral-200 dark:border-neutral-700">
-                    <span id="category-mode-label">Expenses</span>
+                    <span id="category-mode-label">{% if category_mode == "income" %}Income{% else %}Expenses{% endif %}</span>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                         <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -88,12 +90,12 @@
         <div id="flow-chart" style="width:100%;height:600px" role="img" aria-label="Sankey diagram showing income and expense flow"></div>
         {% else %}
         <div class="flex items-center justify-between mb-4">
-            <h2 class="section-title" id="monthly-chart-title">Monthly Summary</h2>
+            <h2 class="section-title" id="monthly-chart-title">{% if monthly_mode == "income" %}Monthly Income{% else %}Monthly Summary{% endif %}</h2>
             <div class="flex items-center gap-2">
             <div class="relative" id="monthly-mode-filter">
                 <button type="button" id="monthly-mode-btn"
                     class="btn-ghost px-3 py-2 text-sm rounded-lg inline-flex items-center gap-2 border border-neutral-200 dark:border-neutral-700">
-                    <span id="monthly-mode-label">Expenses</span>
+                    <span id="monthly-mode-label">{% if monthly_mode == "income" %}Income{% else %}Expenses{% endif %}</span>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                         <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>

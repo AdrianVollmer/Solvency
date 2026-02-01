@@ -19,6 +19,9 @@ pub struct SpendingFilterParams {
     pub to_date: Option<String>,
     pub preset: Option<String>,
     pub tab: Option<String>,
+    pub category_mode: Option<String>,
+    pub monthly_mode: Option<String>,
+    pub categories: Option<String>,
 }
 
 impl SpendingFilterParams {
@@ -56,6 +59,8 @@ pub struct SpendingTemplate {
     pub presets: &'static [DatePreset],
     pub active_tab: String,
     pub base_qs: String,
+    pub category_mode: String,
+    pub monthly_mode: String,
     pub categories: Vec<CategoryWithPath>,
 }
 
@@ -80,7 +85,27 @@ pub async fn index(
 
     let cats = state.cached_categories_with_path()?;
 
-    let base_qs = format!("tab={}", active_tab);
+    let category_mode = match params.category_mode.as_deref() {
+        Some("income") => "income",
+        _ => "expenses",
+    };
+    let monthly_mode = match params.monthly_mode.as_deref() {
+        Some("income") => "income",
+        _ => "expenses",
+    };
+
+    let mut base_qs = format!("tab={}", active_tab);
+    if category_mode != "expenses" {
+        base_qs.push_str(&format!("&category_mode={}", category_mode));
+    }
+    if monthly_mode != "expenses" {
+        base_qs.push_str(&format!("&monthly_mode={}", monthly_mode));
+    }
+    if let Some(ref sel) = params.categories {
+        if !sel.is_empty() {
+            base_qs.push_str(&format!("&categories={}", sel));
+        }
+    }
 
     let template = SpendingTemplate {
         title: "Spending".into(),
@@ -93,6 +118,8 @@ pub async fn index(
         presets: DatePreset::all(),
         active_tab,
         base_qs,
+        category_mode: category_mode.to_string(),
+        monthly_mode: monthly_mode.to_string(),
         categories: cats,
     };
 
@@ -176,7 +203,10 @@ pub async fn category_transactions(
 
     let (title, subtitle) = if params.uncategorized == Some(true) {
         filter.uncategorized_only = true;
-        ("Category Transactions".to_string(), "Uncategorized".to_string())
+        (
+            "Category Transactions".to_string(),
+            "Uncategorized".to_string(),
+        )
     } else if let Some(cat_id) = params.category_id {
         let categories = state.cached_categories()?;
         let cat_name = categories
@@ -227,7 +257,10 @@ pub async fn category_transactions(
 }
 
 /// Collect a category and all its descendants from a flat list.
-fn collect_descendant_ids(categories: &[crate::models::category::Category], parent_id: i64) -> Vec<i64> {
+fn collect_descendant_ids(
+    categories: &[crate::models::category::Category],
+    parent_id: i64,
+) -> Vec<i64> {
     let mut result = vec![parent_id];
     let mut i = 0;
     while i < result.len() {
