@@ -1,7 +1,7 @@
 # Solvency Contributors
 
-Solvency is a web-based expense tracker with a focus on visualizing
-spending habits.
+Solvency is a web-based tracker for your income, expenses and portfolio
+with a focus on visualizing spending habits.
 
 We are still in "greenfield project mode", as there is no release yet,
 so never worry about backwards compatibility.
@@ -18,9 +18,10 @@ so never worry about backwards compatibility.
 ## Features
 
 - No user accounts for now
-- Configurable via web app
 - Light and dark theme
 - Responsive on mobile
+- Progressive Web App for Android and iOS
+- Experimental Desktop App powered by Tauri
 
 ## Conventions
 
