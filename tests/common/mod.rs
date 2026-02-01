@@ -88,6 +88,24 @@ impl TestClient {
             .with_state(self.state.clone())
     }
 
+    /// Get the router with cache invalidation middleware (mimics production caching).
+    pub fn router_with_cache(&self) -> Router {
+        use axum::middleware;
+        use solvency::cache::cache_invalidation_middleware;
+
+        handlers::routes()
+            .layer(middleware::from_fn_with_state(
+                self.state.clone(),
+                cache_invalidation_middleware,
+            ))
+            .with_state(self.state.clone())
+    }
+
+    /// Access the underlying application state.
+    pub fn state(&self) -> &AppState {
+        &self.state
+    }
+
     /// Get the router with XSRF middleware applied (for testing XSRF protection).
     pub fn router_with_xsrf(&self) -> Router {
         use axum::middleware;

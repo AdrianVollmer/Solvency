@@ -158,7 +158,7 @@ pub async fn cache_invalidation_middleware(
             | axum::http::Method::PATCH
     );
     let resp = next.run(req).await;
-    if mutating && resp.status().is_success() {
+    if mutating && !resp.status().is_client_error() && !resp.status().is_server_error() {
         state.cache.invalidate();
     }
     resp
