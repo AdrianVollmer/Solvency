@@ -792,6 +792,8 @@ function setupCategoryFilter(): void {
     const boxes =
       dropdown!.querySelectorAll<HTMLInputElement>(".category-checkbox");
     for (const cb of boxes) {
+      const lbl = cb.closest("label") as HTMLElement | null;
+      if (lbl && lbl.style.display === "none") continue;
       cb.checked = checked;
     }
     dropdown!.dispatchEvent(new Event("change"));
@@ -871,6 +873,66 @@ function setupCategoryFilter(): void {
   }
 }
 
+function updateCategoryFilterLabel(): void {
+  const label = document.getElementById("category-filter-label");
+  if (!label) return;
+  const dropdown = document.getElementById("category-filter-dropdown");
+  const selected = getSelectedCategoryIds();
+  if (selected.length === 0) {
+    label.textContent = "All categories";
+  } else if (selected.length === 1) {
+    const checked = dropdown?.querySelector<HTMLInputElement>(
+      ".category-checkbox:checked",
+    );
+    const name = checked
+      ?.closest("label")
+      ?.querySelector("span:last-child")
+      ?.textContent?.trim();
+    label.textContent = name || "1 selected";
+  } else {
+    label.textContent = `${selected.length} selected`;
+  }
+}
+
+function filterCategoryDropdown(): void {
+  const dropdown = document.getElementById("category-filter-dropdown");
+  if (!dropdown) return;
+
+  const rootName = monthlyMode === "income" ? "Income" : "Expenses";
+
+  let anyChanged = false;
+  const boxes =
+    dropdown.querySelectorAll<HTMLInputElement>(".category-checkbox");
+  for (const cb of boxes) {
+    const lbl = cb.closest("label") as HTMLElement | null;
+    if (!lbl) continue;
+
+    if (lbl.dataset.root === rootName) {
+      lbl.style.removeProperty("display");
+    } else {
+      lbl.style.setProperty("display", "none", "important");
+      if (cb.checked) {
+        cb.checked = false;
+        anyChanged = true;
+      }
+    }
+  }
+
+  updateCategoryFilterLabel();
+
+  if (anyChanged) {
+    const url = new URL(window.location.href);
+    const selected = getSelectedCategoryIds();
+    if (selected.length > 0) {
+      url.searchParams.set("categories", selected.join(","));
+    } else {
+      url.searchParams.delete("categories");
+    }
+    history.replaceState(null, "", url.toString());
+    updateNavLinks();
+  }
+}
+
 function setupCategoryModeFilter(): void {
   const btn = document.getElementById("category-mode-btn");
   const dropdown = document.getElementById("category-mode-dropdown");
@@ -935,7 +997,7 @@ function setupMonthlyModeFilter(): void {
     ".monthly-mode-option",
   );
   for (const opt of options) {
-    opt.addEventListener("click", () => {
+    opt.addEventListener("click", async () => {
       const mode = opt.dataset.mode || "expenses";
       if (mode === monthlyMode) {
         dropdown.classList.add("hidden");
@@ -948,6 +1010,7 @@ function setupMonthlyModeFilter(): void {
           mode === "income" ? "Monthly Income" : "Monthly Summary";
       }
       dropdown.classList.add("hidden");
+      filterCategoryDropdown();
       updateMonthlyChart(getFilterParams());
     });
   }
@@ -959,6 +1022,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupCategoryFilter();
     setupCategoryModeFilter();
     setupMonthlyModeFilter();
+    filterCategoryDropdown();
     updateCharts();
     window.addEventListener("resize", handleResize);
   }
