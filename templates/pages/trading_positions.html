@@ -13,7 +13,7 @@
     {# Security Positions #}
     {% if !security_positions.is_empty() %}
     {% call ui::card(class="", overflow="overflow-hidden") %}
-        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
+        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex flex-wrap justify-between items-center gap-2">
             <h2 class="text-lg font-semibold text-neutral-900 dark:text-white">Securities</h2>
             <div class="flex items-center gap-4">
                 <a href="/trading/positions/closed" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">View Closed Positions</a>
