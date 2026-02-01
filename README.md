@@ -46,57 +46,7 @@ docker run --rm --init -p 7070:7070 \
 - **UI:** Tailwind CSS
 - **Background Jobs:** tokio-cron-scheduler
 
-## Development
-
-### Prerequisites
-
-- Rust (1.92+)
-- Node.js (for Tailwind CSS)
-- pkg-config and libssl-dev (for OpenSSL)
-
-### Building
-
-Use the unified build script:
-
-``` bash
-# Build everything (frontend + Rust)
-./scripts/build.sh
-
-# Or build specific targets:
-./scripts/build.sh frontend      # CSS, JS, and icons
-./scripts/build.sh css           # Tailwind CSS only
-./scripts/build.sh js            # TypeScript only
-./scripts/build.sh icons         # PNG icons from SVG
-./scripts/build.sh rust          # Rust debug build
-./scripts/build.sh rust-release  # Rust release build
-./scripts/build.sh clean         # Remove build artifacts
-```
-
-Or manually:
-
-``` bash
-npm install
-npm run build        # Build CSS and JS
-cargo build --release
-```
-
-Run the application:
-
-``` bash
-./target/release/solvency
-```
-
-The server will start on <http://localhost:7070>.
-
-### Database
-
-Migrations are embedded in the binary and run automatically on startup.
-
-To manually run migrations:
-
-``` bash
-sqlx migrate run
-```
+## Configuration
 
 ### Environment Variables
 
@@ -184,6 +134,7 @@ docker run --rm -d \
 
 MIT
 
-## Contributors
+## Contributing
 
-See CONTRIBUTING.md for development guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build from source and
+contribute to the project.
