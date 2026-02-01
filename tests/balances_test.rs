@@ -76,7 +76,7 @@ async fn test_negative_balance() {
     assert_eq!(status, StatusCode::OK);
     // Should show negative balance
     assert!(
-        body.contains("-$50.00") || body.contains("-50.00"),
+        body.contains("-\u{2060}$50.00") || body.contains("-50.00"),
         "Expected negative balance of -$50.00 not found"
     );
 }

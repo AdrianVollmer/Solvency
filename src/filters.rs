@@ -108,7 +108,7 @@ pub fn format_money_balance(cents: i64, currency: &str, locale: &str) -> String 
     let symbol = currency_symbol(currency);
 
     if cents < 0 {
-        format!("-{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+        format!("-\u{2060}{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     } else {
         format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     }
@@ -127,7 +127,7 @@ pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String 
     let symbol = currency_symbol(currency);
 
     if cents < 0 {
-        format!("-{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+        format!("-\u{2060}{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     } else {
         format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     }
@@ -186,9 +186,9 @@ fn format_money_impl(cents: i64, currency: &str, locale: &str) -> (String, &'sta
 
     // Build final string: sign + symbol + formatted number
     let formatted = if is_negative {
-        format!("-{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+        format!("-\u{2060}{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     } else if cents > 0 {
-        format!("+{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+        format!("+\u{2060}{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     } else {
         format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     };
@@ -266,13 +266,13 @@ mod tests {
     #[test]
     fn test_positive_amount() {
         let result = format_money_plain(12345, "USD", "en-US");
-        assert_eq!(result, "+$123.45");
+        assert_eq!(result, "+\u{2060}$123.45");
     }
 
     #[test]
     fn test_negative_amount() {
         let result = format_money_plain(-12345, "USD", "en-US");
-        assert_eq!(result, "-$123.45");
+        assert_eq!(result, "-\u{2060}$123.45");
     }
 
     #[test]
@@ -284,13 +284,13 @@ mod tests {
     #[test]
     fn test_thousands_separator_en() {
         let result = format_money_plain(123456789, "USD", "en-US");
-        assert_eq!(result, "+$1,234,567.89");
+        assert_eq!(result, "+\u{2060}$1,234,567.89");
     }
 
     #[test]
     fn test_thousands_separator_de() {
         let result = format_money_plain(123456789, "EUR", "de-DE");
-        assert_eq!(result, "+\u{20ac}1.234.567,89");
+        assert_eq!(result, "+\u{2060}\u{20ac}1.234.567,89");
     }
 
     #[test]
@@ -320,7 +320,7 @@ mod tests {
     #[test]
     fn test_balance_negative() {
         let result = format_money_balance(-12345, "USD", "en-US");
-        assert_eq!(result, "-$123.45");
+        assert_eq!(result, "-\u{2060}$123.45");
     }
 
     #[test]
@@ -338,7 +338,7 @@ mod tests {
     #[test]
     fn test_neutral_negative_with_minus() {
         let result = format_money_neutral(-12345, "USD", "en-US");
-        assert_eq!(result, "-$123.45");
+        assert_eq!(result, "-\u{2060}$123.45");
     }
 
     #[test]
