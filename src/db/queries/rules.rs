@@ -23,8 +23,7 @@ pub fn list_rules(conn: &Connection) -> rusqlite::Result<Vec<Rule>> {
                 updated_at: row.get(6)?,
             })
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(rules)
 }

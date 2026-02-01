@@ -11,9 +11,9 @@ pub fn get_cash_account_balances(conn: &Connection) -> rusqlite::Result<HashMap<
          GROUP BY account_id",
     )?;
 
-    let rows = stmt
+    let rows: Vec<(i64, i64)> = stmt
         .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)))?
-        .filter_map(|r| r.ok());
+        .collect::<Result<Vec<_>, _>>()?;
 
     let mut map = HashMap::new();
     for (account_id, balance) in rows {

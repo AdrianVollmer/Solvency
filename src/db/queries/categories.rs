@@ -22,8 +22,7 @@ pub fn list_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
                 updated_at: row.get(7)?,
             })
         })?
-        .filter_map(|c| c.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(categories)
 }
@@ -62,8 +61,7 @@ pub fn list_categories_with_path(conn: &Connection) -> rusqlite::Result<Vec<Cate
                 depth: row.get(9)?,
             })
         })?
-        .filter_map(|c| c.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(categories)
 }
@@ -155,8 +153,7 @@ pub fn get_top_level_categories(conn: &Connection) -> rusqlite::Result<Vec<Categ
                 updated_at: row.get(7)?,
             })
         })?
-        .filter_map(|c| c.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(categories)
 }
@@ -227,8 +224,7 @@ pub fn get_child_categories(conn: &Connection, parent_id: i64) -> rusqlite::Resu
                 updated_at: row.get(7)?,
             })
         })?
-        .filter_map(|c| c.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(categories)
 }

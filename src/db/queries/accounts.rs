@@ -23,8 +23,7 @@ pub fn list_accounts(conn: &Connection) -> rusqlite::Result<Vec<Account>> {
 
     let accounts = stmt
         .query_map([], row_to_account)?
-        .filter_map(|a| a.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(accounts)
 }
@@ -39,8 +38,7 @@ pub fn list_accounts_by_type(
 
     let accounts = stmt
         .query_map([account_type.as_str()], row_to_account)?
-        .filter_map(|a| a.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(accounts)
 }

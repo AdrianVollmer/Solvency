@@ -131,7 +131,7 @@ pub fn list_transactions(
     })?;
 
     let mut transactions: Vec<TransactionWithRelations> =
-        transaction_iter.filter_map(|e| e.ok()).collect();
+        transaction_iter.collect::<Result<Vec<_>, _>>()?;
 
     let transaction_ids: Vec<i64> = transactions.iter().map(|e| e.transaction.id).collect();
     let mut tags_map = get_tags_for_transactions(conn, &transaction_ids)?;
@@ -424,8 +424,7 @@ fn get_transaction_tags(conn: &Connection, transaction_id: i64) -> rusqlite::Res
                 created_at: row.get(4)?,
             })
         })?
-        .filter_map(|t| t.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(tags)
 }
@@ -475,7 +474,8 @@ fn get_tags_for_transactions(
     })?;
 
     let mut tags_map: HashMap<i64, Vec<Tag>> = HashMap::new();
-    for row in rows.filter_map(|r| r.ok()) {
+    for row in rows {
+        let row = row?;
         tags_map.entry(row.0).or_default().push(row.1);
     }
 

@@ -21,8 +21,7 @@ pub fn get_all_settings(conn: &Connection) -> rusqlite::Result<HashMap<String, S
         .query_map([], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<HashMap<_, _>, _>>()?;
 
     Ok(settings)
 }

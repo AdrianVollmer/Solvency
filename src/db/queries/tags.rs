@@ -20,8 +20,7 @@ pub fn list_tags(conn: &Connection) -> rusqlite::Result<Vec<Tag>> {
                 created_at: row.get(4)?,
             })
         })?
-        .filter_map(|t| t.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(tags)
 }
@@ -50,8 +49,7 @@ pub fn list_tags_with_usage(conn: &Connection) -> rusqlite::Result<Vec<TagWithUs
                 usage_count: row.get(5)?,
             })
         })?
-        .filter_map(|t| t.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(tags)
 }
@@ -76,8 +74,7 @@ pub fn search_tags(conn: &Connection, query: &str) -> rusqlite::Result<Vec<Tag>>
                 created_at: row.get(4)?,
             })
         })?
-        .filter_map(|t| t.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(tags)
 }

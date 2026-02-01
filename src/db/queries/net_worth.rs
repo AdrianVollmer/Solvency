@@ -31,8 +31,7 @@ pub fn get_daily_transaction_sums(conn: &Connection) -> rusqlite::Result<Vec<Dai
 
     let rows = stmt
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(rows)
 }
@@ -57,8 +56,7 @@ pub fn get_all_activities_ordered(conn: &Connection) -> rusqlite::Result<Vec<Net
                 row.get(6)?,
             ))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(rows)
 }
@@ -73,8 +71,7 @@ pub fn get_all_market_data(conn: &Connection) -> rusqlite::Result<Vec<MarketData
 
     let rows = stmt
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(rows)
 }
@@ -98,8 +95,7 @@ pub fn get_last_trade_prices(conn: &Connection) -> rusqlite::Result<Vec<LastTrad
 
     let rows = stmt
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(rows)
 }

@@ -96,8 +96,7 @@ pub fn list_activities(
                 updated_at: row.get(11)?,
             })
         })?
-        .filter_map(|a| a.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(activities)
 }
@@ -330,8 +329,7 @@ pub fn get_positions(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
                 row.get(5)?,
             ))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(calculate_positions_from_activities(activities))
 }
@@ -358,8 +356,7 @@ pub fn get_positions_for_account(
                 row.get(5)?,
             ))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(calculate_positions_from_activities(activities))
 }
@@ -383,8 +380,7 @@ pub fn get_positions_without_account(conn: &Connection) -> rusqlite::Result<Vec<
                 row.get(5)?,
             ))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(calculate_positions_from_activities(activities))
 }
@@ -409,8 +405,7 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
                 row.get(5)?,
             ))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     // Calculate positions by symbol, tracking cost, proceeds, fees, taxes, dividends, and dates
     // (quantity, total_cost, total_proceeds, total_fees, total_taxes, total_dividends, currency, first_date, last_date)
@@ -522,8 +517,7 @@ pub fn get_unique_symbols(conn: &Connection) -> rusqlite::Result<Vec<String>> {
 
     let symbols: Vec<String> = stmt
         .query_map([], |row| row.get(0))?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(symbols)
 }
@@ -561,8 +555,7 @@ pub fn get_activities_for_symbol(
                 updated_at: row.get(11)?,
             })
         })?
-        .filter_map(|a| a.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(activities)
 }
@@ -873,8 +866,7 @@ pub fn apply_split_to_past_activities(
         .query_map(params![symbol, split_date, split_activity_id], |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     for (target_id, original_qty, original_price) in &targets {
         conn.execute(
@@ -937,8 +929,7 @@ pub fn apply_existing_splits_to_activity(
         .query_map(params![symbol, activity_date], |row| {
             Ok((row.get(0)?, row.get(1)?))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     if splits.is_empty() {
         return Ok(());
@@ -1006,8 +997,7 @@ pub fn reverse_split_adjustments(
     )?;
     let target_ids: Vec<i64> = target_stmt
         .query_map([split_activity_id], |row| row.get(0))?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
     drop(target_stmt);
 
     let target_count = target_ids.len();
@@ -1091,8 +1081,7 @@ fn recompute_target_without_split(
     )?;
     let remaining: Vec<(i64, f64)> = remaining_stmt
         .query_map([target_id], |row| Ok((row.get(0)?, row.get(1)?)))?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     // Replay remaining adjustments from the base values.
     let mut running_qty = base_qty;

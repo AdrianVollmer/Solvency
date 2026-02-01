@@ -254,8 +254,7 @@ pub async fn clear_database(State(state): State<AppState>) -> AppResult<Html<Str
 
     let tables: Vec<String> = stmt
         .query_map([], |row| row.get(0))?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     for table in &tables {
         conn.execute(&format!("DELETE FROM \"{}\"", table), [])?;

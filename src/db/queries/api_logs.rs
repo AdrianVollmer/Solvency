@@ -44,8 +44,7 @@ pub fn get_all_logs(conn: &Connection, limit: i64) -> rusqlite::Result<Vec<ApiLo
                 created_at: row.get(9)?,
             })
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(logs)
 }
@@ -98,8 +97,7 @@ pub fn get_failed_logs_since(conn: &Connection, since_id: i64) -> rusqlite::Resu
                 created_at: row.get(9)?,
             })
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(logs)
 }

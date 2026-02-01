@@ -103,8 +103,7 @@ pub fn get_prices_for_symbol(conn: &Connection, symbol: &str) -> rusqlite::Resul
                 fetched_at: row.get(5)?,
             })
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(data)
 }
@@ -211,8 +210,7 @@ pub fn get_symbol_coverage(conn: &Connection) -> rusqlite::Result<Vec<SymbolData
                 is_closed,
             })
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(coverage)
 }
@@ -266,8 +264,7 @@ pub fn get_symbols_needing_data(
             let end_date: String = row.get(2)?;
             Ok((symbol, start_date, end_date))
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(symbols)
 }
@@ -297,8 +294,7 @@ pub fn get_symbols_with_data(conn: &Connection) -> rusqlite::Result<Vec<String>>
 
     let symbols = stmt
         .query_map([], |row| row.get(0))?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(symbols)
 }
