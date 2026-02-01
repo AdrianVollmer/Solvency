@@ -6,7 +6,7 @@ use axum::{Form, Json};
 use serde::{Deserialize, Serialize};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
-use crate::db::queries::{accounts, trading};
+use crate::db::queries::trading;
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{NewTradingActivity, Settings, TradingActivity, TradingActivityType};
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
@@ -628,7 +628,7 @@ pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoRespons
     let activities = trading::list_activities(&conn, &filter)?;
 
     // Build account id -> name map for export
-    let account_list = accounts::list_accounts(&conn)?;
+    let account_list = state.cached_accounts()?;
     let account_id_to_name: std::collections::HashMap<i64, String> = account_list
         .iter()
         .map(|a| (a.id, a.name.clone()))
@@ -695,7 +695,7 @@ pub async fn import(
 
     let conn = state.db.get()?;
 
-    let account_list = accounts::list_accounts(&conn)?;
+    let account_list = state.cached_accounts()?;
     let account_name_to_id: std::collections::HashMap<String, i64> = account_list
         .iter()
         .map(|a| (a.name.clone(), a.id))

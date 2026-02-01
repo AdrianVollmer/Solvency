@@ -46,10 +46,8 @@ pub struct AccountFormData {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
     let app_settings = state.load_settings()?;
-    let account_list = accounts::list_accounts(&conn)?;
+    let account_list = state.cached_accounts()?;
 
     let template = AccountsTemplate {
         title: "Accounts".into(),
@@ -166,9 +164,7 @@ struct AccountExport {
 }
 
 pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
-    let conn = state.db.get()?;
-
-    let account_list = accounts::list_accounts(&conn)?;
+    let account_list = state.cached_accounts()?;
 
     let export_data: Vec<AccountExport> = account_list
         .iter()
@@ -208,7 +204,7 @@ pub async fn import(
 
     let conn = state.db.get()?;
 
-    let existing = accounts::list_accounts(&conn)?;
+    let existing = state.cached_accounts()?;
     let existing_names: std::collections::HashSet<_> =
         existing.iter().map(|a| a.name.clone()).collect();
 
@@ -237,10 +233,9 @@ pub async fn import_preview(
     let data: Vec<AccountImport> = serde_json::from_str(&form.data)
         .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
 
-    let conn = state.db.get()?;
     let app_settings = state.load_settings()?;
 
-    let existing = accounts::list_accounts(&conn)?;
+    let existing = state.cached_accounts()?;
     let existing_names: std::collections::HashSet<String> =
         existing.iter().map(|a| a.name.clone()).collect();
 

@@ -5,7 +5,7 @@ use chrono::{Datelike, NaiveDate};
 use serde::Deserialize;
 
 use crate::date_utils::{DatePreset, DateRange};
-use crate::db::queries::{categories, transactions};
+use crate::db::queries::transactions;
 use crate::error::{AppResult, RenderHtml};
 use crate::handlers::transactions::TransactionPreviewTemplate;
 use crate::models::category::CategoryWithPath;
@@ -78,7 +78,7 @@ pub async fn index(
         _ => "category".to_string(),
     };
 
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let base_qs = format!("tab={}", active_tab);
 

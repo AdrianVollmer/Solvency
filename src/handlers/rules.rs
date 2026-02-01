@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::db::queries::transactions::TransactionFilter;
-use crate::db::queries::{categories, rules, tags, transactions};
+use crate::db::queries::{rules, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::handlers::import_preview::{
     ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus, ImportPreviewTemplate,
@@ -124,8 +124,8 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let app_settings = state.load_settings()?;
 
     let rule_list = rules::list_rules(&conn)?;
-    let category_list = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
+    let category_list = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
 
     let template = RulesTemplate {
         title: "Rules".into(),
@@ -144,10 +144,9 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
     let app_settings = state.load_settings()?;
-    let category_list = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
+    let category_list = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
 
     let template = RuleFormTemplate {
         title: "Add Rule".into(),
@@ -169,8 +168,8 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 
     let rule =
         rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
-    let category_list = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
+    let category_list = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
 
     let template = RuleDetailTemplate {
         title: format!("Rule: {}", rule.name),
@@ -196,8 +195,8 @@ pub async fn edit_form(
 
     let rule =
         rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
-    let category_list = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
+    let category_list = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
 
     let template = RuleEditTemplate {
         title: format!("Edit Rule: {}", rule.name),
@@ -285,8 +284,8 @@ pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoRespons
     let conn = state.db.get()?;
 
     let rule_list = rules::list_rules(&conn)?;
-    let cat_list = categories::list_categories(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
+    let cat_list = state.cached_categories()?;
+    let tag_list = state.cached_tags()?;
 
     // Build maps of id -> name
     let cat_id_to_name: HashMap<String, String> = cat_list
@@ -352,8 +351,8 @@ pub async fn import(
 
     let conn = state.db.get()?;
 
-    let cat_list = categories::list_categories(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
+    let cat_list = state.cached_categories()?;
+    let tag_list = state.cached_tags()?;
 
     // Build maps of name -> id
     let cat_name_to_id: HashMap<String, i64> =
@@ -435,8 +434,8 @@ pub async fn import_preview(
     let conn = state.db.get()?;
     let app_settings = state.load_settings()?;
 
-    let cat_list = categories::list_categories(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
+    let cat_list = state.cached_categories()?;
+    let tag_list = state.cached_tags()?;
     let cat_names: std::collections::HashSet<String> =
         cat_list.iter().map(|c| c.name.clone()).collect();
     let tag_names: std::collections::HashSet<String> =
@@ -559,8 +558,8 @@ pub async fn preview(
 
     let scope = params.scope.unwrap_or_else(|| "all".into());
     let matched = match_transactions(&conn, &rule, &scope)?;
-    let category_list = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
+    let category_list = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
 
     let template = RulePreviewTemplate {
         title: format!("Preview: {}", rule.name),

@@ -10,6 +10,7 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
 use crate::auth;
+use crate::cache::{cache_invalidation_middleware, AppCache};
 use crate::config::Config;
 use crate::db::{create_pool, migrations};
 use crate::error_pages::{error_page_middleware, fallback_handler};
@@ -40,6 +41,7 @@ pub fn build_app(config: Config) -> Result<(AppState, Router), Box<dyn std::erro
         manifest,
         xsrf_token: xsrf_token.clone(),
         market_data_refresh: Arc::new(Mutex::new(MarketDataRefreshState::default())),
+        cache: Arc::new(AppCache::new()),
     };
 
     let app = Router::new()
@@ -49,6 +51,10 @@ pub fn build_app(config: Config) -> Result<(AppState, Router), Box<dyn std::erro
         .route("/logout", post(auth::logout))
         .fallback(fallback_handler)
         .nest_service("/static", ServeDir::new(&config.static_path))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            cache_invalidation_middleware,
+        ))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth::auth_middleware,

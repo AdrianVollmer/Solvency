@@ -147,7 +147,7 @@ pub async fn search(
 
     let query = params.q.unwrap_or_default();
     let tag_list = if query.is_empty() {
-        tags::list_tags(&conn)?
+        state.cached_tags()?
     } else {
         tags::search_tags(&conn, &query)?
     };
@@ -196,9 +196,7 @@ struct TagExport {
 }
 
 pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
-    let conn = state.db.get()?;
-
-    let tag_list = tags::list_tags(&conn)?;
+    let tag_list = state.cached_tags()?;
 
     let export_data: Vec<TagExport> = tag_list
         .iter()
@@ -246,7 +244,7 @@ pub async fn import(
 
     let conn = state.db.get()?;
 
-    let existing = tags::list_tags(&conn)?;
+    let existing = state.cached_tags()?;
     let existing_names: std::collections::HashSet<_> =
         existing.iter().map(|t| t.name.clone()).collect();
 
@@ -276,10 +274,9 @@ pub async fn import_preview(
     let data: Vec<TagImport> = serde_json::from_str(&form.data)
         .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
 
-    let conn = state.db.get()?;
     let app_settings = state.load_settings()?;
 
-    let existing = tags::list_tags(&conn)?;
+    let existing = state.cached_tags()?;
     let existing_names: std::collections::HashSet<String> =
         existing.iter().map(|t| t.name.clone()).collect();
 

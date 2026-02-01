@@ -1,8 +1,8 @@
-use crate::config::{AuthMode, Config};
-use crate::db::queries::settings as db_settings;
+use crate::cache::AppCache;
+use crate::config::Config;
 use crate::db::DbPool;
 use crate::error::AppResult;
-use crate::models::Settings;
+use crate::models::{Account, Category, CategoryWithPath, Settings, Tag};
 use crate::xsrf::XsrfToken;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -35,15 +35,33 @@ pub struct AppState {
     pub manifest: JsManifest,
     pub xsrf_token: XsrfToken,
     pub market_data_refresh: Arc<Mutex<MarketDataRefreshState>>,
+    pub cache: Arc<AppCache>,
 }
 
 impl AppState {
     /// Load settings from the database with runtime auth state populated.
     pub fn load_settings(&self) -> AppResult<Settings> {
-        let conn = self.db.get()?;
-        let mut settings = db_settings::get_settings(&conn)?;
-        settings.is_authenticated = matches!(self.config.auth_mode, AuthMode::Password(_));
-        Ok(settings)
+        self.cache.load_settings(&self.db, &self.config.auth_mode)
+    }
+
+    pub fn cached_categories_with_path(&self) -> AppResult<Vec<CategoryWithPath>> {
+        self.cache.load_categories_with_path(&self.db)
+    }
+
+    pub fn cached_categories(&self) -> AppResult<Vec<Category>> {
+        self.cache.load_categories(&self.db)
+    }
+
+    pub fn cached_tags(&self) -> AppResult<Vec<Tag>> {
+        self.cache.load_tags(&self.db)
+    }
+
+    pub fn cached_accounts(&self) -> AppResult<Vec<Account>> {
+        self.cache.load_accounts(&self.db)
+    }
+
+    pub fn cached_cash_accounts(&self) -> AppResult<Vec<Account>> {
+        self.cache.load_cash_accounts(&self.db)
     }
 }
 

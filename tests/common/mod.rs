@@ -12,6 +12,7 @@ use axum::routing::{get, post};
 use axum::Router;
 use http_body_util::BodyExt;
 use solvency::auth;
+use solvency::cache::AppCache;
 use solvency::config::{AuthMode, Config};
 use solvency::db::queries::trading;
 use solvency::db::{create_in_memory_pool, migrations};
@@ -60,6 +61,7 @@ impl TestClient {
             manifest: JsManifest::default(),
             xsrf_token: XsrfToken::generate(),
             market_data_refresh: Arc::new(Mutex::new(MarketDataRefreshState::default())),
+            cache: Arc::new(AppCache::new()),
         };
 
         Self { state }

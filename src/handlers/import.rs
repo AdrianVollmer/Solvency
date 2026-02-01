@@ -286,7 +286,7 @@ pub async fn wizard(
 
     let session = import::get_session(&conn, &session_id)?;
     let app_settings = state.load_settings()?;
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let template = ImportWizardTemplate {
         title: "Import".into(),
@@ -308,7 +308,7 @@ pub async fn status(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
     let session = import::get_session(&conn, &session_id)?;
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let template = ImportStatusTemplate {
         icons: crate::filters::Icons,
@@ -346,7 +346,7 @@ pub async fn rows(
 
     let rows = import::get_rows_paginated(&conn, &session_id, PREVIEW_PAGE_SIZE, offset)?;
     let total_count = import::count_rows(&conn, &session_id)?;
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let template = ImportPreviewTableTemplate {
         session_id,
@@ -435,7 +435,7 @@ pub async fn confirm(
     // Return status template for polling
     let conn = state.db.get()?;
     let session = import::get_session(&conn, &session_id)?;
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let template = ImportStatusTemplate {
         icons: crate::filters::Icons,

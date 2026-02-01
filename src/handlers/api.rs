@@ -4,7 +4,7 @@ use axum::response::{IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, warn};
 
-use crate::db::queries::{categories, transactions};
+use crate::db::queries::transactions;
 use crate::error::AppResult;
 use crate::filters::Icons;
 use crate::services::analytics;
@@ -90,7 +90,7 @@ pub async fn spending_by_category(
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
 
     // Exclude Transfers subtree from the flat pie chart
-    let all_cats = categories::list_categories(&conn)?;
+    let all_cats = state.cached_categories()?;
     let excluded = transfers_excluded_ids(&all_cats);
     let filtered: Vec<_> = transaction_list
         .into_iter()
@@ -378,7 +378,7 @@ pub async fn spending_by_category_tree(
         .max()
         .map(String::from);
 
-    let all_categories = categories::list_categories(&conn)?;
+    let all_categories = state.cached_categories()?;
     debug!(
         transactions = transaction_list.len(),
         categories = all_categories.len(),
@@ -528,7 +528,7 @@ pub async fn monthly_by_category(
     };
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
-    let all_categories = categories::list_categories(&conn)?;
+    let all_categories = state.cached_categories()?;
 
     let cat_map: std::collections::HashMap<i64, &crate::models::category::Category> =
         all_categories.iter().map(|c| (c.id, c)).collect();
@@ -683,7 +683,7 @@ pub async fn flow_sankey(
         .max()
         .map(String::from);
 
-    let all_categories = categories::list_categories(&conn)?;
+    let all_categories = state.cached_categories()?;
 
     let cat_map: std::collections::HashMap<i64, &crate::models::category::Category> =
         all_categories.iter().map(|c| (c.id, c)).collect();

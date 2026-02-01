@@ -70,9 +70,8 @@ pub struct CategoryFormData {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
     let app_settings = state.load_settings()?;
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let template = CategoryFormTemplate {
         title: "Add Category".into(),
@@ -104,7 +103,7 @@ pub async fn edit_form(
     }
 
     let app_settings = state.load_settings()?;
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let back_url = format!("/categories/{}", id);
     let template = CategoryFormTemplate {
@@ -124,11 +123,9 @@ pub async fn edit_form(
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
     let app_settings = state.load_settings()?;
 
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let template = CategoriesTemplate {
         title: "Categories".into(),
@@ -158,7 +155,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     };
     let transaction_count = transactions::count_transactions(&conn, &filter)?;
 
-    let all_cats = categories::list_categories_with_path(&conn)?;
+    let all_cats = state.cached_categories_with_path()?;
     let children: Vec<CategoryWithPath> = all_cats
         .into_iter()
         .filter(|c| c.category.parent_id == Some(id))
@@ -325,9 +322,7 @@ struct CategoryExport {
 }
 
 pub async fn export(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
-    let conn = state.db.get()?;
-
-    let cats = categories::list_categories(&conn)?;
+    let cats = state.cached_categories()?;
 
     // Build a map of id -> name for parent lookups
     let id_to_name: HashMap<i64, String> = cats.iter().map(|c| (c.id, c.name.clone())).collect();
@@ -390,7 +385,7 @@ pub async fn import(
     let mut name_to_id: HashMap<String, i64> = HashMap::new();
 
     // Seed map with existing categories
-    let existing = categories::list_categories(&conn)?;
+    let existing = state.cached_categories()?;
     for cat in &existing {
         name_to_id.insert(cat.name.clone(), cat.id);
     }
@@ -449,10 +444,9 @@ pub async fn import_preview(
     let data: Vec<CategoryImport> = serde_json::from_str(&form.data)
         .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
 
-    let conn = state.db.get()?;
     let app_settings = state.load_settings()?;
 
-    let existing = categories::list_categories(&conn)?;
+    let existing = state.cached_categories()?;
     let existing_names: std::collections::HashSet<String> =
         existing.iter().map(|c| c.name.clone()).collect();
 

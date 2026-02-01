@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
 use crate::date_utils::{DateFilterable, DatePreset, DateRange};
-use crate::db::queries::{accounts, categories, tags, transactions};
+use crate::db::queries::transactions;
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{
-    Account, AccountType, CategoryWithPath, NewTransaction, Settings, Tag, TransactionWithRelations,
+    Account, CategoryWithPath, NewTransaction, Settings, Tag, TransactionWithRelations,
 };
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
 use crate::state::{AppState, JsManifest};
@@ -376,7 +376,7 @@ pub async fn index(
 
     let transaction_list = transactions::list_transactions(&conn, &filter)?;
     let total_count = transactions::count_transactions(&conn, &filter)?;
-    let cats = categories::list_categories_with_path(&conn)?;
+    let cats = state.cached_categories_with_path()?;
 
     let template = TransactionsTemplate {
         title: "Transactions".into(),
@@ -476,9 +476,9 @@ pub async fn bulk_page(
     };
 
     let total_count = transactions::count_transactions(&conn, &filter)?;
-    let cats = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
-    let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
+    let cats = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
+    let cash_accounts = state.cached_cash_accounts()?;
 
     let back_qs = params.preserve_query_string(&date_range);
     let back_url = if back_qs.is_empty() {
@@ -514,9 +514,9 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 
     let app_settings = state.load_settings()?;
 
-    let cats = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
-    let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
+    let cats = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
+    let cash_accounts = state.cached_cash_accounts()?;
 
     let template = TransactionDetailTemplate {
         title: format!("Transaction #{}", id),
@@ -535,12 +535,10 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
-
     let app_settings = state.load_settings()?;
-    let cats = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
-    let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
+    let cats = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
+    let cash_accounts = state.cached_cash_accounts()?;
 
     let template = TransactionNewTemplate {
         title: "Add Transaction".into(),
@@ -568,9 +566,9 @@ pub async fn edit_form(
 
     let app_settings = state.load_settings()?;
 
-    let cats = categories::list_categories_with_path(&conn)?;
-    let tag_list = tags::list_tags(&conn)?;
-    let cash_accounts = accounts::list_accounts_by_type(&conn, AccountType::Cash)?;
+    let cats = state.cached_categories_with_path()?;
+    let tag_list = state.cached_tags()?;
+    let cash_accounts = state.cached_cash_accounts()?;
 
     let template = TransactionEditTemplate {
         title: "Edit Transaction".into(),
@@ -905,17 +903,17 @@ pub async fn import(
     let conn = state.db.get()?;
 
     // Build lookup maps for category and account names
-    let cat_list = categories::list_categories(&conn)?;
+    let cat_list = state.cached_categories()?;
     let cat_name_to_id: std::collections::HashMap<String, i64> =
         cat_list.iter().map(|c| (c.name.clone(), c.id)).collect();
 
-    let account_list = accounts::list_accounts(&conn)?;
+    let account_list = state.cached_accounts()?;
     let account_name_to_id: std::collections::HashMap<String, i64> = account_list
         .iter()
         .map(|a| (a.name.clone(), a.id))
         .collect();
 
-    let tag_list = tags::list_tags(&conn)?;
+    let tag_list = state.cached_tags()?;
     let tag_name_to_id: std::collections::HashMap<String, i64> =
         tag_list.iter().map(|t| (t.name.clone(), t.id)).collect();
 

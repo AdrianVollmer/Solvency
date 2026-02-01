@@ -4,7 +4,7 @@ use axum::response::Html;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 
-use crate::db::queries::{accounts, balances, market_data, trading, transactions};
+use crate::db::queries::{balances, market_data, trading, transactions};
 use crate::error::{AppResult, RenderHtml};
 use crate::filters;
 use crate::handlers::transactions::TransactionPreviewTemplate;
@@ -229,7 +229,7 @@ pub async fn account_allocation(
 ) -> AppResult<Json<Vec<AllocationNode>>> {
     let conn = state.db.get()?;
 
-    let all_accounts = accounts::list_accounts(&conn)?;
+    let all_accounts = state.cached_accounts()?;
     let cash_balances = balances::get_cash_account_balances(&conn)?;
 
     let mut nodes: Vec<AllocationNode> = Vec::new();
