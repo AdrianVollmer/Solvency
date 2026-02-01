@@ -112,9 +112,9 @@ impl TradingActivity {
     }
 
     pub fn fee_display(&self) -> String {
-        let dollars = self.fee_cents / 100;
-        let cents = self.fee_cents % 100;
-        format!("{}.{:02}", dollars, cents)
+        let abs = self.fee_cents.abs();
+        let sign = if self.fee_cents < 0 { "-" } else { "" };
+        format!("{}{}.{:02}", sign, abs / 100, abs % 100)
     }
 
     pub fn fee_formatted(&self) -> String {
@@ -271,9 +271,9 @@ impl PositionWithMarketData {
 
     pub fn current_value_display(&self) -> Option<String> {
         self.current_value_cents.map(|cents| {
-            let dollars = cents / 100;
-            let remainder = cents.abs() % 100;
-            format!("{}.{:02}", dollars, remainder)
+            let abs = cents.abs();
+            let sign = if cents < 0 { "-" } else { "" };
+            format!("{}{}.{:02}", sign, abs / 100, abs % 100)
         })
     }
 
@@ -338,9 +338,9 @@ pub struct ClosedPosition {
 
 impl ClosedPosition {
     pub fn total_cost_display(&self) -> String {
-        let dollars = self.total_cost_cents / 100;
-        let cents = self.total_cost_cents.abs() % 100;
-        format!("{}.{:02}", dollars, cents)
+        let abs = self.total_cost_cents.abs();
+        let sign = if self.total_cost_cents < 0 { "-" } else { "" };
+        format!("{}{}.{:02}", sign, abs / 100, abs % 100)
     }
 
     pub fn total_cost_formatted(&self) -> String {
@@ -352,9 +352,9 @@ impl ClosedPosition {
     }
 
     pub fn total_proceeds_display(&self) -> String {
-        let dollars = self.total_proceeds_cents / 100;
-        let cents = self.total_proceeds_cents.abs() % 100;
-        format!("{}.{:02}", dollars, cents)
+        let abs = self.total_proceeds_cents.abs();
+        let sign = if self.total_proceeds_cents < 0 { "-" } else { "" };
+        format!("{}{}.{:02}", sign, abs / 100, abs % 100)
     }
 
     pub fn total_proceeds_formatted(&self) -> String {
