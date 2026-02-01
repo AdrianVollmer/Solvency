@@ -45,6 +45,7 @@ interface MonthlyByCategoryResponse {
 let activeChart: any = null;
 let activeMonth: string | null = null;
 let activeCategory: number | null = null;
+let categoryMode: string = "expenses";
 
 function showEmptyState(container: HTMLElement): void {
   if (activeChart) {
@@ -228,9 +229,14 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
 
   collapseCategoryTransactions();
 
+  const modeParams = new URLSearchParams(params);
+  if (categoryMode !== "expenses") {
+    modeParams.set("mode", categoryMode);
+  }
+
   const data = await fetchData<CategoryTreeResponse>(
     "/api/analytics/spending-by-category-tree",
-    params,
+    modeParams,
   );
 
   if (data.categories.length === 0) {
@@ -856,10 +862,52 @@ function setupCategoryFilter(): void {
   }
 }
 
+function setupCategoryModeFilter(): void {
+  const btn = document.getElementById("category-mode-btn");
+  const dropdown = document.getElementById("category-mode-dropdown");
+  const label = document.getElementById("category-mode-label");
+  const title = document.getElementById("category-chart-title");
+
+  if (!btn || !dropdown || !label) return;
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("hidden");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!dropdown.contains(e.target as Node) && e.target !== btn) {
+      dropdown.classList.add("hidden");
+    }
+  });
+
+  const options = dropdown.querySelectorAll<HTMLButtonElement>(
+    ".category-mode-option",
+  );
+  for (const opt of options) {
+    opt.addEventListener("click", () => {
+      const mode = opt.dataset.mode || "expenses";
+      if (mode === categoryMode) {
+        dropdown.classList.add("hidden");
+        return;
+      }
+      categoryMode = mode;
+      label.textContent = mode === "income" ? "Income" : "Expenses";
+      if (title) {
+        title.textContent =
+          mode === "income" ? "Income by Category" : "Spending by Category";
+      }
+      dropdown.classList.add("hidden");
+      updateCategoryChart(getFilterParams());
+    });
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (document.querySelector("[data-active-tab]")) {
     updateNavLinks();
     setupCategoryFilter();
+    setupCategoryModeFilter();
     updateCharts();
     window.addEventListener("resize", handleResize);
   }

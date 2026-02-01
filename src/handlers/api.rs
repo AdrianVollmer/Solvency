@@ -51,6 +51,8 @@ fn transfers_excluded_ids(
 pub struct AnalyticsParams {
     pub from_date: Option<String>,
     pub to_date: Option<String>,
+    /// "expenses" (default) or "income" — used by the category tree endpoint.
+    pub mode: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -391,8 +393,9 @@ pub async fn spending_by_category_tree(
         "spending_by_category_tree: loaded raw data"
     );
 
-    // Group spending by category_id, then keep only net-negative
-    // categories (actual spending) and flip sign to positive.
+    let income_mode = params.mode.as_deref() == Some("income");
+
+    // Group totals by category_id.
     let mut totals_by_id: std::collections::HashMap<i64, i64> = std::collections::HashMap::new();
     let mut uncategorized_total: i64 = 0;
 
@@ -407,14 +410,17 @@ pub async fn spending_by_category_tree(
     // Exclude Transfers subtree
     let excluded = transfers_excluded_ids(&all_categories);
 
-    // Keep only categories with net negative amounts (expenses), negate to positive
+    // In expense mode: keep net-negative amounts, negate to positive.
+    // In income mode: keep net-positive amounts as-is.
     let spending_by_id: std::collections::HashMap<i64, i64> = totals_by_id
         .into_iter()
-        .filter(|(_, v)| *v < 0)
         .filter(|(k, _)| !excluded.contains(k))
-        .map(|(k, v)| (k, -v))
+        .filter(|(_, v)| if income_mode { *v > 0 } else { *v < 0 })
+        .map(|(k, v)| (k, if income_mode { v } else { -v }))
         .collect();
-    let uncategorized_total = if uncategorized_total < 0 {
+    let uncategorized_total = if income_mode {
+        uncategorized_total.max(0)
+    } else if uncategorized_total < 0 {
         -uncategorized_total
     } else {
         0

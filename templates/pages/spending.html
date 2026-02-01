@@ -60,7 +60,25 @@
     {% call ui::card() %}
     <div data-active-tab="{{ active_tab }}">
         {% if active_tab == "category" %}
-        <h2 class="section-title mb-4">Spending by Category</h2>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="section-title" id="category-chart-title">Spending by Category</h2>
+            <div class="relative" id="category-mode-filter">
+                <button type="button" id="category-mode-btn"
+                    class="btn-ghost px-3 py-2 text-sm rounded-lg inline-flex items-center gap-2 border border-neutral-200 dark:border-neutral-700">
+                    <span id="category-mode-label">Expenses</span>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div id="category-mode-dropdown"
+                    class="hidden absolute right-0 z-20 mt-1 w-36 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-lg py-1">
+                    <button type="button" data-mode="expenses"
+                        class="category-mode-option w-full text-left px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-700/50">Expenses</button>
+                    <button type="button" data-mode="income"
+                        class="category-mode-option w-full text-left px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-700/50">Income</button>
+                </div>
+            </div>
+        </div>
         <div id="category-chart" class="aspect-square max-h-[750px] mx-auto" role="img" aria-label="Sunburst chart showing spending by category"></div>
         {% else if active_tab == "time" %}
         <h2 class="section-title mb-4">Spending Over Time</h2>
