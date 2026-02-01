@@ -82,6 +82,9 @@ function renderTree(): void {
 
 const ICON_GRIP = '<svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
 
+// Lucide "copy" icon
+const ICON_COPY = '<svg class="w-4 h-4 lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+
 // Render nodes recursively
 function renderNodes(nodes: CategoryNode[]): string {
   if (nodes.length === 0) return '';
@@ -102,11 +105,17 @@ function renderNodes(nodes: CategoryNode[]): string {
             <span class="font-medium text-gray-900 dark:text-gray-100">${node.name}</span>
           </a>`;
 
+    const cloneBtn = `<a href="/categories/new?clone_from=${node.id}" title="Clone category"
+          class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+            ${ICON_COPY}
+          </a>`;
+
     html += `
       <div class="tree-node" data-id="${node.id}">
         <div class="category-row group">
           ${dragHandle}
           ${nameContent}
+          ${cloneBtn}
         </div>
         <div class="tree-children" data-parent-id="${node.id}">
           ${renderNodes(node.children)}

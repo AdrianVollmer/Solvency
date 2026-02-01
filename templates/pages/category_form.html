@@ -17,7 +17,7 @@
                 <input type="text" id="category-name" name="name" required
                     class="input w-full"
                     placeholder="e.g., Food, Transport, Entertainment"
-                    value="{% match editing %}{% when Some with (cat) %}{{ cat.name }}{% when None %}{% endmatch %}">
+                    value="{% match editing %}{% when Some with (cat) %}{{ cat.name }}{% when None %}{% if let Some(p) = prefill %}{{ p.name }}{% endif %}{% endmatch %}">
             </div>
 
             <div>
@@ -31,7 +31,7 @@
                     <option value="{{ cat.category.id }}" {% match editing_cat.parent_id %}{% when Some with (pid) %}{% if *pid == cat.category.id %}selected{% endif %}{% when None %}{% endmatch %}>{{ cat.path }}</option>
                     {% endif %}
                     {% when None %}
-                    <option value="{{ cat.category.id }}">{{ cat.path }}</option>
+                    <option value="{{ cat.category.id }}" {% if let Some(p) = prefill %}{% match p.parent_id %}{% when Some with (pid) %}{% if *pid == cat.category.id %}selected{% endif %}{% when None %}{% endmatch %}{% endif %}>{{ cat.path }}</option>
                     {% endmatch %}
                     {% endfor %}
                 </select>
@@ -42,7 +42,7 @@
                 <select id="category-color" name="color" class="input w-full" data-color-select>
                     {% for entry in palette %}
                     <option value="{{ entry.1 }}"
-                        {% match editing %}{% when Some with (cat) %}{% if cat.color == entry.1 %} selected{% endif %}{% when None %}{% if entry.1 == "#6b7280" %} selected{% endif %}{% endmatch %}>
+                        {% match editing %}{% when Some with (cat) %}{% if cat.color == entry.1 %} selected{% endif %}{% when None %}{% if let Some(p) = prefill %}{% if p.color == entry.1 %} selected{% endif %}{% else %}{% if entry.1 == "#6b7280" %} selected{% endif %}{% endif %}{% endmatch %}>
                         {{ entry.0 }}
                     </option>
                     {% endfor %}
@@ -55,7 +55,7 @@
                     <div class="flex items-center gap-2">
                         <div id="icon-preview" class="flex-shrink-0"></div>
                         <input type="text" id="category-icon" name="icon"
-                            value="{% match editing %}{% when Some with (cat) %}{{ cat.icon }}{% when None %}folder{% endmatch %}"
+                            value="{% match editing %}{% when Some with (cat) %}{{ cat.icon }}{% when None %}{% if let Some(p) = prefill %}{{ p.icon }}{% else %}folder{% endif %}{% endmatch %}"
                             class="input w-full"
                             placeholder="Type to search icons..."
                             autocomplete="off">

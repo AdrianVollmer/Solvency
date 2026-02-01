@@ -1,5 +1,5 @@
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::Form;
 use serde::Deserialize;
@@ -22,6 +22,7 @@ pub struct CategoryFormTemplate {
     pub xsrf_token: String,
     pub categories: Vec<CategoryWithPath>,
     pub editing: Option<Category>,
+    pub prefill: Option<Category>,
     pub palette: &'static [(&'static str, &'static str)],
     pub back_url: String,
 }
@@ -52,9 +53,24 @@ pub struct CategoryFormData {
     pub icon: Option<String>,
 }
 
-pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
+#[derive(Debug, Deserialize)]
+pub struct NewFormQuery {
+    pub clone_from: Option<i64>,
+}
+
+pub async fn new_form(
+    State(state): State<AppState>,
+    Query(query): Query<NewFormQuery>,
+) -> AppResult<Html<String>> {
     let app_settings = state.load_settings()?;
     let cats = state.cached_categories_with_path()?;
+
+    let prefill = if let Some(id) = query.clone_from {
+        let conn = state.db.get()?;
+        categories::get_category(&conn, id)?
+    } else {
+        None
+    };
 
     let template = CategoryFormTemplate {
         title: "Add Category".into(),
@@ -65,6 +81,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
         xsrf_token: state.xsrf_token.value().to_string(),
         categories: cats,
         editing: None,
+        prefill,
         palette: TAG_PALETTE,
         back_url: "/manage?tab=categories".into(),
     };
@@ -98,6 +115,7 @@ pub async fn edit_form(
         xsrf_token: state.xsrf_token.value().to_string(),
         categories: cats,
         editing: Some(category),
+        prefill: None,
         palette: TAG_PALETTE,
         back_url,
     };
