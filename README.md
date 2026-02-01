@@ -36,6 +36,10 @@ docker run --rm --init -p 7070:7070 \
     ghcr.io/adrianvollmer/solvency-demo:latest
 ```
 
+Also works with Podman!
+
+Then navigate your browser to <http://localhost:7070>.
+
 ## Tech Stack
 
 - **Web Framework:** Axum 0.7
@@ -71,6 +75,8 @@ it to an Argon2 hash of your password:
 echo -n "your-password" | argon2 $(openssl rand -base64 16) -id -e
 ```
 
+(Or use <https://argon2.online/>.)
+
 To explicitly allow unauthenticated access (e.g., for local-only
 deployments), set:
 
@@ -83,7 +89,7 @@ empty, or invalid.
 
 ## Docker Deployment
 
-The easiest way to run Solvency is with Docker.
+The easiest way to run Solvency is with Docker (or Podman).
 
 ### Using Docker Compose (Recommended)
 
