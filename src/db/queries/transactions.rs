@@ -404,6 +404,230 @@ pub fn delete_all_transactions(conn: &Connection) -> rusqlite::Result<usize> {
     Ok(rows)
 }
 
+// ---------------------------------------------------------------------------
+// Aggregate query helpers (push GROUP BY / SUM into SQL instead of Rust).
+// ---------------------------------------------------------------------------
+
+/// Sum `amount_cents` for all transactions matching the given date range.
+pub fn sum_amount_cents(
+    conn: &Connection,
+    from_date: Option<&str>,
+    to_date: Option<&str>,
+) -> rusqlite::Result<i64> {
+    let mut sql = "SELECT COALESCE(SUM(e.amount_cents), 0) FROM transactions e WHERE 1=1".to_string();
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    if let Some(from) = from_date {
+        sql.push_str(" AND e.date >= ?");
+        params_vec.push(Box::new(from.to_string()));
+    }
+    if let Some(to) = to_date {
+        sql.push_str(" AND e.date <= ?");
+        params_vec.push(Box::new(to.to_string()));
+    }
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    conn.query_row(&sql, params_refs.as_slice(), |row| row.get(0))
+}
+
+/// Result of a per-category aggregation.
+pub struct CategorySum {
+    pub category_id: Option<i64>,
+    pub category_name: String,
+    pub category_color: String,
+    pub total_cents: i64,
+    pub count: i64,
+}
+
+/// Sum transactions grouped by category, excluding the given category IDs.
+pub fn sum_by_category(
+    conn: &Connection,
+    from_date: Option<&str>,
+    to_date: Option<&str>,
+    exclude_ids: &[i64],
+) -> rusqlite::Result<Vec<CategorySum>> {
+    let mut sql = String::from(
+        "SELECT e.category_id, COALESCE(c.name, 'Uncategorized'), COALESCE(c.color, '#6b7280'), \
+         SUM(e.amount_cents), COUNT(*) \
+         FROM transactions e \
+         LEFT JOIN categories c ON e.category_id = c.id \
+         WHERE 1=1",
+    );
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    if let Some(from) = from_date {
+        sql.push_str(" AND e.date >= ?");
+        params_vec.push(Box::new(from.to_string()));
+    }
+    if let Some(to) = to_date {
+        sql.push_str(" AND e.date <= ?");
+        params_vec.push(Box::new(to.to_string()));
+    }
+    if !exclude_ids.is_empty() {
+        let placeholders: String = exclude_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        sql.push_str(&format!(
+            " AND (e.category_id IS NULL OR e.category_id NOT IN ({}))",
+            placeholders
+        ));
+        for &id in exclude_ids {
+            params_vec.push(Box::new(id));
+        }
+    }
+    sql.push_str(" GROUP BY e.category_id ORDER BY SUM(e.amount_cents)");
+
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map(params_refs.as_slice(), |row| {
+            Ok(CategorySum {
+                category_id: row.get(0)?,
+                category_name: row.get(1)?,
+                category_color: row.get(2)?,
+                total_cents: row.get(3)?,
+                count: row.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+/// Sum transactions grouped by date.
+pub fn sum_by_date(
+    conn: &Connection,
+    from_date: Option<&str>,
+    to_date: Option<&str>,
+) -> rusqlite::Result<Vec<(String, i64)>> {
+    let mut sql =
+        "SELECT e.date, SUM(e.amount_cents) FROM transactions e WHERE 1=1".to_string();
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    if let Some(from) = from_date {
+        sql.push_str(" AND e.date >= ?");
+        params_vec.push(Box::new(from.to_string()));
+    }
+    if let Some(to) = to_date {
+        sql.push_str(" AND e.date <= ?");
+        params_vec.push(Box::new(to.to_string()));
+    }
+    sql.push_str(" GROUP BY e.date ORDER BY e.date");
+
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map(params_refs.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+/// Result of a per-month aggregation.
+pub struct MonthSum {
+    pub month: String,
+    pub total_cents: i64,
+    pub count: i64,
+}
+
+/// Sum transactions grouped by month (YYYY-MM), filtering to only income
+/// (positive amounts) or only expenses (negative amounts, returned as positive).
+pub fn sum_by_month(
+    conn: &Connection,
+    from_date: Option<&str>,
+    to_date: Option<&str>,
+    income_mode: bool,
+) -> rusqlite::Result<Vec<MonthSum>> {
+    let amount_expr = if income_mode {
+        "e.amount_cents"
+    } else {
+        "-e.amount_cents"
+    };
+    let sign_filter = if income_mode {
+        " AND e.amount_cents > 0"
+    } else {
+        " AND e.amount_cents < 0"
+    };
+
+    let mut sql = format!(
+        "SELECT substr(e.date, 1, 7), SUM({}), COUNT(*) FROM transactions e WHERE 1=1{}",
+        amount_expr, sign_filter
+    );
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    if let Some(from) = from_date {
+        sql.push_str(" AND e.date >= ?");
+        params_vec.push(Box::new(from.to_string()));
+    }
+    if let Some(to) = to_date {
+        sql.push_str(" AND e.date <= ?");
+        params_vec.push(Box::new(to.to_string()));
+    }
+    sql.push_str(" GROUP BY substr(e.date, 1, 7) ORDER BY 1");
+
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map(params_refs.as_slice(), |row| {
+            Ok(MonthSum {
+                month: row.get(0)?,
+                total_cents: row.get(1)?,
+                count: row.get(2)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+/// Result of a category-id aggregation with date range.
+pub struct CategoryIdSumsWithDates {
+    pub sums: Vec<(Option<i64>, i64)>,
+    pub min_date: Option<String>,
+    pub max_date: Option<String>,
+}
+
+/// Sum transactions grouped by category_id, also returning the actual date
+/// range (MIN/MAX date) of the matched transactions.  Used by the sankey endpoint.
+pub fn sum_by_category_id_with_dates(
+    conn: &Connection,
+    from_date: Option<&str>,
+    to_date: Option<&str>,
+) -> rusqlite::Result<CategoryIdSumsWithDates> {
+    // Date extent
+    let mut date_sql =
+        "SELECT MIN(e.date), MAX(e.date) FROM transactions e WHERE 1=1".to_string();
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    if let Some(from) = from_date {
+        date_sql.push_str(" AND e.date >= ?");
+        params_vec.push(Box::new(from.to_string()));
+    }
+    if let Some(to) = to_date {
+        date_sql.push_str(" AND e.date <= ?");
+        params_vec.push(Box::new(to.to_string()));
+    }
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let (min_date, max_date): (Option<String>, Option<String>) =
+        conn.query_row(&date_sql, params_refs.as_slice(), |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+
+    // Category sums
+    let mut agg_sql = "SELECT e.category_id, SUM(e.amount_cents) FROM transactions e WHERE 1=1"
+        .to_string();
+    let mut params_vec2: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    if let Some(from) = from_date {
+        agg_sql.push_str(" AND e.date >= ?");
+        params_vec2.push(Box::new(from.to_string()));
+    }
+    if let Some(to) = to_date {
+        agg_sql.push_str(" AND e.date <= ?");
+        params_vec2.push(Box::new(to.to_string()));
+    }
+    agg_sql.push_str(" GROUP BY e.category_id");
+    let params_refs2: Vec<&dyn rusqlite::ToSql> = params_vec2.iter().map(|p| p.as_ref()).collect();
+    let mut stmt = conn.prepare(&agg_sql)?;
+    let rows = stmt
+        .query_map(params_refs2.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(CategoryIdSumsWithDates {
+        sums: rows,
+        min_date,
+        max_date,
+    })
+}
+
 fn get_transaction_tags(conn: &Connection, transaction_id: i64) -> rusqlite::Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
         "SELECT t.id, t.name, t.color, t.style, t.created_at

@@ -42,26 +42,10 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     };
     let recent_transactions = transactions::list_transactions(&conn, &filter)?;
 
-    let this_month_filter = transactions::TransactionFilter {
-        from_date: Some(this_month_start),
-        ..Default::default()
-    };
-    let this_month_transactions = transactions::list_transactions(&conn, &this_month_filter)?;
-    let total_this_month: i64 = this_month_transactions
-        .iter()
-        .map(|e| e.transaction.amount_cents)
-        .sum();
-
-    let last_month_filter = transactions::TransactionFilter {
-        from_date: Some(last_month_start),
-        to_date: Some(last_month_end),
-        ..Default::default()
-    };
-    let last_month_transactions = transactions::list_transactions(&conn, &last_month_filter)?;
-    let total_last_month: i64 = last_month_transactions
-        .iter()
-        .map(|e| e.transaction.amount_cents)
-        .sum();
+    let total_this_month =
+        transactions::sum_amount_cents(&conn, Some(&this_month_start), None)?;
+    let total_last_month =
+        transactions::sum_amount_cents(&conn, Some(&last_month_start), Some(&last_month_end))?;
 
     let transaction_count =
         transactions::count_transactions(&conn, &transactions::TransactionFilter::default())?;

@@ -7,7 +7,6 @@ use tracing::{debug, warn};
 use crate::db::queries::transactions;
 use crate::error::AppResult;
 use crate::filters::Icons;
-use crate::services::analytics;
 use crate::state::AppState;
 
 /// Collect a category and all its descendants into a set of IDs.
@@ -83,35 +82,30 @@ pub async fn spending_by_category(
 ) -> AppResult<Json<Vec<CategorySpending>>> {
     let conn = state.db.get()?;
 
-    let filter = transactions::TransactionFilter {
-        from_date: params.from_date,
-        to_date: params.to_date,
-        ..Default::default()
-    };
-
-    let transaction_list = transactions::list_transactions(&conn, &filter)?;
-
-    // Exclude Transfers subtree from the flat pie chart
     let all_cats = state.cached_categories()?;
     let excluded = transfers_excluded_ids(&all_cats);
-    let filtered: Vec<_> = transaction_list
-        .into_iter()
-        .filter(|t| {
-            t.transaction
-                .category_id
-                .is_none_or(|id| !excluded.contains(&id))
-        })
-        .collect();
+    let excluded_vec: Vec<i64> = excluded.into_iter().collect();
 
-    let breakdowns = analytics::spending_by_category(&filtered);
+    let sums = transactions::sum_by_category(
+        &conn,
+        params.from_date.as_deref(),
+        params.to_date.as_deref(),
+        &excluded_vec,
+    )?;
 
-    let result: Vec<CategorySpending> = breakdowns
+    let grand_total: i64 = sums.iter().map(|s| s.total_cents).sum();
+
+    let result: Vec<CategorySpending> = sums
         .into_iter()
-        .map(|b| CategorySpending {
-            category: b.category,
-            color: b.color,
-            amount_cents: b.total_cents,
-            percentage: b.percentage,
+        .map(|s| CategorySpending {
+            category: s.category_name,
+            color: s.category_color,
+            amount_cents: s.total_cents,
+            percentage: if grand_total != 0 {
+                (s.total_cents as f64 / grand_total as f64) * 100.0
+            } else {
+                0.0
+            },
         })
         .collect();
 
@@ -129,33 +123,16 @@ pub async fn spending_over_time(
     );
     let conn = state.db.get()?;
 
-    let filter = transactions::TransactionFilter {
-        from_date: params.from_date,
-        to_date: params.to_date,
-        ..Default::default()
-    };
+    let rows = transactions::sum_by_date(
+        &conn,
+        params.from_date.as_deref(),
+        params.to_date.as_deref(),
+    )?;
 
-    let transaction_list = transactions::list_transactions(&conn, &filter)?;
-    debug!(
-        transactions = transaction_list.len(),
-        "spending_over_time: loaded transactions"
-    );
-
-    let mut daily_totals: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
-
-    for transaction in &transaction_list {
-        let entry = daily_totals
-            .entry(transaction.transaction.date.clone())
-            .or_insert(0);
-        *entry += transaction.transaction.amount_cents;
-    }
-
-    let mut result: Vec<TimeSeriesPoint> = daily_totals
+    let result: Vec<TimeSeriesPoint> = rows
         .into_iter()
         .map(|(date, amount_cents)| TimeSeriesPoint { date, amount_cents })
         .collect();
-
-    result.sort_by(|a, b| a.date.cmp(&b.date));
 
     if result.is_empty() {
         warn!("spending_over_time: no data points in selected period");
@@ -210,59 +187,29 @@ pub async fn monthly_summary(
     );
     let conn = state.db.get()?;
 
-    let from_date_str = params.from_date.clone();
-    let to_date_str = params.to_date.clone();
+    let income_mode = params.mode.as_deref() == Some("income");
 
-    let filter = transactions::TransactionFilter {
-        from_date: params.from_date,
-        to_date: params.to_date,
-        ..Default::default()
-    };
+    let sums = transactions::sum_by_month(
+        &conn,
+        params.from_date.as_deref(),
+        params.to_date.as_deref(),
+        income_mode,
+    )?;
 
-    let transaction_list = transactions::list_transactions(&conn, &filter)?;
-    debug!(
-        transactions = transaction_list.len(),
-        "monthly_summary: loaded transactions"
-    );
-
+    // Seed all months in the requested date range so gaps show as zero bars.
     let mut monthly_data: std::collections::HashMap<String, (i64, i64)> =
         std::collections::HashMap::new();
 
-    // Seed all months in the requested date range so gaps show as zero bars.
-    if let (Some(from), Some(to)) = (&from_date_str, &to_date_str) {
+    if let (Some(from), Some(to)) = (&params.from_date, &params.to_date) {
         for month in all_months_in_range(from, to) {
             monthly_data.entry(month).or_insert((0, 0));
         }
     }
 
-    let income_mode = params.mode.as_deref() == Some("income");
-
-    for transaction in &transaction_list {
-        let amount = transaction.transaction.amount_cents;
-
-        // In expense mode keep only negatives (negate to positive).
-        // In income mode keep only positives as-is.
-        let filtered = if income_mode {
-            if amount > 0 {
-                amount
-            } else {
-                continue;
-            }
-        } else if amount < 0 {
-            -amount
-        } else {
-            continue;
-        };
-
-        let month = if transaction.transaction.date.len() >= 7 {
-            transaction.transaction.date[..7].to_string()
-        } else {
-            continue;
-        };
-
-        let entry = monthly_data.entry(month).or_insert((0, 0));
-        entry.0 += filtered;
-        entry.1 += 1;
+    for s in sums {
+        let entry = monthly_data.entry(s.month).or_insert((0, 0));
+        entry.0 = s.total_cents;
+        entry.1 = s.count;
     }
 
     let mut result: Vec<MonthlySummary> = monthly_data
@@ -385,30 +332,19 @@ pub async fn spending_by_category_tree(
     );
     let conn = state.db.get()?;
 
-    let filter = transactions::TransactionFilter {
-        from_date: params.from_date,
-        to_date: params.to_date,
-        ..Default::default()
-    };
-
-    let transaction_list = transactions::list_transactions(&conn, &filter)?;
-
-    let actual_from = transaction_list
-        .iter()
-        .map(|t| t.transaction.date.as_str())
-        .min()
-        .map(String::from);
-    let actual_to = transaction_list
-        .iter()
-        .map(|t| t.transaction.date.as_str())
-        .max()
-        .map(String::from);
+    let agg = transactions::sum_by_category_id_with_dates(
+        &conn,
+        params.from_date.as_deref(),
+        params.to_date.as_deref(),
+    )?;
+    let actual_from = agg.min_date;
+    let actual_to = agg.max_date;
 
     let all_categories = state.cached_categories()?;
     debug!(
-        transactions = transaction_list.len(),
+        category_groups = agg.sums.len(),
         categories = all_categories.len(),
-        "spending_by_category_tree: loaded raw data"
+        "spending_by_category_tree: loaded aggregate data"
     );
 
     let income_mode = params.mode.as_deref() == Some("income");
@@ -417,11 +353,11 @@ pub async fn spending_by_category_tree(
     let mut totals_by_id: std::collections::HashMap<i64, i64> = std::collections::HashMap::new();
     let mut uncategorized_total: i64 = 0;
 
-    for transaction in &transaction_list {
-        if let Some(cat_id) = transaction.transaction.category_id {
-            *totals_by_id.entry(cat_id).or_insert(0) += transaction.transaction.amount_cents;
+    for (cat_id, total) in agg.sums {
+        if let Some(id) = cat_id {
+            *totals_by_id.entry(id).or_insert(0) += total;
         } else {
-            uncategorized_total += transaction.transaction.amount_cents;
+            uncategorized_total += total;
         }
     }
 
@@ -699,44 +635,30 @@ pub async fn flow_sankey(
     );
     let conn = state.db.get()?;
 
-    let filter = transactions::TransactionFilter {
-        from_date: params.from_date,
-        to_date: params.to_date,
-        ..Default::default()
-    };
-
-    let transaction_list = transactions::list_transactions(&conn, &filter)?;
-
-    // Derive actual date range from transactions (important for the "All" preset
-    // where the filter dates are 1970–2099).
-    let actual_from = transaction_list
-        .iter()
-        .map(|t| t.transaction.date.as_str())
-        .min()
-        .map(String::from);
-    let actual_to = transaction_list
-        .iter()
-        .map(|t| t.transaction.date.as_str())
-        .max()
-        .map(String::from);
+    let agg = transactions::sum_by_category_id_with_dates(
+        &conn,
+        params.from_date.as_deref(),
+        params.to_date.as_deref(),
+    )?;
 
     let all_categories = state.cached_categories()?;
 
     let cat_map: std::collections::HashMap<i64, &crate::models::category::Category> =
         all_categories.iter().map(|c| (c.id, c)).collect();
 
+    let actual_from = agg.min_date;
+    let actual_to = agg.max_date;
+
     debug!(
-        transactions = transaction_list.len(),
+        category_groups = agg.sums.len(),
         categories = all_categories.len(),
-        "flow_sankey: loaded raw data"
+        "flow_sankey: loaded aggregate data"
     );
 
-    // Sum amount_cents per category
     let mut totals_by_id: std::collections::HashMap<Option<i64>, i64> =
         std::collections::HashMap::new();
-
-    for t in &transaction_list {
-        *totals_by_id.entry(t.transaction.category_id).or_insert(0) += t.transaction.amount_cents;
+    for (cat_id, total) in agg.sums {
+        totals_by_id.insert(cat_id, total);
     }
 
     // Build category hierarchy, excluding Transfers subtree
