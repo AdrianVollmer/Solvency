@@ -5,6 +5,7 @@ use axum::response::{Html, IntoResponse};
 use axum::Form;
 use serde::Deserialize;
 use std::fs;
+use std::path::Path;
 
 use tracing::{info, warn};
 
@@ -125,121 +126,35 @@ pub async fn toggle_theme(
 pub async fn export_database(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
     let conn = state.db.get()?;
 
-    let sql = generate_sql_dump(&conn)?;
+    let temp_path =
+        std::env::temp_dir().join(format!("solvency-backup-{}.db", std::process::id()));
+    let path_str = temp_path.display().to_string().replace('\'', "''");
+
+    // VACUUM INTO creates an atomic, consistent snapshot of the database.
+    conn.execute_batch(&format!("VACUUM INTO '{}'", path_str))?;
+
+    let bytes = fs::read(&temp_path)?;
+    let _ = fs::remove_file(&temp_path);
+
+    info!(size_bytes = bytes.len(), "Database exported");
 
     Ok((
         [
-            (header::CONTENT_TYPE, "application/sql"),
+            (header::CONTENT_TYPE, "application/x-sqlite3"),
             (
                 header::CONTENT_DISPOSITION,
-                "attachment; filename=\"solvency-backup.sql\"",
+                "attachment; filename=\"solvency-backup.db\"",
             ),
         ],
-        sql,
+        bytes,
     ))
-}
-
-fn generate_sql_dump(conn: &rusqlite::Connection) -> AppResult<String> {
-    let mut sql = String::new();
-
-    sql.push_str("-- Solvency Database Backup\n");
-    sql.push_str(&format!(
-        "-- Generated at: {}\n\n",
-        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
-    ));
-
-    // Get all user tables (excluding internal SQLite and migration tables)
-    let mut stmt = conn.prepare(
-        "SELECT name FROM sqlite_master
-         WHERE type='table'
-         AND name NOT LIKE 'sqlite_%'
-         AND name != '_migrations'
-         ORDER BY name",
-    )?;
-
-    let tables: Vec<String> = stmt
-        .query_map([], |row| row.get(0))?
-        .filter_map(|r| r.ok())
-        .collect();
-
-    // For each table, get schema and data
-    for table in &tables {
-        // Get CREATE TABLE statement
-        let create_sql: String = conn.query_row(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
-            [table],
-            |row| row.get(0),
-        )?;
-
-        sql.push_str(&format!("-- Table: {}\n", table));
-        sql.push_str(&format!("DROP TABLE IF EXISTS \"{}\";\n", table));
-        sql.push_str(&format!("{};\n\n", create_sql));
-
-        // Get all rows from the table
-        let row_sql = format!("SELECT * FROM \"{}\"", table);
-        let mut data_stmt = conn.prepare(&row_sql)?;
-        let column_count = data_stmt.column_count();
-        let column_names: Vec<String> = data_stmt
-            .column_names()
-            .iter()
-            .map(|s| format!("\"{}\"", s))
-            .collect();
-
-        let mut rows = data_stmt.query([])?;
-        while let Some(row) = rows.next()? {
-            let mut values: Vec<String> = Vec::with_capacity(column_count);
-            for i in 0..column_count {
-                let value = format_sql_value(row, i);
-                values.push(value);
-            }
-            sql.push_str(&format!(
-                "INSERT INTO \"{}\" ({}) VALUES ({});\n",
-                table,
-                column_names.join(", "),
-                values.join(", ")
-            ));
-        }
-        sql.push('\n');
-    }
-
-    Ok(sql)
-}
-
-fn format_sql_value(row: &rusqlite::Row, idx: usize) -> String {
-    // Try different types in order
-    if let Ok(val) = row.get::<_, Option<i64>>(idx) {
-        match val {
-            Some(v) => v.to_string(),
-            None => "NULL".to_string(),
-        }
-    } else if let Ok(val) = row.get::<_, Option<f64>>(idx) {
-        match val {
-            Some(v) => v.to_string(),
-            None => "NULL".to_string(),
-        }
-    } else if let Ok(val) = row.get::<_, Option<String>>(idx) {
-        match val {
-            Some(v) => format!("'{}'", v.replace('\'', "''")),
-            None => "NULL".to_string(),
-        }
-    } else if let Ok(val) = row.get::<_, Option<Vec<u8>>>(idx) {
-        match val {
-            Some(v) => {
-                let hex_str: String = v.iter().map(|b| format!("{:02x}", b)).collect();
-                format!("X'{}'", hex_str)
-            }
-            None => "NULL".to_string(),
-        }
-    } else {
-        "NULL".to_string()
-    }
 }
 
 pub async fn import_database(
     State(state): State<AppState>,
     mut multipart: Multipart,
 ) -> AppResult<Html<String>> {
-    let mut sql_content = String::new();
+    let mut file_bytes = Vec::new();
 
     while let Some(field) = multipart
         .next_field()
@@ -247,28 +162,53 @@ pub async fn import_database(
         .map_err(|e| AppError::Internal(format!("Failed to read upload: {}", e)))?
     {
         if field.name() == Some("file") {
-            let bytes = field
+            file_bytes = field
                 .bytes()
                 .await
-                .map_err(|e| AppError::Internal(format!("Failed to read file: {}", e)))?;
-            sql_content = String::from_utf8(bytes.to_vec())
-                .map_err(|e| AppError::Validation(format!("Invalid UTF-8 in SQL file: {}", e)))?;
+                .map_err(|e| AppError::Internal(format!("Failed to read file: {}", e)))?
+                .to_vec();
             break;
         }
     }
 
-    if sql_content.is_empty() {
-        return Err(AppError::Validation("No SQL file uploaded".to_string()));
+    if file_bytes.is_empty() {
+        return Err(AppError::Validation("No file uploaded".to_string()));
     }
 
-    // Execute the SQL statements
     let conn = state.db.get()?;
-    conn.execute_batch(&sql_content)?;
 
-    info!(
-        size_bytes = sql_content.len(),
-        "Database imported from SQL file"
-    );
+    // Detect format: SQLite binary (.db) vs SQL text (.sql)
+    let is_sqlite = file_bytes.len() >= 16 && file_bytes[..16] == *b"SQLite format 3\0";
+
+    if is_sqlite {
+        let temp_path =
+            std::env::temp_dir().join(format!("solvency-import-{}.db", std::process::id()));
+        fs::write(&temp_path, &file_bytes)?;
+
+        let result = restore_from_db_file(&conn, &temp_path);
+        let _ = fs::remove_file(&temp_path);
+        result?;
+
+        info!(
+            size_bytes = file_bytes.len(),
+            "Database restored from .db backup"
+        );
+    } else {
+        // Legacy SQL import
+        let sql_content = String::from_utf8(file_bytes)
+            .map_err(|e| AppError::Validation(format!("Invalid file: {}", e)))?;
+        conn.execute_batch("PRAGMA foreign_keys = OFF")?;
+        let result = conn.execute_batch(&sql_content);
+        let _ = conn.execute_batch("PRAGMA foreign_keys = ON");
+        result?;
+
+        info!(
+            size_bytes = sql_content.len(),
+            "Database imported from SQL file"
+        );
+    }
+
+    state.cache.invalidate();
 
     let template = SettingsSavedTemplate {
         icons: crate::filters::Icons,
@@ -276,6 +216,78 @@ pub async fn import_database(
     };
 
     template.render_html()
+}
+
+/// Restore the live database from an uploaded .db file using ATTACH + copy.
+fn restore_from_db_file(conn: &rusqlite::Connection, src_path: &Path) -> AppResult<()> {
+    let path_str = src_path.display().to_string().replace('\'', "''");
+    conn.execute_batch(&format!("ATTACH DATABASE '{}' AS src", path_str))?;
+
+    let result = (|| -> AppResult<()> {
+        // Read source schema
+        let mut stmt = conn.prepare(
+            "SELECT name, sql FROM src.sqlite_master \
+             WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND sql IS NOT NULL",
+        )?;
+        let tables: Vec<(String, String)> = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+            .collect::<Result<_, _>>()?;
+        drop(stmt);
+
+        let mut stmt = conn.prepare(
+            "SELECT sql FROM src.sqlite_master \
+             WHERE type IN ('index', 'trigger') \
+             AND name NOT LIKE 'sqlite_%' AND sql IS NOT NULL",
+        )?;
+        let extra_objects: Vec<String> = stmt
+            .query_map([], |row| row.get(0))?
+            .collect::<Result<_, _>>()?;
+        drop(stmt);
+
+        // Get existing tables to drop
+        let mut stmt = conn.prepare(
+            "SELECT name FROM main.sqlite_master \
+             WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+        )?;
+        let existing: Vec<String> = stmt
+            .query_map([], |row| row.get(0))?
+            .collect::<Result<_, _>>()?;
+        drop(stmt);
+
+        // Disable FK checks (must be outside transaction)
+        conn.execute_batch("PRAGMA foreign_keys = OFF")?;
+
+        conn.execute_batch("BEGIN")?;
+
+        for name in &existing {
+            conn.execute_batch(&format!("DROP TABLE IF EXISTS main.\"{}\"", name))?;
+        }
+        for (_, create_sql) in &tables {
+            conn.execute_batch(create_sql)?;
+        }
+        for (name, _) in &tables {
+            conn.execute_batch(&format!(
+                "INSERT INTO main.\"{}\" SELECT * FROM src.\"{}\"",
+                name, name
+            ))?;
+        }
+        for obj_sql in &extra_objects {
+            conn.execute_batch(obj_sql)?;
+        }
+
+        conn.execute_batch("COMMIT")?;
+        Ok(())
+    })();
+
+    if result.is_err() {
+        let _ = conn.execute_batch("ROLLBACK");
+    }
+
+    // Always restore FK checks and detach
+    let _ = conn.execute_batch("PRAGMA foreign_keys = ON");
+    let _ = conn.execute_batch("DETACH DATABASE src");
+
+    result
 }
 
 pub async fn clear_database(State(state): State<AppState>) -> AppResult<Html<String>> {

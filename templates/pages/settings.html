@@ -98,7 +98,7 @@
 
         <div class="border-t border-neutral-200 dark:border-neutral-700 pt-6">
             <h3 class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">Export</h3>
-            <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">Download a full backup of your database as SQL.</p>
+            <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">Download a full backup of your database.</p>
             <a href="/settings/export-database" class="btn btn-secondary">
                 Download Backup
             </a>
@@ -107,11 +107,11 @@
         <div class="border-t border-neutral-200 dark:border-neutral-700 pt-6">
             <h3 class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">Import</h3>
             <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                Restore from a SQL backup file. <strong class="text-red-600 dark:text-red-400">Warning:</strong> This will overwrite all existing data.
+                Restore from a backup file. <strong class="text-red-600 dark:text-red-400">Warning:</strong> This will overwrite all existing data.
             </p>
             <form hx-post="/settings/import-database" hx-target="#import-message" hx-swap="innerHTML" hx-encoding="multipart/form-data" hx-disabled-elt="find button[type='submit']">
                 <div class="flex items-center gap-4">
-                    <input type="file" name="file" accept=".sql" required
+                    <input type="file" name="file" accept=".db,.sql" required
                         class="text-sm text-neutral-600 dark:text-neutral-400
                             file:mr-4 file:py-2 file:px-4
                             file:rounded-lg file:border-0
