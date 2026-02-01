@@ -248,12 +248,10 @@ pub async fn monthly_summary(
             } else {
                 continue;
             }
+        } else if amount < 0 {
+            -amount
         } else {
-            if amount < 0 {
-                -amount
-            } else {
-                continue;
-            }
+            continue;
         };
 
         let month = if transaction.transaction.date.len() >= 7 {
