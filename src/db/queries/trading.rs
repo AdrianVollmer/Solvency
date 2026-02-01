@@ -8,14 +8,35 @@ use rusqlite::{params, Connection, OptionalExtension};
 use std::collections::HashMap;
 use tracing::{debug, info};
 
-/// Raw activity row for position calculations: (symbol, activity_type, quantity, unit_price_cents, fee_cents, currency)
-type ActivityRow = (String, String, Option<f64>, Option<i64>, i64, String);
+struct ActivityRow {
+    symbol: String,
+    activity_type: String,
+    quantity: Option<f64>,
+    unit_price_cents: Option<i64>,
+    _fee_cents: i64,
+    currency: String,
+}
 
-/// Raw activity row for closed position calculations: (symbol, activity_type, quantity, unit_price_cents, currency, date)
-type ClosedPositionActivityRow = (String, String, Option<f64>, Option<i64>, String, String);
+struct ClosedPositionActivityRow {
+    symbol: String,
+    activity_type: String,
+    quantity: Option<f64>,
+    unit_price_cents: Option<i64>,
+    currency: String,
+    date: String,
+}
 
-/// Accumulator for position tracking: (quantity, total_cost, total_proceeds, total_fees, total_taxes, total_dividends, currency, first_date, last_date)
-type PositionAccumulator = (f64, i64, i64, i64, i64, i64, String, String, String);
+struct PositionAccumulator {
+    quantity: f64,
+    total_cost: i64,
+    total_proceeds: i64,
+    total_fees: i64,
+    total_taxes: i64,
+    total_dividends: i64,
+    currency: String,
+    first_date: String,
+    last_date: String,
+}
 
 fn trading_activity_from_row(row: &rusqlite::Row) -> rusqlite::Result<TradingActivity> {
     let activity_type_str: String = row.get(4)?;
@@ -229,17 +250,16 @@ pub fn delete_all_activities(conn: &Connection) -> rusqlite::Result<usize> {
 fn calculate_positions_from_activities(activities: Vec<ActivityRow>) -> Vec<Position> {
     let mut positions_map: HashMap<String, (f64, i64, String)> = HashMap::new();
 
-    for (symbol, activity_type_str, quantity, unit_price_cents, _fee_cents, currency) in activities
-    {
-        let activity_type: TradingActivityType = activity_type_str
+    for row in activities {
+        let activity_type: TradingActivityType = row.activity_type
             .parse()
             .unwrap_or(TradingActivityType::Buy);
-        let qty = quantity.unwrap_or(0.0);
-        let price = unit_price_cents.unwrap_or(0);
+        let qty = row.quantity.unwrap_or(0.0);
+        let price = row.unit_price_cents.unwrap_or(0);
 
         let entry = positions_map
-            .entry(symbol.clone())
-            .or_insert((0.0, 0, currency));
+            .entry(row.symbol.clone())
+            .or_insert((0.0, 0, row.currency));
 
         match activity_type {
             TradingActivityType::Buy => {
@@ -306,14 +326,14 @@ pub fn get_positions(conn: &Connection) -> rusqlite::Result<Vec<Position>> {
 
     let activities: Vec<ActivityRow> = stmt
         .query_map([], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-                row.get(5)?,
-            ))
+            Ok(ActivityRow {
+                symbol: row.get(0)?,
+                activity_type: row.get(1)?,
+                quantity: row.get(2)?,
+                unit_price_cents: row.get(3)?,
+                _fee_cents: row.get(4)?,
+                currency: row.get(5)?,
+            })
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -333,14 +353,14 @@ pub fn get_positions_for_account(
 
     let activities: Vec<ActivityRow> = stmt
         .query_map([account_id], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-                row.get(5)?,
-            ))
+            Ok(ActivityRow {
+                symbol: row.get(0)?,
+                activity_type: row.get(1)?,
+                quantity: row.get(2)?,
+                unit_price_cents: row.get(3)?,
+                _fee_cents: row.get(4)?,
+                currency: row.get(5)?,
+            })
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -357,14 +377,14 @@ pub fn get_positions_without_account(conn: &Connection) -> rusqlite::Result<Vec<
 
     let activities: Vec<ActivityRow> = stmt
         .query_map([], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-                row.get(5)?,
-            ))
+            Ok(ActivityRow {
+                symbol: row.get(0)?,
+                activity_type: row.get(1)?,
+                quantity: row.get(2)?,
+                unit_price_cents: row.get(3)?,
+                _fee_cents: row.get(4)?,
+                currency: row.get(5)?,
+            })
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -382,57 +402,56 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
 
     let activities: Vec<ClosedPositionActivityRow> = stmt
         .query_map([], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-                row.get(5)?,
-            ))
+            Ok(ClosedPositionActivityRow {
+                symbol: row.get(0)?,
+                activity_type: row.get(1)?,
+                quantity: row.get(2)?,
+                unit_price_cents: row.get(3)?,
+                currency: row.get(4)?,
+                date: row.get(5)?,
+            })
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
     // Calculate positions by symbol, tracking cost, proceeds, fees, taxes, dividends, and dates
-    // (quantity, total_cost, total_proceeds, total_fees, total_taxes, total_dividends, currency, first_date, last_date)
     let mut positions_map: HashMap<String, PositionAccumulator> = HashMap::new();
 
-    for (symbol, activity_type_str, quantity, unit_price_cents, currency, date) in activities {
-        let activity_type: TradingActivityType = activity_type_str
+    for row in activities {
+        let activity_type: TradingActivityType = row.activity_type
             .parse()
             .unwrap_or(TradingActivityType::Buy);
-        let qty = quantity.unwrap_or(0.0);
-        let price = unit_price_cents.unwrap_or(0);
+        let qty = row.quantity.unwrap_or(0.0);
+        let price = row.unit_price_cents.unwrap_or(0);
 
-        let entry = positions_map.entry(symbol.clone()).or_insert((
-            0.0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            currency,
-            date.clone(),
-            date.clone(),
-        ));
+        let entry = positions_map.entry(row.symbol.clone()).or_insert(PositionAccumulator {
+            quantity: 0.0,
+            total_cost: 0,
+            total_proceeds: 0,
+            total_fees: 0,
+            total_taxes: 0,
+            total_dividends: 0,
+            currency: row.currency,
+            first_date: row.date.clone(),
+            last_date: row.date.clone(),
+        });
 
         // Update last activity date
-        if date > entry.8 {
-            entry.8 = date.clone();
+        if row.date > entry.last_date {
+            entry.last_date = row.date.clone();
         }
 
         match activity_type {
             TradingActivityType::Buy => {
                 let cost = (qty * price as f64).round() as i64;
-                entry.0 += qty;
-                entry.1 += cost;
+                entry.quantity += qty;
+                entry.total_cost += cost;
             }
             TradingActivityType::Sell => {
                 let proceeds = (qty * price as f64).round() as i64;
-                entry.0 -= qty;
-                entry.2 += proceeds;
-                if entry.0 < 0.0 {
-                    entry.0 = 0.0;
+                entry.quantity -= qty;
+                entry.total_proceeds += proceeds;
+                if entry.quantity < 0.0 {
+                    entry.quantity = 0.0;
                 }
             }
             TradingActivityType::Split => {
@@ -441,15 +460,15 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
             }
             TradingActivityType::Fee => {
                 // Fee amount is stored in unit_price_cents
-                entry.3 += price;
+                entry.total_fees += price;
             }
             TradingActivityType::Tax => {
                 // Tax amount is stored in unit_price_cents
-                entry.4 += price;
+                entry.total_taxes += price;
             }
             TradingActivityType::Dividend => {
                 // Dividend amount is stored in unit_price_cents
-                entry.5 += price;
+                entry.total_dividends += price;
             }
         }
     }
@@ -457,38 +476,23 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
     // Convert to ClosedPosition structs, filtering to only zero positions
     let mut closed_positions: Vec<ClosedPosition> = positions_map
         .into_iter()
-        .filter(|(_, (qty, _, _, _, _, _, _, _, _))| *qty == 0.0)
-        .map(
-            |(
+        .filter(|(_, acc)| acc.quantity == 0.0)
+        .map(|(symbol, acc)| {
+            // Net realized gain/loss = proceeds - cost + dividends - fees - taxes
+            let realized_gain_loss_cents = acc.total_proceeds - acc.total_cost
+                + acc.total_dividends
+                - acc.total_fees
+                - acc.total_taxes;
+            ClosedPosition {
                 symbol,
-                (
-                    _,
-                    total_cost_cents,
-                    total_proceeds_cents,
-                    total_fees_cents,
-                    total_taxes_cents,
-                    total_dividends_cents,
-                    currency,
-                    first_date,
-                    last_date,
-                ),
-            )| {
-                // Net realized gain/loss = proceeds - cost + dividends - fees - taxes
-                let realized_gain_loss_cents = total_proceeds_cents - total_cost_cents
-                    + total_dividends_cents
-                    - total_fees_cents
-                    - total_taxes_cents;
-                ClosedPosition {
-                    symbol,
-                    total_cost_cents,
-                    total_proceeds_cents,
-                    realized_gain_loss_cents,
-                    currency,
-                    first_activity_date: first_date,
-                    last_activity_date: last_date,
-                }
-            },
-        )
+                total_cost_cents: acc.total_cost,
+                total_proceeds_cents: acc.total_proceeds,
+                realized_gain_loss_cents,
+                currency: acc.currency,
+                first_activity_date: acc.first_date,
+                last_activity_date: acc.last_date,
+            }
+        })
         .collect();
 
     // Sort alphabetically by symbol
