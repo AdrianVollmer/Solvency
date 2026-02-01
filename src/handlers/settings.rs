@@ -96,13 +96,16 @@ pub async fn update(
     State(state): State<AppState>,
     Form(form): Form<SettingsFormData>,
 ) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
+    let tx = conn.transaction()?;
 
-    settings::set_setting(&conn, "theme", &form.theme)?;
-    settings::set_setting(&conn, "currency", &form.currency)?;
-    settings::set_setting(&conn, "date_format", &form.date_format)?;
-    settings::set_setting(&conn, "page_size", &form.page_size)?;
-    settings::set_setting(&conn, "locale", &form.locale)?;
+    settings::set_setting(&tx, "theme", &form.theme)?;
+    settings::set_setting(&tx, "currency", &form.currency)?;
+    settings::set_setting(&tx, "date_format", &form.date_format)?;
+    settings::set_setting(&tx, "page_size", &form.page_size)?;
+    settings::set_setting(&tx, "locale", &form.locale)?;
+
+    tx.commit()?;
 
     let template = SettingsSavedTemplate {
         icons: crate::filters::Icons,
@@ -242,24 +245,28 @@ fn restore_from_db_file(
 
 pub async fn clear_database(State(state): State<AppState>) -> AppResult<Html<String>> {
     warn!("Clearing entire database");
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
+    let tx = conn.transaction()?;
 
-    let mut stmt = conn.prepare(
-        "SELECT name FROM sqlite_master
-         WHERE type='table'
-         AND name NOT LIKE 'sqlite_%'
-         AND name != '_migrations'
-         ORDER BY name",
-    )?;
-
-    let tables: Vec<String> = stmt
-        .query_map([], |row| row.get(0))?
-        .collect::<Result<Vec<_>, _>>()?;
+    let tables: Vec<String> = {
+        let mut stmt = tx.prepare(
+            "SELECT name FROM sqlite_master
+             WHERE type='table'
+             AND name NOT LIKE 'sqlite_%'
+             AND name != '_migrations'
+             ORDER BY name",
+        )?;
+        let rows = stmt
+            .query_map([], |row| row.get(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+        rows
+    };
 
     for table in &tables {
-        conn.execute(&format!("DELETE FROM \"{}\"", table), [])?;
+        tx.execute(&format!("DELETE FROM \"{}\"", table), [])?;
     }
 
+    tx.commit()?;
     warn!(tables_cleared = tables.len(), "Database cleared");
 
     Ok(Html(String::new()))

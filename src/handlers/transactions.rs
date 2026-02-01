@@ -616,12 +616,14 @@ pub async fn create(
     Form(form): Form<TransactionFormData>,
 ) -> AppResult<Redirect> {
     debug!(description = %form.description, amount = %form.amount, "Creating transaction");
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
+    let tx = conn.transaction()?;
 
     let new_transaction = form.to_new_transaction()?;
-    let id = transactions::create_transaction(&conn, &new_transaction)?;
+    let id = transactions::create_transaction(&tx, &new_transaction)?;
     info!(transaction_id = id, "Transaction created via web form");
 
+    tx.commit()?;
     Ok(Redirect::to("/transactions"))
 }
 
@@ -631,12 +633,14 @@ pub async fn update(
     Form(form): Form<TransactionFormData>,
 ) -> AppResult<Redirect> {
     debug!(transaction_id = id, "Updating transaction");
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
+    let tx = conn.transaction()?;
 
     let new_transaction = form.to_new_transaction()?;
-    transactions::update_transaction(&conn, id, &new_transaction)?;
+    transactions::update_transaction(&tx, id, &new_transaction)?;
     info!(transaction_id = id, "Transaction updated via web form");
 
+    tx.commit()?;
     Ok(Redirect::to(&format!("/transactions/{}", id)))
 }
 
@@ -651,10 +655,12 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 
 pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>> {
     warn!("Deleting all transactions");
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
+    let tx = conn.transaction()?;
 
-    transactions::delete_all_transactions(&conn)?;
+    transactions::delete_all_transactions(&tx)?;
 
+    tx.commit()?;
     Ok(Html(String::new()))
 }
 

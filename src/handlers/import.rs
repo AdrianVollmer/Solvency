@@ -563,7 +563,7 @@ fn apply_rules_to_import_rows(conn: &rusqlite::Connection, session_id: &str) {
 async fn import_rows_background(state: AppState, session_id: String) {
     debug!(session_id = %session_id, "Starting background import");
 
-    let conn = match state.db.get() {
+    let mut conn = match state.db.get() {
         Ok(c) => c,
         Err(e) => {
             tracing::error!(session_id = %session_id, error = %e, "Failed to get database connection");
@@ -583,8 +583,32 @@ async fn import_rows_background(state: AppState, session_id: String) {
 
     let mut error_count = 0;
     let mut errors: Vec<String> = Vec::new();
+    const BATCH_SIZE: usize = 100;
 
-    for row in pending_rows {
+    let mut tx = match conn.transaction() {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::error!(session_id = %session_id, error = %e, "Failed to start transaction");
+            return;
+        }
+    };
+
+    for (i, row) in pending_rows.into_iter().enumerate() {
+        // Commit in batches for performance while keeping progress visible
+        if i > 0 && i % BATCH_SIZE == 0 {
+            if let Err(e) = tx.commit() {
+                tracing::error!(session_id = %session_id, error = %e, "Failed to commit batch");
+                return;
+            }
+            tx = match conn.transaction() {
+                Ok(t) => t,
+                Err(e) => {
+                    tracing::error!(session_id = %session_id, error = %e, "Failed to start transaction");
+                    return;
+                }
+            };
+        }
+
         let amount: f64 = match row.data.amount.parse() {
             Ok(a) => a,
             Err(_) => {
@@ -594,9 +618,9 @@ async fn import_rows_background(state: AppState, session_id: String) {
                     row.row_index + 1,
                     row.data.amount
                 ));
-                let _ = import::mark_row_error(&conn, row.id, "Invalid amount");
-                let _ = import::increment_session_processed(&conn, &session_id);
-                let _ = import::increment_session_error_count(&conn, &session_id);
+                let _ = import::mark_row_error(&tx, row.id, "Invalid amount");
+                let _ = import::increment_session_processed(&tx, &session_id);
+                let _ = import::increment_session_error_count(&tx, &session_id);
                 continue;
             }
         };
@@ -611,7 +635,7 @@ async fn import_rows_background(state: AppState, session_id: String) {
                 if name.is_empty() {
                     return None;
                 }
-                tags::create_or_get_tag(&conn, name).ok().map(|t| t.id)
+                tags::create_or_get_tag(&tx, name).ok().map(|t| t.id)
             })
             .collect();
 
@@ -635,19 +659,25 @@ async fn import_rows_background(state: AppState, session_id: String) {
             customer_reference: row.data.customer_reference.clone(),
         };
 
-        match transactions::create_transaction(&conn, &new_transaction) {
+        match transactions::create_transaction(&tx, &new_transaction) {
             Ok(_) => {
-                let _ = import::mark_row_imported(&conn, row.id);
+                let _ = import::mark_row_imported(&tx, row.id);
             }
             Err(e) => {
                 error_count += 1;
                 errors.push(format!("Row {}: {}", row.row_index + 1, e));
-                let _ = import::mark_row_error(&conn, row.id, &e.to_string());
-                let _ = import::increment_session_error_count(&conn, &session_id);
+                let _ = import::mark_row_error(&tx, row.id, &e.to_string());
+                let _ = import::increment_session_error_count(&tx, &session_id);
             }
         }
 
-        let _ = import::increment_session_processed(&conn, &session_id);
+        let _ = import::increment_session_processed(&tx, &session_id);
+    }
+
+    // Commit final batch
+    if let Err(e) = tx.commit() {
+        tracing::error!(session_id = %session_id, error = %e, "Failed to commit final batch");
+        return;
     }
 
     // Finalize
