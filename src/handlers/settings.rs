@@ -177,36 +177,27 @@ pub async fn import_database(
 
     let conn = state.db.get()?;
 
-    // Detect format: SQLite binary (.db) vs SQL text (.sql)
+    // Only accept SQLite binary files
     let is_sqlite = file_bytes.len() >= 16 && file_bytes[..16] == *b"SQLite format 3\0";
 
-    if is_sqlite {
-        let temp_path =
-            std::env::temp_dir().join(format!("solvency-import-{}.db", std::process::id()));
-        fs::write(&temp_path, &file_bytes)?;
-
-        let result = restore_from_db_file(&conn, &temp_path);
-        let _ = fs::remove_file(&temp_path);
-        result?;
-
-        info!(
-            size_bytes = file_bytes.len(),
-            "Database restored from .db backup"
-        );
-    } else {
-        // Legacy SQL import
-        let sql_content = String::from_utf8(file_bytes)
-            .map_err(|e| AppError::Validation(format!("Invalid file: {}", e)))?;
-        conn.execute_batch("PRAGMA foreign_keys = OFF")?;
-        let result = conn.execute_batch(&sql_content);
-        let _ = conn.execute_batch("PRAGMA foreign_keys = ON");
-        result?;
-
-        info!(
-            size_bytes = sql_content.len(),
-            "Database imported from SQL file"
-        );
+    if !is_sqlite {
+        return Err(AppError::Validation(
+            "Invalid file format. Please upload a .db SQLite backup file.".to_string(),
+        ));
     }
+
+    let temp_path =
+        std::env::temp_dir().join(format!("solvency-import-{}.db", std::process::id()));
+    fs::write(&temp_path, &file_bytes)?;
+
+    let result = restore_from_db_file(&conn, &temp_path);
+    let _ = fs::remove_file(&temp_path);
+    result?;
+
+    info!(
+        size_bytes = file_bytes.len(),
+        "Database restored from .db backup"
+    );
 
     state.cache.invalidate();
 
@@ -218,61 +209,52 @@ pub async fn import_database(
     template.render_html()
 }
 
-/// Restore the live database from an uploaded .db file using ATTACH + copy.
+/// Restore the live database from an uploaded .db file using ATTACH + data copy.
+///
+/// Only copies data into tables that already exist in the main schema (from
+/// migrations). No SQL from the uploaded file's `sqlite_master` is executed --
+/// schema objects (CREATE TABLE, triggers, indexes) come exclusively from the
+/// application's own migrations.
 fn restore_from_db_file(conn: &rusqlite::Connection, src_path: &Path) -> AppResult<()> {
     let path_str = src_path.display().to_string().replace('\'', "''");
     conn.execute_batch(&format!("ATTACH DATABASE '{}' AS src", path_str))?;
 
     let result = (|| -> AppResult<()> {
-        // Read source schema
-        let mut stmt = conn.prepare(
-            "SELECT name, sql FROM src.sqlite_master \
-             WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND sql IS NOT NULL",
-        )?;
-        let tables: Vec<(String, String)> = stmt
-            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
-            .collect::<Result<_, _>>()?;
-        drop(stmt);
-
-        let mut stmt = conn.prepare(
-            "SELECT sql FROM src.sqlite_master \
-             WHERE type IN ('index', 'trigger') \
-             AND name NOT LIKE 'sqlite_%' AND sql IS NOT NULL",
-        )?;
-        let extra_objects: Vec<String> = stmt
-            .query_map([], |row| row.get(0))?
-            .collect::<Result<_, _>>()?;
-        drop(stmt);
-
-        // Get existing tables to drop
+        // Get tables from the MAIN schema (our trusted migration-managed schema)
         let mut stmt = conn.prepare(
             "SELECT name FROM main.sqlite_master \
-             WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+             WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != '_migrations'",
         )?;
-        let existing: Vec<String> = stmt
+        let main_tables: Vec<String> = stmt
             .query_map([], |row| row.get(0))?
             .collect::<Result<_, _>>()?;
         drop(stmt);
 
-        // Disable FK checks (must be outside transaction)
-        conn.execute_batch("PRAGMA foreign_keys = OFF")?;
+        // Get tables present in the source database
+        let mut stmt = conn.prepare(
+            "SELECT name FROM src.sqlite_master \
+             WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+        )?;
+        let src_tables: std::collections::HashSet<String> = stmt
+            .query_map([], |row| row.get(0))?
+            .collect::<Result<_, _>>()?;
+        drop(stmt);
 
+        conn.execute_batch("PRAGMA foreign_keys = OFF")?;
         conn.execute_batch("BEGIN")?;
 
-        for name in &existing {
-            conn.execute_batch(&format!("DROP TABLE IF EXISTS main.\"{}\"", name))?;
-        }
-        for (_, create_sql) in &tables {
-            conn.execute_batch(create_sql)?;
-        }
-        for (name, _) in &tables {
+        // For each table in our schema that also exists in the source, clear
+        // and copy data.  We never execute CREATE TABLE / trigger / index SQL
+        // from the uploaded file.
+        for name in &main_tables {
+            if !src_tables.contains(name) {
+                continue;
+            }
+            conn.execute_batch(&format!("DELETE FROM main.\"{}\"", name))?;
             conn.execute_batch(&format!(
                 "INSERT INTO main.\"{}\" SELECT * FROM src.\"{}\"",
                 name, name
             ))?;
-        }
-        for obj_sql in &extra_objects {
-            conn.execute_batch(obj_sql)?;
         }
 
         conn.execute_batch("COMMIT")?;
@@ -283,7 +265,6 @@ fn restore_from_db_file(conn: &rusqlite::Connection, src_path: &Path) -> AppResu
         let _ = conn.execute_batch("ROLLBACK");
     }
 
-    // Always restore FK checks and detach
     let _ = conn.execute_batch("PRAGMA foreign_keys = ON");
     let _ = conn.execute_batch("DETACH DATABASE src");
 
