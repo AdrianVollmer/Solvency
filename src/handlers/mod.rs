@@ -33,6 +33,10 @@ pub fn routes() -> Router<AppState> {
             "/spending/monthly-transactions",
             get(spending::monthly_transactions),
         )
+        .route(
+            "/spending/category-transactions",
+            get(spending::category_transactions),
+        )
         .route("/transactions", get(transactions::index))
         .route("/import", get(import::index))
         .route("/settings", get(settings::index))

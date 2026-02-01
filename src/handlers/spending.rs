@@ -150,6 +150,98 @@ pub async fn monthly_transactions(
     template.render_html()
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CategoryTransactionsParams {
+    pub category_id: Option<i64>,
+    pub include_children: Option<bool>,
+    pub uncategorized: Option<bool>,
+    pub from_date: Option<String>,
+    pub to_date: Option<String>,
+}
+
+pub async fn category_transactions(
+    State(state): State<AppState>,
+    Query(params): Query<CategoryTransactionsParams>,
+) -> AppResult<Html<String>> {
+    let conn = state.db.get()?;
+    let app_settings = state.load_settings()?;
+
+    let mut filter = transactions::TransactionFilter {
+        from_date: params.from_date.clone(),
+        to_date: params.to_date.clone(),
+        sort_sql: Some("ABS(e.amount_cents) DESC".to_string()),
+        limit: Some(20),
+        ..Default::default()
+    };
+
+    let (title, subtitle) = if params.uncategorized == Some(true) {
+        filter.uncategorized_only = true;
+        ("Category Transactions".to_string(), "Uncategorized".to_string())
+    } else if let Some(cat_id) = params.category_id {
+        let categories = state.cached_categories()?;
+        let cat_name = categories
+            .iter()
+            .find(|c| c.id == cat_id)
+            .map(|c| c.name.clone())
+            .unwrap_or_else(|| format!("Category {}", cat_id));
+
+        if params.include_children == Some(true) {
+            let ids = collect_descendant_ids(&categories, cat_id);
+            filter.category_ids = ids;
+        } else {
+            filter.category_ids = vec![cat_id];
+        }
+
+        ("Category Transactions".to_string(), cat_name)
+    } else {
+        return Err(crate::error::AppError::Validation(
+            "category_id or uncategorized required".to_string(),
+        ));
+    };
+
+    let total_count = transactions::count_transactions(&conn, &filter)?;
+    let transaction_list = transactions::list_transactions(&conn, &filter)?;
+
+    let mut view_all_url = "/transactions?".to_string();
+    if let Some(cat_id) = params.category_id {
+        view_all_url.push_str(&format!("category_id={}", cat_id));
+    }
+    if let Some(ref from) = params.from_date {
+        view_all_url.push_str(&format!("&from_date={}", from));
+    }
+    if let Some(ref to) = params.to_date {
+        view_all_url.push_str(&format!("&to_date={}", to));
+    }
+
+    let template = TransactionPreviewTemplate {
+        settings: app_settings,
+        icons: crate::filters::Icons,
+        title,
+        subtitle,
+        transactions: transaction_list,
+        count: total_count as usize,
+        view_all_url,
+    };
+
+    template.render_html()
+}
+
+/// Collect a category and all its descendants from a flat list.
+fn collect_descendant_ids(categories: &[crate::models::category::Category], parent_id: i64) -> Vec<i64> {
+    let mut result = vec![parent_id];
+    let mut i = 0;
+    while i < result.len() {
+        let current = result[i];
+        for cat in categories {
+            if cat.parent_id == Some(current) && !result.contains(&cat.id) {
+                result.push(cat.id);
+            }
+        }
+        i += 1;
+    }
+    result
+}
+
 /// Parse a month string into (from_date, to_date, display_label).
 /// Accepts "2024-01" (ISO) or "Jan 2024" / "January 2024" (chart label) formats.
 fn parse_month_range(month: &str) -> AppResult<(String, String, String)> {

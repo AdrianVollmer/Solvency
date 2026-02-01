@@ -3,6 +3,7 @@ declare const echarts: any;
 interface CategoryTreeNode {
   name: string;
   color: string;
+  id?: number;
   amount_cents?: number;
   children: CategoryTreeNode[];
 }
@@ -43,6 +44,7 @@ interface MonthlyByCategoryResponse {
 
 let activeChart: any = null;
 let activeMonth: string | null = null;
+let activeCategory: number | null = null;
 
 function showEmptyState(container: HTMLElement): void {
   if (activeChart) {
@@ -81,12 +83,14 @@ function mapTreeToSunburst(nodes: CategoryTreeNode[]): any[] {
     if (node.children.length > 0) {
       return {
         name: node.name,
+        categoryId: node.id,
         itemStyle: { color: node.color },
         children: mapTreeToSunburst(node.children),
       };
     }
     return {
       name: node.name,
+      categoryId: node.id,
       value: (node.amount_cents || 0) / 100,
       itemStyle: { color: node.color },
     };
@@ -122,9 +126,107 @@ function buildSunburstLevels(maxDepth: number): any[] {
   return levels;
 }
 
+function collapseCategoryTransactions(): void {
+  const container = document.getElementById("category-transactions");
+  if (!container) return;
+  container.style.maxHeight = "0";
+  container.style.opacity = "0";
+  activeCategory = null;
+}
+
+function setupCategoryShiftClick(
+  fromDate?: string,
+  toDate?: string,
+): void {
+  if (!activeChart) return;
+
+  activeChart.on("click", (params: any) => {
+    if (!params.event?.event?.shiftKey) return;
+
+    const categoryId: number | undefined = params.data?.categoryId;
+    const hasChildren = params.data?.children?.length > 0;
+    const isUncategorized = params.name === "Uncategorized" && categoryId == null;
+
+    const container = document.getElementById("category-transactions");
+    if (!container) return;
+
+    // Build a key for toggle detection
+    const clickKey = isUncategorized ? -1 : (categoryId ?? -2);
+
+    // Clicking the same category again collapses the panel
+    if (clickKey === activeCategory) {
+      collapseCategoryTransactions();
+      return;
+    }
+
+    const url = new URL(
+      "/spending/category-transactions",
+      window.location.origin,
+    );
+
+    if (isUncategorized) {
+      url.searchParams.set("uncategorized", "true");
+    } else if (categoryId != null) {
+      url.searchParams.set("category_id", String(categoryId));
+      url.searchParams.set("include_children", String(hasChildren));
+    } else {
+      return;
+    }
+
+    if (fromDate) url.searchParams.set("from_date", fromDate);
+    if (toDate) url.searchParams.set("to_date", toDate);
+
+    // If replacing content, snap to 0 first to re-trigger transition
+    if (activeCategory !== null) {
+      container.style.transition = "none";
+      container.style.maxHeight = "0";
+      container.style.opacity = "0";
+      void container.offsetHeight;
+      container.style.transition = "";
+    }
+
+    fetch(url.toString())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch transactions");
+        return res.text();
+      })
+      .then((html) => {
+        container.innerHTML = html;
+        activeCategory = clickKey;
+
+        requestAnimationFrame(() => {
+          container.style.maxHeight = container.scrollHeight + "px";
+          container.style.opacity = "1";
+
+          const closeBtn = container.querySelector(".preview-close-btn");
+          if (closeBtn) {
+            closeBtn.addEventListener(
+              "click",
+              collapseCategoryTransactions,
+            );
+          }
+        });
+
+        const savedKey = clickKey;
+        const onTransitionEnd = () => {
+          if (activeCategory === savedKey) {
+            container.style.maxHeight = "none";
+          }
+          container.removeEventListener("transitionend", onTransitionEnd);
+        };
+        container.addEventListener("transitionend", onTransitionEnd);
+      })
+      .catch((err) =>
+        console.error("Category transactions fetch error:", err),
+      );
+  });
+}
+
 async function updateCategoryChart(params: URLSearchParams): Promise<void> {
   const container = document.getElementById("category-chart");
   if (!container) return;
+
+  collapseCategoryTransactions();
 
   const data = await fetchData<CategoryTreeResponse>(
     "/api/analytics/spending-by-category-tree",
@@ -187,6 +289,7 @@ async function updateCategoryChart(params: URLSearchParams): Promise<void> {
   };
 
   activeChart.setOption(option);
+  setupCategoryShiftClick(data.from_date, data.to_date);
 }
 
 async function updateTimeChart(params: URLSearchParams): Promise<void> {

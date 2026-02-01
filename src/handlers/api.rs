@@ -278,6 +278,8 @@ pub struct CategoryTreeNode {
     pub name: String,
     pub color: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub amount_cents: Option<i64>,
     pub children: Vec<CategoryTreeNode>,
 }
@@ -309,12 +311,14 @@ fn build_subtree(
         child_nodes.push(CategoryTreeNode {
             name: format!("Other {}", cat.name),
             color: cat.color.clone(),
+            id: Some(cat_id),
             amount_cents: Some(direct_spending),
             children: Vec::new(),
         });
         Some(CategoryTreeNode {
             name: cat.name.clone(),
             color: cat.color.clone(),
+            id: Some(cat_id),
             amount_cents: None,
             children: child_nodes,
         })
@@ -322,6 +326,7 @@ fn build_subtree(
         Some(CategoryTreeNode {
             name: cat.name.clone(),
             color: cat.color.clone(),
+            id: Some(cat_id),
             amount_cents: None,
             children: child_nodes,
         })
@@ -329,6 +334,7 @@ fn build_subtree(
         Some(CategoryTreeNode {
             name: cat.name.clone(),
             color: cat.color.clone(),
+            id: Some(cat_id),
             amount_cents: Some(direct_spending),
             children: Vec::new(),
         })
@@ -446,6 +452,7 @@ pub async fn spending_by_category_tree(
         result.push(CategoryTreeNode {
             name: "Uncategorized".into(),
             color: "#6b7280".into(),
+            id: None,
             amount_cents: Some(uncategorized_total),
             children: Vec::new(),
         });
