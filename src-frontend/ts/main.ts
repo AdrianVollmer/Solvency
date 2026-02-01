@@ -393,9 +393,13 @@ function initHtmx(): void {
     document.body.classList.remove("htmx-request");
   });
 
-  document.body.addEventListener("htmx:responseError", (event: Event) => {
+  document.body.addEventListener("htmx:beforeSwap", (event: Event) => {
     const detail = (event as CustomEvent).detail;
-    console.error("HTMX error:", detail);
+    // Swap error responses so the server-rendered error HTML is shown to the user.
+    if (detail.xhr.status >= 400) {
+      detail.shouldSwap = true;
+      detail.isError = false;
+    }
   });
 }
 
