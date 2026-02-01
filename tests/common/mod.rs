@@ -294,7 +294,7 @@ impl TestClient {
         let (status, _) = self
             .post_form(
                 "/accounts/create",
-                &[("name", name), ("account_type", account_type)],
+                &[("name", name), ("account_type", account_type), ("active", "on")],
             )
             .await;
         // Redirect (303) indicates success

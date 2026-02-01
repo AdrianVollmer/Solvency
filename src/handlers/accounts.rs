@@ -43,6 +43,9 @@ pub struct AccountFormTemplate {
 pub struct AccountFormData {
     pub name: String,
     pub account_type: String,
+    /// HTML checkbox: "on" when checked, absent (defaults to "") when unchecked.
+    #[serde(default)]
+    pub active: String,
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
@@ -114,6 +117,7 @@ pub async fn create(
     let new_account = NewAccount {
         name: form.name,
         account_type,
+        active: form.active == "on",
     };
 
     accounts::create_account(&conn, &new_account)?;
@@ -134,6 +138,7 @@ pub async fn update(
     let updated_account = NewAccount {
         name: form.name,
         account_type,
+        active: form.active == "on",
     };
 
     accounts::update_account(&conn, id, &updated_account)?;
@@ -214,6 +219,7 @@ pub async fn import(
             let new_account = NewAccount {
                 name: item.name,
                 account_type: item.account_type,
+                active: true,
             };
             accounts::create_account(&conn, &new_account)?;
             created += 1;

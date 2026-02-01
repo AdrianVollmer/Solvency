@@ -34,6 +34,7 @@ pub struct Account {
     pub id: i64,
     pub name: String,
     pub account_type: AccountType,
+    pub active: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -42,4 +43,5 @@ pub struct Account {
 pub struct NewAccount {
     pub name: String,
     pub account_type: AccountType,
+    pub active: bool,
 }

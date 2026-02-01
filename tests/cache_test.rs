@@ -51,6 +51,7 @@ async fn test_stale_cache_refreshes_after_invalidation() {
         &NewAccount {
             name: "Savings".into(),
             account_type: solvency::models::AccountType::Cash,
+            active: true,
         },
     )
     .unwrap();
@@ -106,6 +107,7 @@ async fn test_invalidation_clears_all_slots() {
         &NewAccount {
             name: "Checking".into(),
             account_type: solvency::models::AccountType::Cash,
+            active: true,
         },
     )
     .unwrap();
@@ -196,7 +198,7 @@ async fn test_middleware_invalidates_on_successful_post() {
     let (status, _) = post_form(
         client.router_with_cache(),
         "/accounts/create",
-        &[("name", "MyBank"), ("account_type", "Cash")],
+        &[("name", "MyBank"), ("account_type", "Cash"), ("active", "on")],
     )
     .await;
     assert_eq!(status, StatusCode::SEE_OTHER);
@@ -226,6 +228,7 @@ async fn test_get_does_not_invalidate() {
         &NewAccount {
             name: "Hidden".into(),
             account_type: solvency::models::AccountType::Cash,
+            active: true,
         },
     )
     .unwrap();
@@ -252,6 +255,7 @@ async fn test_failed_post_does_not_invalidate() {
         &NewAccount {
             name: "Original".into(),
             account_type: solvency::models::AccountType::Cash,
+            active: true,
         },
     )
     .unwrap();
@@ -266,6 +270,7 @@ async fn test_failed_post_does_not_invalidate() {
         &NewAccount {
             name: "Sneaky".into(),
             account_type: solvency::models::AccountType::Cash,
+            active: true,
         },
     )
     .unwrap();

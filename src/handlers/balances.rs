@@ -28,6 +28,7 @@ pub struct BalancesTemplate {
     pub version: &'static str,
     pub xsrf_token: String,
     pub accounts: Vec<AccountBalance>,
+    pub inactive_accounts: Vec<AccountBalance>,
     pub total_balance_cents: i64,
     pub total_balance_formatted: String,
     pub total_balance_color: &'static str,
@@ -95,7 +96,15 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         });
     }
 
-    let total_balance_cents: i64 = account_balances.iter().map(|a| a.balance_cents).sum();
+    let (active_accounts, inactive_accounts): (Vec<_>, Vec<_>) = account_balances
+        .into_iter()
+        .partition(|ab| ab.account.active);
+
+    let total_balance_cents: i64 = active_accounts
+        .iter()
+        .chain(inactive_accounts.iter())
+        .map(|a| a.balance_cents)
+        .sum();
 
     let template = BalancesTemplate {
         title: "Balances".into(),
@@ -104,7 +113,8 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         manifest: state.manifest.clone(),
         version: VERSION,
         xsrf_token: state.xsrf_token.value().to_string(),
-        accounts: account_balances,
+        accounts: active_accounts,
+        inactive_accounts,
         total_balance_formatted: filters::format_money_balance(
             total_balance_cents,
             currency,

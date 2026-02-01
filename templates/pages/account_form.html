@@ -39,6 +39,14 @@
                 </p>
             </div>
 
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="account-active" name="active"
+                    class="w-4 h-4 text-primary-600 focus:ring-primary-500 border-neutral-300 dark:border-neutral-600 rounded"
+                    {% if let Some(acc) = account %}{% if acc.active %}checked{% endif %}{% else %}checked{% endif %}>
+                <label for="account-active" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Active</label>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 ml-2">Inactive accounts are shown separately on the Balances page.</p>
+            </div>
+
             <div class="flex gap-3 pt-4">
                 <a href="/accounts" class="btn btn-secondary flex-1 text-center">
                     Cancel

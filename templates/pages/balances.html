@@ -5,7 +5,7 @@
 <div class="space-y-6">
     {% call ui::page_header(title="Balances", subtitle="Account balances overview") %}{% endcall %}
 
-    {% if accounts.is_empty() %}
+    {% if accounts.is_empty() && inactive_accounts.is_empty() %}
     {% call ui::card(class="p-8 text-center") %}
         <p class="text-neutral-500 dark:text-neutral-400">No accounts yet. Create an account to start tracking balances.</p>
         <div class="mt-4">
@@ -13,6 +13,8 @@
         </div>
     {% endcall %}
     {% else %}
+
+    {% if !accounts.is_empty() %}
     {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -41,6 +43,35 @@
             </table>
         </div>
     {% endcall %}
+    {% endif %}
+
+    {% if !inactive_accounts.is_empty() %}
+    {% call ui::section(title="Inactive Accounts") %}
+    {% call ui::card(class="", overflow="overflow-hidden") %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead class="bg-neutral-50 dark:bg-neutral-900">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Account</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Type</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Balance</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {% for ab in inactive_accounts %}
+                    <tr class="opacity-60">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-white">{{ ab.account.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">{{ ab.account.account_type.as_str() }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold tabular-nums text-right {{ ab.balance_color }}">{{ ab.balance_formatted }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endcall %}
+    {% endcall %}
+    {% endif %}
+
     {% endif %}
 </div>
 {% endblock %}
