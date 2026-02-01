@@ -14,7 +14,7 @@ COPY tailwind.config.js ./
 COPY templates ./templates
 
 # Copy static assets and build CSS and JS
-RUN npm run build:static && npm run build:css && npm run build:ts
+RUN npm run build:static && npm run generate:icons && npm run build:css && npm run build:ts
 
 # Build stage for Rust binary
 FROM rust:1.92-slim-bookworm AS rust-builder
