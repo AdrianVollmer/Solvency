@@ -124,7 +124,9 @@
                                 {% if item.data_points > 0 %}
                                 <button
                                     hx-delete="/trading/market-data/{{ item.symbol }}/delete"
-                                    hx-confirm="Are you sure you want to delete all market data for {{ item.symbol }}?"
+                                    data-confirm-modal="Are you sure you want to delete all market data for {{ item.symbol }}?"
+                                    data-confirm-title="Confirm deletion"
+                                    data-confirm-action="Delete"
                                     hx-swap="none"
                                     hx-on::after-request="if(event.detail.successful) window.location.reload()"
                                     class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">

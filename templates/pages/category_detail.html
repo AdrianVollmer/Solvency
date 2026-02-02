@@ -65,7 +65,9 @@
         {% if transaction_count > 0 %}
         <button
             hx-post="/categories/{{ category.category.id }}/unset-transactions"
-            hx-confirm="Unset this category from all {{ transaction_count }} transaction(s)? They will become uncategorized."
+            data-confirm-modal="Unset this category from all {{ transaction_count }} transaction(s)? They will become uncategorized."
+            data-confirm-title="Confirm"
+            data-confirm-action="Unset"
             hx-target="body"
             hx-swap="none"
             hx-on::after-request="if(event.detail.successful) window.location.reload()"

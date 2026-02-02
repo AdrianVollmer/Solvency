@@ -359,15 +359,13 @@ function initConfirmModal(): void {
     }
   });
 
-  // Intercept HTMX confirm on elements with data-confirm-modal or hx-confirm
+  // Intercept HTMX confirm on elements with data-confirm-modal
   document.body.addEventListener("htmx:confirm", (event: Event) => {
     const el = event.target as HTMLElement;
-    const customMsg = el.getAttribute("data-confirm-modal");
-    const hxMsg = el.getAttribute("hx-confirm");
-    if (!customMsg && !hxMsg) return;
+    const message = el.getAttribute("data-confirm-modal");
+    if (!message) return;
 
     event.preventDefault();
-    const message = customMsg || hxMsg || "Are you sure?";
     const title = el.getAttribute("data-confirm-title") || "Confirm";
     const action = el.getAttribute("data-confirm-action") || "Confirm";
     const detail = (event as CustomEvent).detail;
