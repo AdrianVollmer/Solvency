@@ -14,7 +14,7 @@
     {# Hero: Realized G/L with secondary fee/tax stats #}
     <div class="flex flex-col md:flex-row md:items-end gap-6 md:gap-12">
         <div>
-            <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Realized G/L</p>
+            <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide inline-flex items-center gap-1" title="Net realized gain/loss after taxes and fees">Realized G/L<span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span></p>
             <p class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums {{ total_realized_gl_color }}">
                 {{ total_realized_gl_formatted }}
             </p>
