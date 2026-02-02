@@ -118,9 +118,7 @@ pub fn list_activities(
     let mut stmt = conn.prepare(&sql)?;
 
     let activities = stmt
-        .query_map(params_refs.as_slice(), |row| {
-            trading_activity_from_row(row)
-        })?
+        .query_map(params_refs.as_slice(), |row| trading_activity_from_row(row))?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(activities)
@@ -251,7 +249,8 @@ fn calculate_positions_from_activities(activities: Vec<ActivityRow>) -> Vec<Posi
     let mut positions_map: HashMap<String, (f64, i64, String)> = HashMap::new();
 
     for row in activities {
-        let activity_type: TradingActivityType = row.activity_type
+        let activity_type: TradingActivityType = row
+            .activity_type
             .parse()
             .unwrap_or(TradingActivityType::Buy);
         let qty = row.quantity.unwrap_or(0.0);
@@ -417,23 +416,26 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
     let mut positions_map: HashMap<String, PositionAccumulator> = HashMap::new();
 
     for row in activities {
-        let activity_type: TradingActivityType = row.activity_type
+        let activity_type: TradingActivityType = row
+            .activity_type
             .parse()
             .unwrap_or(TradingActivityType::Buy);
         let qty = row.quantity.unwrap_or(0.0);
         let price = row.unit_price_cents.unwrap_or(0);
 
-        let entry = positions_map.entry(row.symbol.clone()).or_insert(PositionAccumulator {
-            quantity: 0.0,
-            total_cost: 0,
-            total_proceeds: 0,
-            total_fees: 0,
-            total_taxes: 0,
-            total_dividends: 0,
-            currency: row.currency,
-            first_date: row.date.clone(),
-            last_date: row.date.clone(),
-        });
+        let entry = positions_map
+            .entry(row.symbol.clone())
+            .or_insert(PositionAccumulator {
+                quantity: 0.0,
+                total_cost: 0,
+                total_proceeds: 0,
+                total_fees: 0,
+                total_taxes: 0,
+                total_dividends: 0,
+                currency: row.currency,
+                first_date: row.date.clone(),
+                last_date: row.date.clone(),
+            });
 
         // Update last activity date
         if row.date > entry.last_date {

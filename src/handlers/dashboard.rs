@@ -42,8 +42,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     };
     let recent_transactions = transactions::list_transactions(&conn, &filter)?;
 
-    let total_this_month =
-        transactions::sum_amount_cents(&conn, Some(&this_month_start), None)?;
+    let total_this_month = transactions::sum_amount_cents(&conn, Some(&this_month_start), None)?;
     let total_last_month =
         transactions::sum_amount_cents(&conn, Some(&last_month_start), Some(&last_month_end))?;
 

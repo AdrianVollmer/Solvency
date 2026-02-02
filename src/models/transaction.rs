@@ -161,4 +161,3 @@ impl NewTransaction {
         (amount * 100.0).round() as i64
     }
 }
-

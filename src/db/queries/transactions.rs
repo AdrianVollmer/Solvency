@@ -392,7 +392,8 @@ pub fn sum_amount_cents(
     from_date: Option<&str>,
     to_date: Option<&str>,
 ) -> rusqlite::Result<i64> {
-    let mut sql = "SELECT COALESCE(SUM(e.amount_cents), 0) FROM transactions e WHERE 1=1".to_string();
+    let mut sql =
+        "SELECT COALESCE(SUM(e.amount_cents), 0) FROM transactions e WHERE 1=1".to_string();
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     if let Some(from) = from_date {
         sql.push_str(" AND e.date >= ?");
@@ -439,7 +440,11 @@ pub fn sum_by_category(
         params_vec.push(Box::new(to.to_string()));
     }
     if !exclude_ids.is_empty() {
-        let placeholders: String = exclude_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let placeholders: String = exclude_ids
+            .iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(",");
         sql.push_str(&format!(
             " AND (e.category_id IS NULL OR e.category_id NOT IN ({}))",
             placeholders
@@ -472,8 +477,7 @@ pub fn sum_by_date(
     from_date: Option<&str>,
     to_date: Option<&str>,
 ) -> rusqlite::Result<Vec<(String, i64)>> {
-    let mut sql =
-        "SELECT e.date, SUM(e.amount_cents) FROM transactions e WHERE 1=1".to_string();
+    let mut sql = "SELECT e.date, SUM(e.amount_cents) FROM transactions e WHERE 1=1".to_string();
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     if let Some(from) = from_date {
         sql.push_str(" AND e.date >= ?");
@@ -563,8 +567,7 @@ pub fn sum_by_category_id_with_dates(
     to_date: Option<&str>,
 ) -> rusqlite::Result<CategoryIdSumsWithDates> {
     // Date extent
-    let mut date_sql =
-        "SELECT MIN(e.date), MAX(e.date) FROM transactions e WHERE 1=1".to_string();
+    let mut date_sql = "SELECT MIN(e.date), MAX(e.date) FROM transactions e WHERE 1=1".to_string();
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     if let Some(from) = from_date {
         date_sql.push_str(" AND e.date >= ?");
@@ -581,8 +584,8 @@ pub fn sum_by_category_id_with_dates(
         })?;
 
     // Category sums
-    let mut agg_sql = "SELECT e.category_id, SUM(e.amount_cents) FROM transactions e WHERE 1=1"
-        .to_string();
+    let mut agg_sql =
+        "SELECT e.category_id, SUM(e.amount_cents) FROM transactions e WHERE 1=1".to_string();
     let mut params_vec2: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     if let Some(from) = from_date {
         agg_sql.push_str(" AND e.date >= ?");
@@ -596,7 +599,9 @@ pub fn sum_by_category_id_with_dates(
     let params_refs2: Vec<&dyn rusqlite::ToSql> = params_vec2.iter().map(|p| p.as_ref()).collect();
     let mut stmt = conn.prepare(&agg_sql)?;
     let rows = stmt
-        .query_map(params_refs2.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+        .query_map(params_refs2.as_slice(), |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(CategoryIdSumsWithDates {

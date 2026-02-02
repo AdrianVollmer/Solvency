@@ -129,8 +129,7 @@ pub async fn toggle_theme(
 pub async fn export_database(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
     let conn = state.db.get()?;
 
-    let temp_path =
-        std::env::temp_dir().join(format!("solvency-backup-{}.db", std::process::id()));
+    let temp_path = std::env::temp_dir().join(format!("solvency-backup-{}.db", std::process::id()));
     let path_str = temp_path.display().to_string().replace('\'', "''");
 
     // VACUUM INTO creates an atomic, consistent snapshot of the database.
@@ -189,8 +188,7 @@ pub async fn import_database(
         ));
     }
 
-    let temp_path =
-        std::env::temp_dir().join(format!("solvency-import-{}.db", std::process::id()));
+    let temp_path = std::env::temp_dir().join(format!("solvency-import-{}.db", std::process::id()));
     fs::write(&temp_path, &file_bytes)?;
 
     let result = restore_from_db_file(&mut conn, &temp_path, &state.config.migrations_path);

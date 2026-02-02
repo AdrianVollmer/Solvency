@@ -309,24 +309,15 @@ fn positions_to_allocation_nodes(
 ) -> AppResult<Vec<AllocationNode>> {
     let mut children = Vec::new();
     for pos in positions {
-        let enriched =
-            if let Ok(Some(data)) = market_data::get_latest_price(conn, &pos.symbol) {
-                PositionWithMarketData::with_market_data(
-                    pos.clone(),
-                    data.close_price_cents,
-                    data.date,
-                )
-            } else if let Ok(Some((price_cents, date))) =
-                trading::get_last_trade_price(conn, &pos.symbol)
-            {
-                PositionWithMarketData::with_approximated_price(
-                    pos.clone(),
-                    price_cents,
-                    date,
-                )
-            } else {
-                PositionWithMarketData::from_position(pos.clone())
-            };
+        let enriched = if let Ok(Some(data)) = market_data::get_latest_price(conn, &pos.symbol) {
+            PositionWithMarketData::with_market_data(pos.clone(), data.close_price_cents, data.date)
+        } else if let Ok(Some((price_cents, date))) =
+            trading::get_last_trade_price(conn, &pos.symbol)
+        {
+            PositionWithMarketData::with_approximated_price(pos.clone(), price_cents, date)
+        } else {
+            PositionWithMarketData::from_position(pos.clone())
+        };
 
         let value = enriched
             .current_value_cents

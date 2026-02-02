@@ -108,7 +108,10 @@ pub fn format_money_balance(cents: i64, currency: &str, locale: &str) -> String 
     let symbol = currency_symbol(currency);
 
     if cents < 0 {
-        format!("-\u{2060}{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+        format!(
+            "-\u{2060}{}{}{}{:02}",
+            symbol, whole_str, decimal_sep, fractional
+        )
     } else {
         format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     }
@@ -127,7 +130,10 @@ pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String 
     let symbol = currency_symbol(currency);
 
     if cents < 0 {
-        format!("-\u{2060}{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+        format!(
+            "-\u{2060}{}{}{}{:02}",
+            symbol, whole_str, decimal_sep, fractional
+        )
     } else {
         format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     }
@@ -186,9 +192,15 @@ fn format_money_impl(cents: i64, currency: &str, locale: &str) -> (String, &'sta
 
     // Build final string: sign + symbol + formatted number
     let formatted = if is_negative {
-        format!("-\u{2060}{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+        format!(
+            "-\u{2060}{}{}{}{:02}",
+            symbol, whole_str, decimal_sep, fractional
+        )
     } else if cents > 0 {
-        format!("+\u{2060}{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
+        format!(
+            "+\u{2060}{}{}{}{:02}",
+            symbol, whole_str, decimal_sep, fractional
+        )
     } else {
         format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
     };

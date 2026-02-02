@@ -17,9 +17,7 @@ fn row_to_account(row: &rusqlite::Row) -> rusqlite::Result<Account> {
 const SELECT_COLS: &str = "id, name, account_type, active, created_at, updated_at";
 
 pub fn list_accounts(conn: &Connection) -> rusqlite::Result<Vec<Account>> {
-    let mut stmt = conn.prepare(&format!(
-        "SELECT {SELECT_COLS} FROM accounts ORDER BY name"
-    ))?;
+    let mut stmt = conn.prepare(&format!("SELECT {SELECT_COLS} FROM accounts ORDER BY name"))?;
 
     let accounts = stmt
         .query_map([], row_to_account)?

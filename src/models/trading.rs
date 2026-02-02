@@ -354,7 +354,11 @@ impl ClosedPosition {
 
     pub fn total_proceeds_display(&self) -> String {
         let abs = self.total_proceeds_cents.abs();
-        let sign = if self.total_proceeds_cents < 0 { "-" } else { "" };
+        let sign = if self.total_proceeds_cents < 0 {
+            "-"
+        } else {
+            ""
+        };
         format!("{}{}.{:02}", sign, abs / 100, abs % 100)
     }
 
@@ -589,4 +593,3 @@ pub struct TradingImportRow {
     pub status: String,
     pub error: Option<String>,
 }
-

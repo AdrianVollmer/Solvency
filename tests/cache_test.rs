@@ -198,7 +198,11 @@ async fn test_middleware_invalidates_on_successful_post() {
     let (status, _) = post_form(
         client.router_with_cache(),
         "/accounts/create",
-        &[("name", "MyBank"), ("account_type", "Cash"), ("active", "on")],
+        &[
+            ("name", "MyBank"),
+            ("account_type", "Cash"),
+            ("active", "on"),
+        ],
     )
     .await;
     assert_eq!(status, StatusCode::SEE_OTHER);

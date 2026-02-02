@@ -64,12 +64,7 @@ async fn test_export_import_round_trip() {
     // Import into fresh client
     let client_b = TestClient::new();
     let (status, _) = client_b
-        .post_multipart(
-            "/settings/import-database",
-            "file",
-            "backup.db",
-            &exported,
-        )
+        .post_multipart("/settings/import-database", "file", "backup.db", &exported)
         .await;
     assert_eq!(status, StatusCode::OK);
 
@@ -85,8 +80,7 @@ async fn test_export_import_round_trip() {
         "Groceries category not found after import"
     );
 
-    let txns =
-        transactions::list_transactions(&conn, &TransactionFilter::default()).unwrap();
+    let txns = transactions::list_transactions(&conn, &TransactionFilter::default()).unwrap();
     assert_eq!(txns.len(), 1);
     assert_eq!(txns[0].transaction.description, "Weekly shop");
 }
@@ -133,8 +127,7 @@ async fn test_import_overwrites_existing_data() {
     assert_eq!(accts.len(), 1);
     assert_eq!(accts[0].name, "Savings");
 
-    let txns =
-        transactions::list_transactions(&conn, &TransactionFilter::default()).unwrap();
+    let txns = transactions::list_transactions(&conn, &TransactionFilter::default()).unwrap();
     assert_eq!(txns.len(), 1);
     assert_eq!(txns[0].transaction.description, "Initial deposit");
 }
@@ -148,12 +141,7 @@ async fn test_import_invalid_file_rejected() {
 
     let garbage = b"this is not a valid database file at all";
     let (status, body) = client
-        .post_multipart(
-            "/settings/import-database",
-            "file",
-            "bad.db",
-            garbage,
-        )
+        .post_multipart("/settings/import-database", "file", "bad.db", garbage)
         .await;
 
     // Handler tries to execute the bytes as SQL — should fail

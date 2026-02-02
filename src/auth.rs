@@ -71,9 +71,7 @@ impl LoginRateLimiter {
     /// Record a failed login attempt for the given IP.
     fn record_failure(&self, ip: &str) {
         let mut map = self.attempts.lock().unwrap_or_else(|e| e.into_inner());
-        let entry = map
-            .entry(ip.to_string())
-            .or_insert((0, Instant::now()));
+        let entry = map.entry(ip.to_string()).or_insert((0, Instant::now()));
         // Reset window if the previous window has expired
         if entry.1.elapsed().as_secs() >= LOCKOUT_SECS {
             *entry = (0, Instant::now());
@@ -305,4 +303,3 @@ fn verify_password(password: &str, hash: &str) -> bool {
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok()
 }
-
