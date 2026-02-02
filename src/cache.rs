@@ -8,9 +8,10 @@ use axum::middleware::Next;
 use axum::response::Response;
 
 use crate::config::AuthMode;
-use crate::db::queries::{accounts, categories, settings as db_settings, tags};
+use crate::db::queries::{accounts, categories, settings as db_settings, tags, transactions};
 use crate::db::DbPool;
 use crate::error::AppResult;
+use crate::handlers::recurring_expenses::{self, RecurringExpense};
 use crate::models::{Account, Category, CategoryWithPath, Settings, Tag};
 use crate::state::AppState;
 
@@ -48,6 +49,7 @@ pub struct AppCache {
     tags: Slot<Vec<Tag>>,
     accounts: Slot<Vec<Account>>,
     cash_accounts: Slot<Vec<Account>>,
+    recurring_expenses: Slot<Vec<RecurringExpense>>,
 }
 
 impl Default for AppCache {
@@ -66,6 +68,7 @@ impl AppCache {
             tags: Slot::new(),
             accounts: Slot::new(),
             cash_accounts: Slot::new(),
+            recurring_expenses: Slot::new(),
         }
     }
 
@@ -141,6 +144,33 @@ impl AppCache {
         let conn = pool.get()?;
         let val = accounts::list_accounts_by_type(&conn, crate::models::AccountType::Cash)?;
         self.cash_accounts.set(gen, val.clone());
+        Ok(val)
+    }
+
+    pub fn load_recurring_expenses(
+        &self,
+        pool: &DbPool,
+        auth_mode: &AuthMode,
+    ) -> AppResult<Vec<RecurringExpense>> {
+        let gen = self.gen();
+        if let Some(cached) = self.recurring_expenses.get(gen) {
+            return Ok(cached);
+        }
+        let settings = self.load_settings(pool, auth_mode)?;
+        let categories = self.load_categories(pool)?;
+        let excluded: Vec<i64> = recurring_expenses::transfers_excluded_ids(&categories)
+            .into_iter()
+            .collect();
+        let conn = pool.get()?;
+        let rows = transactions::fetch_expenses_for_recurring_detection(&conn, &excluded)?;
+        let today = chrono::Utc::now().date_naive();
+        let val = recurring_expenses::detect_recurring_expenses(
+            rows,
+            &settings.currency,
+            &settings.locale,
+            today,
+        );
+        self.recurring_expenses.set(gen, val.clone());
         Ok(val)
     }
 }

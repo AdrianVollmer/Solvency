@@ -3,6 +3,7 @@ use crate::cache::AppCache;
 use crate::config::Config;
 use crate::db::DbPool;
 use crate::error::AppResult;
+use crate::handlers::recurring_expenses::RecurringExpense;
 use crate::models::{Account, Category, CategoryWithPath, Settings, Tag};
 use crate::xsrf::XsrfToken;
 use serde::Deserialize;
@@ -68,6 +69,11 @@ impl AppState {
 
     pub fn cached_cash_accounts(&self) -> AppResult<Vec<Account>> {
         self.cache.load_cash_accounts(&self.db)
+    }
+
+    pub fn cached_recurring_expenses(&self) -> AppResult<Vec<RecurringExpense>> {
+        self.cache
+            .load_recurring_expenses(&self.db, &self.config.auth_mode)
     }
 }
 

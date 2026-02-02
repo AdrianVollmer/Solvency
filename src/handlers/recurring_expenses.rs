@@ -62,6 +62,7 @@ fn classify_interval(median_days: i64) -> Option<Frequency> {
 }
 
 /// A detected recurring expense ready for display.
+#[derive(Clone)]
 pub struct RecurringExpense {
     pub description: String,
     pub frequency_label: String,
@@ -96,18 +97,8 @@ pub struct RecurringExpensesTemplate {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let conn = state.db.get()?;
     let app_settings = state.load_settings()?;
-
-    // Exclude transfers category subtree
-    let all_cats = state.cached_categories()?;
-    let excluded = transfers_excluded_ids(&all_cats);
-    let excluded_vec: Vec<i64> = excluded.into_iter().collect();
-
-    let today = chrono::Utc::now().date_naive();
-    let rows = transactions::fetch_expenses_for_recurring_detection(&conn, &excluded_vec)?;
-    let all_expenses =
-        detect_recurring_expenses(rows, &app_settings.currency, &app_settings.locale, today);
+    let all_expenses = state.cached_recurring_expenses()?;
 
     let (inactive_expenses, expenses): (Vec<_>, Vec<_>) =
         all_expenses.into_iter().partition(|e| e.inactive);
@@ -271,7 +262,7 @@ fn median(sorted: &[i64]) -> i64 {
 }
 
 /// Detect recurring expenses from raw transaction data.
-fn detect_recurring_expenses(
+pub(crate) fn detect_recurring_expenses(
     rows: Vec<transactions::ExpenseRow>,
     currency: &str,
     locale: &str,
@@ -371,7 +362,7 @@ fn detect_recurring_expenses(
 }
 
 /// Build a children map and find the Transfers subtree IDs to exclude.
-fn transfers_excluded_ids(
+pub(crate) fn transfers_excluded_ids(
     all_categories: &[crate::models::category::Category],
 ) -> std::collections::HashSet<i64> {
     let mut children_map: std::collections::HashMap<i64, Vec<i64>> =
