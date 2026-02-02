@@ -8,7 +8,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # Copy frontend source files and build scripts
-COPY scripts/build-ts.js scripts/copy-static.js ./scripts/
+COPY scripts ./scripts
 COPY src-frontend ./src-frontend
 COPY tailwind.config.js ./
 COPY templates ./templates
