@@ -4,7 +4,7 @@ resolver = "2"
 
 [package]
 name = "solvency"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 rust-version = "1.92"
 description = "A web-based expense tracker with a focus on visualizing spending habits"
