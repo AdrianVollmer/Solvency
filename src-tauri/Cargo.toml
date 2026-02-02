@@ -13,7 +13,7 @@ tauri-build = { version = "2", features = [] }
 axum = "0.7"
 http = "1"
 solvency = { path = ".." }
-tauri = { version = "2", features = [] }
+tauri = { version = "2.10", features = [] }
 tokio = { version = "1", features = ["full"] }
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
