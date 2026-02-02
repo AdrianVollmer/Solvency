@@ -22,6 +22,10 @@
 *.swo
 .claude/
 
+# Generated screenshots (regenerate with scripts/take_screenshots.py)
+/docs/screenshots/
+/docs/collages/
+
 # OS
 .DS_Store
 Thumbs.db

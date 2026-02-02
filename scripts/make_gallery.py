@@ -4,11 +4,10 @@
 # dependencies = []
 # ///
 """
-Generate a gallery image from multiple desktop collages.
+Generate a gallery image from multiple tablet collages.
 
-Fans out 5 collages in a wide horizontal arrangement with slight
-vertical stagger, rounded corners, and drop shadows on a transparent
-background.
+Places 5 collages side by side in a clean row with rounded corners,
+drop shadows, and a transparent background.
 
 Requires ImageMagick (`convert`, `identify`) to be installed.
 
@@ -128,8 +127,9 @@ def make_gallery(collages: list[Path], output: Path) -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
 
-        scale = 30
+        scale = 40
         radius = 10
+        gap = 30
 
         # Prepare all cards
         cards: list[tuple[Path, int, int]] = []
@@ -141,19 +141,11 @@ def make_gallery(collages: list[Path], output: Path) -> None:
         card_w = cards[0][1]
         card_h = cards[0][2]
 
-        # Horizontal spacing: overlap by ~55% of card width
-        step_x = card_w * 45 // 100
+        pad = 40
+        canvas_w = pad + n * card_w + (n - 1) * gap + pad
+        canvas_h = pad + card_h + pad
 
-        # Vertical offsets: gentle downward arc (edges high, center low)
-        mid = (n - 1) / 2
-        max_dy = 30
-        y_offsets = [int(max_dy * (1 - ((i - mid) / mid) ** 2)) for i in range(n)]
-
-        pad = 50
-        canvas_w = pad + step_x * (n - 1) + card_w + pad
-        canvas_h = pad + card_h + max_dy + pad
-
-        # Build composite command: layer cards left to right (last on top)
+        # Build composite command: place cards side by side
         cmd: list[str] = [
             "convert",
             "-size",
@@ -162,8 +154,8 @@ def make_gallery(collages: list[Path], output: Path) -> None:
         ]
 
         for i, (card_path, cw, ch) in enumerate(cards):
-            x = pad + step_x * i
-            y = pad + y_offsets[i]
+            x = pad + i * (card_w + gap)
+            y = pad
             cmd += [str(card_path), "-geometry", f"+{x}+{y}", "-composite"]
 
         cmd.append(str(output))
@@ -172,7 +164,7 @@ def make_gallery(collages: list[Path], output: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate a gallery image from desktop collages."
+        description="Generate a gallery image from tablet collages."
     )
     parser.add_argument(
         "--pages",
@@ -201,7 +193,7 @@ def main() -> None:
 
     collage_paths: list[Path] = []
     for page in args.pages:
-        path = args.collages / f"{page}-desktop-collage.png"
+        path = args.collages / f"{page}-tablet-collage.png"
         if not path.exists():
             print(f"Error: {path} not found")
             raise SystemExit(1)

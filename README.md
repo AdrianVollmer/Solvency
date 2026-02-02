@@ -26,6 +26,10 @@ currently no support for multiple users.
 - **Bulk import/export** of transactions and trading activities from CSV
 - **Dark mode** and customizable settings
 
+![Dashboard across devices](docs/hero.png)
+
+![Feature gallery](docs/gallery.png)
+
 ## Demo
 
 Take it for a spin! To start up an instance with some demo data:
