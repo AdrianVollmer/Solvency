@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build:static": "node scripts/copy-static.js",
-    "build:css": "npx tailwindcss -i src-frontend/css/input.css -o static/css/tailwind.css --minify",
+    "build:css": "npx tailwindcss -i src-frontend/css/input.css -o static/css/tailwind.css --minify && node scripts/hash-css.js",
     "build:ts": "node scripts/build-ts.js",
     "watch:css": "npx tailwindcss -i src-frontend/css/input.css -o static/css/tailwind.css --watch",
     "watch:ts": "node scripts/build-ts.js --watch",

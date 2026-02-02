@@ -84,6 +84,21 @@ async function build() {
     }
   }
 
+  // Merge with existing manifest (preserves non-JS entries like CSS)
+  let existing = {};
+  if (fs.existsSync(manifestPath)) {
+    try {
+      existing = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    } catch {
+      // Ignore corrupt manifest
+    }
+  }
+  for (const [key, value] of Object.entries(existing)) {
+    if (!key.endsWith(".js")) {
+      manifest[key] = value;
+    }
+  }
+
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   console.log(`Manifest written to ${manifestPath}`);
 }
