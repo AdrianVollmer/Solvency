@@ -656,7 +656,6 @@ async function updateFlowChart(params: URLSearchParams): Promise<void> {
         nodeGap: 12,
         nodeWidth: 20,
         layoutIterations: 0,
-        sort: null,
         data: data.nodes.map((n) => ({
           name: n.name,
           depth: n.depth,
