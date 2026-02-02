@@ -47,7 +47,7 @@ function initMultipartXsrf(): void {
 
     fetch(form.action, {
       method: form.method,
-      headers: { [XSRF_HEADER]: token },
+      headers: { [XSRF_HEADER]: token, "HX-Request": "true" },
       body: formData,
     })
       .then((response) => {
@@ -64,7 +64,10 @@ function initMultipartXsrf(): void {
               >
             ).showAlertModal;
             if (alertFn) {
-              alertFn(text || "Upload failed");
+              // Server returns HTML; extract plain text for the modal.
+              const tmp = document.createElement("div");
+              tmp.innerHTML = text;
+              alertFn(tmp.textContent?.trim() || "Upload failed");
             }
             if (submitBtn) submitBtn.disabled = false;
           });
