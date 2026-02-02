@@ -63,6 +63,8 @@ pub struct RecurringExpense {
     pub total_spent_cents: i64,
     pub total_spent_formatted: String,
     pub occurrence_count: usize,
+    /// True when the last occurrence is more than 365 days ago.
+    pub inactive: bool,
 }
 
 #[derive(Template)]
@@ -75,6 +77,7 @@ pub struct RecurringExpensesTemplate {
     pub version: &'static str,
     pub xsrf_token: String,
     pub expenses: Vec<RecurringExpense>,
+    pub inactive_expenses: Vec<RecurringExpense>,
     pub total_annual_cost_formatted: String,
     pub total_monthly_cost_formatted: String,
     pub subscription_count: usize,
@@ -89,9 +92,15 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let excluded = transfers_excluded_ids(&all_cats);
     let excluded_vec: Vec<i64> = excluded.into_iter().collect();
 
+    let today = chrono::Utc::now().date_naive();
     let rows = transactions::fetch_expenses_for_recurring_detection(&conn, &excluded_vec)?;
-    let expenses = detect_recurring_expenses(rows, &app_settings.currency, &app_settings.locale);
+    let all_expenses =
+        detect_recurring_expenses(rows, &app_settings.currency, &app_settings.locale, today);
 
+    let (inactive_expenses, expenses): (Vec<_>, Vec<_>) =
+        all_expenses.into_iter().partition(|e| e.inactive);
+
+    // Summary stats reflect only active subscriptions
     let total_annual: i64 = expenses.iter().map(|e| e.annual_cost_cents).sum();
     let total_monthly = total_annual / 12;
 
@@ -104,6 +113,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         xsrf_token: state.xsrf_token.value().to_string(),
         subscription_count: expenses.len(),
         expenses,
+        inactive_expenses,
         total_annual_cost_formatted: filters::format_money_neutral(
             total_annual,
             &app_settings.currency,
@@ -253,6 +263,7 @@ fn detect_recurring_expenses(
     rows: Vec<transactions::ExpenseRow>,
     currency: &str,
     locale: &str,
+    today: NaiveDate,
 ) -> Vec<RecurringExpense> {
     // Group by key
     let mut groups: HashMap<String, Vec<GroupEntry>> = HashMap::new();
@@ -317,7 +328,8 @@ fn detect_recurring_expenses(
             let total_spent: i64 = filtered.iter().map(|e| e.amount_cents.abs()).sum();
             let annual_cost = median_amount * frequency.annual_multiplier();
             let description = filtered.last().unwrap().display_name.clone();
-            let last_date = dates.last().unwrap();
+            let last_date = *dates.last().unwrap();
+            let inactive = (today - last_date).num_days() > 365;
 
             results.push(RecurringExpense {
                 description,
@@ -333,6 +345,7 @@ fn detect_recurring_expenses(
                 total_spent_cents: total_spent,
                 total_spent_formatted: filters::format_money_neutral(total_spent, currency, locale),
                 occurrence_count: filtered.len(),
+                inactive,
             });
         }
     }
@@ -430,6 +443,10 @@ mod tests {
         assert!(key.starts_with("desc:"));
     }
 
+    fn today() -> NaiveDate {
+        NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()
+    }
+
     #[test]
     fn test_detect_monthly_subscription() {
         let rows: Vec<transactions::ExpenseRow> = (0..6)
@@ -442,10 +459,29 @@ mod tests {
             })
             .collect();
 
-        let results = detect_recurring_expenses(rows, "EUR", "en-US");
+        let results = detect_recurring_expenses(rows, "EUR", "en-US", today());
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].frequency_label, "Monthly");
         assert_eq!(results[0].occurrence_count, 6);
+        assert!(!results[0].inactive);
+    }
+
+    #[test]
+    fn test_inactive_subscription() {
+        // Last occurrence 2023-06-15, which is >365 days before 2024-12-01
+        let rows: Vec<transactions::ExpenseRow> = (0..6)
+            .map(|i| transactions::ExpenseRow {
+                date: format!("2023-{:02}-15", i + 1),
+                amount_cents: -999,
+                description: "Old Service".to_string(),
+                payee: None,
+                counterparty_iban: None,
+            })
+            .collect();
+
+        let results = detect_recurring_expenses(rows, "EUR", "en-US", today());
+        assert_eq!(results.len(), 1);
+        assert!(results[0].inactive);
     }
 
     #[test]
@@ -467,7 +503,7 @@ mod tests {
             },
         ];
 
-        let results = detect_recurring_expenses(rows, "EUR", "en-US");
+        let results = detect_recurring_expenses(rows, "EUR", "en-US", today());
         assert!(results.is_empty());
     }
 
@@ -498,7 +534,7 @@ mod tests {
             },
         ];
 
-        let results = detect_recurring_expenses(rows, "EUR", "en-US");
+        let results = detect_recurring_expenses(rows, "EUR", "en-US", today());
         assert!(results.is_empty());
     }
 
