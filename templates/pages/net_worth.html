@@ -44,18 +44,14 @@
         </div>
     </div>
 
-    {# Chart tabs #}
+    {# Chart tabs — labels hidden on mobile, icon-only #}
     <div class="flex flex-wrap gap-2">
-        <a href="/trading/net-worth?tab=overview"
-            class="tab {% if active_tab == "overview" %}tab-active{% else %}tab-inactive{% endif %}">
+        {% call ui::chart_tab(href="/trading/net-worth?tab=overview", label="Overview", active=(active_tab == "overview")) %}
             <span class="icon-xs" aria-hidden="true">{{ icons.get("chart-line")|safe }}</span>
-            Overview
-        </a>
-        <a href="/trading/net-worth?tab=allocation"
-            class="tab {% if active_tab == "allocation" %}tab-active{% else %}tab-inactive{% endif %}">
+        {% endcall %}
+        {% call ui::chart_tab(href="/trading/net-worth?tab=allocation", label="Allocation", active=(active_tab == "allocation")) %}
             <span class="icon-xs" aria-hidden="true">{{ icons.get("chart-pie")|safe }}</span>
-            Allocation
-        </a>
+        {% endcall %}
     </div>
 
     {% if active_tab == "overview" %}

@@ -66,6 +66,11 @@
     {% call ui::tag_badge(color="#3b82f6", name="Tag", text_color="#1e3a5f") %}
     {% call ui::tag_badge_striped(color="#3b82f6", name="Tag", text_color="#1e3a5f") %}
 
+    Chart tab (icon + responsive label):
+    {% call ui::chart_tab(href="/spending?tab=time", label="Over Time", active=active_tab == "time") %}
+        <span class="icon-xs" aria-hidden="true">{{ icons.get("chart-line")|safe }}</span>
+    {% endcall %}
+
     Mobile overflow menu (three-dot dropdown for secondary actions):
     {% call ui::overflow_menu() %}
         <a href="/export" download class="dropdown-item" role="menuitem">Export</a>
@@ -535,6 +540,20 @@
     <p class="text-xl font-semibold text-neutral-900 dark:text-white">{{ value }}</p>
     <p class="text-sm text-red-600 dark:text-red-400">{{ secondary }}</p>
 </div>
+{% endmacro %}
+
+{# Chart tab link — icon always visible, label hidden on mobile #}
+{# href: Link target #}
+{# label: Tab text (also used as title tooltip) #}
+{# active: Boolean, whether this tab is currently selected #}
+{# data_nav: Optional data-nav attribute for client-side navigation #}
+{# Body (caller): icon element (SVG or <span class="icon-xs">) #}
+{% macro chart_tab(href, label, active, data_nav="") %}
+<a href="{{ href }}"{% if data_nav != "" %} data-nav="{{ data_nav }}"{% endif %} title="{{ label }}"
+    class="tab {% if active %}tab-active{% else %}tab-inactive{% endif %}">
+    {{ caller() }}
+    <span class="hidden md:inline">{{ label }}</span>
+</a>
 {% endmacro %}
 
 {# Mobile overflow menu (three-dot dropdown, hidden on desktop) #}
