@@ -10,9 +10,11 @@ set -euo pipefail
 # 1. Updates version in Cargo.toml
 # 2. Updates version in package.json
 # 3. Updates version in package-lock.json
-# 4. Updates Cargo.lock
-# 5. Creates a git commit
-# 6. Creates a git tag (v<version>)
+# 4. Updates version in src-tauri/Cargo.toml
+# 5. Updates version in src-tauri/tauri.conf.json
+# 6. Updates Cargo.lock
+# 7. Creates a git commit
+# 8. Creates a git tag (v<version>)
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <new-version>"
@@ -48,14 +50,25 @@ echo "Updating package-lock.json..."
 sed -i.bak "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/g" package-lock.json
 rm package-lock.json.bak
 
+# Update src-tauri/Cargo.toml
+echo "Updating src-tauri/Cargo.toml..."
+TAURI_CURRENT=$(grep '^version = ' src-tauri/Cargo.toml | head -n1 | sed 's/version = "\(.*\)"/\1/')
+sed -i.bak "s/^version = \"$TAURI_CURRENT\"/version = \"$NEW_VERSION\"/" src-tauri/Cargo.toml
+rm src-tauri/Cargo.toml.bak
+
+# Update src-tauri/tauri.conf.json
+echo "Updating src-tauri/tauri.conf.json..."
+sed -i.bak "s/\"version\": \"$TAURI_CURRENT\"/\"version\": \"$NEW_VERSION\"/" src-tauri/tauri.conf.json
+rm src-tauri/tauri.conf.json.bak
+
 # Update Cargo.lock
 echo "Updating Cargo.lock..."
 cargo check --quiet
 
 # Check if there are changes
-if ! git diff --quiet Cargo.toml package.json package-lock.json Cargo.lock; then
+if ! git diff --quiet Cargo.toml package.json package-lock.json Cargo.lock src-tauri/Cargo.toml src-tauri/tauri.conf.json; then
     echo "Creating git commit and tag..."
-    git add Cargo.toml package.json package-lock.json Cargo.lock
+    git add Cargo.toml package.json package-lock.json Cargo.lock src-tauri/Cargo.toml src-tauri/tauri.conf.json
     git -c user.name="Claude Code" -c user.email="noreply@anthropic.com" commit -m "$(cat <<EOF
 Bump version to $NEW_VERSION
 
@@ -63,6 +76,8 @@ Updated version number across:
 - Cargo.toml
 - package.json
 - package-lock.json
+- src-tauri/Cargo.toml
+- src-tauri/tauri.conf.json
 - Cargo.lock
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
