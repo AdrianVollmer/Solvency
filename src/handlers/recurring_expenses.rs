@@ -39,6 +39,15 @@ impl Frequency {
             Frequency::Yearly => 1,
         }
     }
+
+    fn sort_order(self) -> u8 {
+        match self {
+            Frequency::Weekly => 1,
+            Frequency::Monthly => 2,
+            Frequency::Quarterly => 3,
+            Frequency::Yearly => 4,
+        }
+    }
 }
 
 /// Classify a median day-interval into a frequency bucket.
@@ -56,6 +65,9 @@ fn classify_interval(median_days: i64) -> Option<Frequency> {
 pub struct RecurringExpense {
     pub description: String,
     pub frequency_label: String,
+    /// Sort order for frequency (1=weekly, 2=monthly, 3=quarterly, 4=yearly).
+    pub frequency_sort: u8,
+    pub typical_amount_cents: i64,
     pub typical_amount_formatted: String,
     pub last_date: String,
     pub annual_cost_cents: i64,
@@ -334,6 +346,8 @@ fn detect_recurring_expenses(
             results.push(RecurringExpense {
                 description,
                 frequency_label: frequency.label().to_string(),
+                frequency_sort: frequency.sort_order(),
+                typical_amount_cents: median_amount,
                 typical_amount_formatted: filters::format_money_neutral(
                     median_amount,
                     currency,
