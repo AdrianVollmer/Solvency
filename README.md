@@ -25,6 +25,7 @@ currently no support for multiple users.
 - **Automatic categorization** via pattern-matching rules
 - **Bulk import/export** of transactions and trading activities from CSV
 - **Dark mode** and customizable settings
+- **Progressive Web App** installable on Android and iOS
 
 ![Dashboard across devices](docs/hero.png)
 
