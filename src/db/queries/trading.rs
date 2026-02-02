@@ -503,6 +503,19 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
     Ok(closed_positions)
 }
 
+/// Aggregate total fees and taxes across all trading activities.
+/// Returns (total_fees_cents, total_taxes_cents).
+pub fn get_portfolio_fee_tax_totals(conn: &Connection) -> rusqlite::Result<(i64, i64)> {
+    conn.query_row(
+        "SELECT
+            COALESCE(SUM(CASE WHEN activity_type = 'FEE' THEN unit_price_cents ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN activity_type = 'TAX' THEN unit_price_cents ELSE 0 END), 0)
+         FROM trading_activities",
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    )
+}
+
 pub fn get_unique_symbols(conn: &Connection) -> rusqlite::Result<Vec<String>> {
     let mut stmt =
         conn.prepare("SELECT DISTINCT symbol FROM trading_activities ORDER BY symbol")?;

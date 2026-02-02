@@ -10,6 +10,28 @@
     {% call ui::empty_state_action(icon="trending-up", title="No positions yet", description="Import or add trading activities to see your positions", action_url="/trading/activities", action_label="Add Activity") %}{% endcall %}
     {% else %}
 
+    {% if has_closed_positions %}
+    {# Hero: Realized G/L with secondary fee/tax stats #}
+    <div class="flex flex-col md:flex-row md:items-end gap-6 md:gap-12">
+        <div>
+            <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Realized G/L</p>
+            <p class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums {{ total_realized_gl_color }}">
+                {{ total_realized_gl_formatted }}
+            </p>
+        </div>
+        <div class="flex gap-8 text-sm">
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Taxes</p>
+                <p class="mt-0.5 font-semibold tabular-nums">{{ total_taxes_formatted }}</p>
+            </div>
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Fees</p>
+                <p class="mt-0.5 font-semibold tabular-nums">{{ total_fees_formatted }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {# Security Positions #}
     {% if !security_positions.is_empty() %}
     {% call ui::card(class="", overflow="overflow-hidden") %}

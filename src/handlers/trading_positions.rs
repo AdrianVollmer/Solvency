@@ -192,6 +192,11 @@ pub struct TradingPositionsTemplate {
     pub total_gain_loss_color: &'static str,
     pub total_gain_loss_formatted: Option<String>,
     pub sort: TableSort<PositionSortColumn>,
+    pub total_realized_gl_formatted: String,
+    pub total_realized_gl_color: &'static str,
+    pub total_fees_formatted: String,
+    pub total_taxes_formatted: String,
+    pub has_closed_positions: bool,
 }
 
 pub async fn index(
@@ -275,6 +280,29 @@ pub async fn index(
         _ => "text-neutral-600 dark:text-neutral-400",
     };
 
+    // Compute hero stats: realized G/L from closed positions, plus portfolio-wide fees/taxes
+    let closed_positions = trading::get_closed_positions(&conn)?;
+    let total_realized_gl: i64 = closed_positions
+        .iter()
+        .map(|p| p.realized_gain_loss_cents)
+        .sum();
+    let (total_fees_cents, total_taxes_cents) = trading::get_portfolio_fee_tax_totals(&conn)?;
+    let has_closed_positions =
+        !closed_positions.is_empty() || total_fees_cents != 0 || total_taxes_cents != 0;
+
+    let total_realized_gl_color = if total_realized_gl > 0 {
+        "text-green-600 dark:text-green-400"
+    } else if total_realized_gl < 0 {
+        "text-red-600 dark:text-red-400"
+    } else {
+        "text-neutral-600 dark:text-neutral-400"
+    };
+
+    let total_realized_gl_formatted =
+        filters::format_money_plain(total_realized_gl, currency, locale);
+    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, currency, locale);
+    let total_taxes_formatted = filters::format_money_neutral(total_taxes_cents, currency, locale);
+
     let template = TradingPositionsTemplate {
         title: "Positions".into(),
         settings: app_settings,
@@ -293,6 +321,11 @@ pub async fn index(
         total_gain_loss_color,
         total_gain_loss_formatted,
         sort,
+        total_realized_gl_formatted,
+        total_realized_gl_color,
+        total_fees_formatted,
+        total_taxes_formatted,
+        has_closed_positions,
     };
 
     template.render_html()
