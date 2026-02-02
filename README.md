@@ -50,7 +50,6 @@ Then navigate your browser to <http://localhost:7070>.
 - **Templates:** Askama (compile-time checked)
 - **Interactivity:** HTMX
 - **Database:** SQLite with SQLx
-- **RSS Parser:** feed-rs
 - **UI:** Tailwind CSS
 - **Background Jobs:** tokio-cron-scheduler
 
