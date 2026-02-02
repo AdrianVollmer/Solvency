@@ -82,10 +82,9 @@
     {% endif %}
 
     {% if !inactive_expenses.is_empty() %}
-    <div>
-        <h2 class="section-title mb-4">Inactive</h2>
+    {% call ui::section(title="Inactive", card_class="overflow-hidden") %}
         {% call expense_table(rows=inactive_expenses, table_id="inactive-table") %}{% endcall %}
-    </div>
+    {% endcall %}
     {% endif %}
 
     {% endif %}
