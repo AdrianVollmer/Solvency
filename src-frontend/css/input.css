@@ -8,6 +8,13 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Inform the browser of the active color scheme so native controls
+   (select dropdowns, scrollbars, etc.) render correctly in dark mode.
+   WebKitGTK in particular requires this. */
+html.dark {
+  color-scheme: dark;
+}
+
 @layer base {
   html {
     @apply scroll-smooth;
