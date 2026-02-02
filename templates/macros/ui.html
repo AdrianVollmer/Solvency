@@ -552,7 +552,7 @@
 <a href="{{ href }}"{% if data_nav != "" %} data-nav="{{ data_nav }}"{% endif %} title="{{ label }}"
     class="tab {% if active %}tab-active{% else %}tab-inactive{% endif %}">
     {{ caller() }}
-    <span class="hidden md:inline">{{ label }}</span>
+    <span class="tab-label">{{ label }}</span>
 </a>
 {% endmacro %}
 
