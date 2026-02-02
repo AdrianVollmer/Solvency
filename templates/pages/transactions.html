@@ -21,25 +21,20 @@
             </a>
 
             {# Mobile: overflow menu for secondary actions (hidden on desktop) #}
-            <div class="relative md:hidden" data-dropdown>
-                <button type="button" class="btn btn-secondary flex items-center justify-center !px-2.5" aria-haspopup="true" data-dropdown-toggle aria-label="More actions">
-                    <span class="icon-sm" aria-hidden="true">{{ icons.get("ellipsis-vertical")|safe }}</span>
+            {% call ui::overflow_menu() %}
+                <a href="/transactions/export" download class="dropdown-item" role="menuitem">
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
+                    Export
+                </a>
+                <button type="button" onclick="document.getElementById('import-file').click()" class="dropdown-item w-full" role="menuitem">
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
+                    Import
                 </button>
-                <div class="dropdown-menu hidden absolute left-0 top-full mt-1 w-48 py-1 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-lg z-20" role="menu">
-                    <a href="/transactions/export" download class="dropdown-item" role="menuitem">
-                        <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
-                        Export
-                    </a>
-                    <button type="button" onclick="document.getElementById('import-file').click()" class="dropdown-item w-full" role="menuitem">
-                        <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
-                        Import
-                    </button>
-                    <a href="/transactions/bulk?{{ filter.preserve_query_string(&date_range) }}" class="dropdown-item" role="menuitem">
-                        <span class="icon-sm" aria-hidden="true">{{ icons.get("layers")|safe }}</span>
-                        Bulk Operations
-                    </a>
-                </div>
-            </div>
+                <a href="/transactions/bulk?{{ filter.preserve_query_string(&date_range) }}" class="dropdown-item" role="menuitem">
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("layers")|safe }}</span>
+                    Bulk Operations
+                </a>
+            {% endcall %}
 
             {# Primary action: always visible #}
             <a href="/transactions/new" class="btn btn-primary flex items-center gap-2">

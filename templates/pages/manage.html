@@ -67,22 +67,16 @@
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
                 Import
             </button>
-            {# Mobile overflow menu #}
-            <div class="relative md:hidden" data-dropdown>
-                <button type="button" class="btn btn-secondary flex items-center justify-center !px-2.5" aria-haspopup="true" data-dropdown-toggle aria-label="More actions">
-                    <span class="icon-sm" aria-hidden="true">{{ icons.get("ellipsis-vertical")|safe }}</span>
+            {% call ui::overflow_menu() %}
+                <a href="/manage/export" download class="dropdown-item" role="menuitem">
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
+                    Export All
+                </a>
+                <button type="button" onclick="document.getElementById('manage-import-file').click()" class="dropdown-item w-full" role="menuitem">
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
+                    Import
                 </button>
-                <div class="dropdown-menu hidden absolute right-0 top-full mt-1 w-48 py-1 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-lg z-20" role="menu">
-                    <a href="/manage/export" download class="dropdown-item" role="menuitem">
-                        <span class="icon-sm" aria-hidden="true">{{ icons.get("download")|safe }}</span>
-                        Export All
-                    </a>
-                    <button type="button" onclick="document.getElementById('manage-import-file').click()" class="dropdown-item w-full" role="menuitem">
-                        <span class="icon-sm" aria-hidden="true">{{ icons.get("upload")|safe }}</span>
-                        Import
-                    </button>
-                </div>
-            </div>
+            {% endcall %}
             <input type="file" id="manage-import-file" accept=".json" class="hidden" onchange="importResource(this.files[0], '/manage/import')" aria-label="Import from JSON file">
         </div>
     </div>
