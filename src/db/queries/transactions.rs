@@ -611,6 +611,62 @@ pub fn sum_by_category_id_with_dates(
     })
 }
 
+/// Raw expense row used for recurring expense detection.
+pub struct ExpenseRow {
+    pub date: String,
+    pub amount_cents: i64,
+    pub description: String,
+    pub payee: Option<String>,
+    pub counterparty_iban: Option<String>,
+}
+
+/// Fetch all expense transactions (amount_cents < 0), excluding the given
+/// category IDs (typically the Transfers subtree), ordered by date.
+/// Used for recurring expense detection in the handler.
+pub fn fetch_expenses_for_recurring_detection(
+    conn: &Connection,
+    exclude_category_ids: &[i64],
+) -> rusqlite::Result<Vec<ExpenseRow>> {
+    let mut sql = String::from(
+        "SELECT e.date, e.amount_cents, e.description, e.payee, e.counterparty_iban \
+         FROM transactions e \
+         WHERE e.amount_cents < 0",
+    );
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
+    if !exclude_category_ids.is_empty() {
+        let placeholders: String = exclude_category_ids
+            .iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(",");
+        sql.push_str(&format!(
+            " AND (e.category_id IS NULL OR e.category_id NOT IN ({}))",
+            placeholders
+        ));
+        for &id in exclude_category_ids {
+            params_vec.push(Box::new(id));
+        }
+    }
+
+    sql.push_str(" ORDER BY e.date");
+
+    let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map(params_refs.as_slice(), |row| {
+            Ok(ExpenseRow {
+                date: row.get(0)?,
+                amount_cents: row.get(1)?,
+                description: row.get(2)?,
+                payee: row.get(3)?,
+                counterparty_iban: row.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
 fn get_transaction_tags(conn: &Connection, transaction_id: i64) -> rusqlite::Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
         "SELECT t.id, t.name, t.color, t.style, t.created_at

@@ -118,7 +118,7 @@ pub fn list_activities(
     let mut stmt = conn.prepare(&sql)?;
 
     let activities = stmt
-        .query_map(params_refs.as_slice(), |row| trading_activity_from_row(row))?
+        .query_map(params_refs.as_slice(), trading_activity_from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(activities)

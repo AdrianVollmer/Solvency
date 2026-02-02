@@ -9,6 +9,7 @@ pub mod import_preview;
 pub mod manage;
 pub mod market_data;
 pub mod net_worth;
+pub mod recurring_expenses;
 pub mod rules;
 pub mod settings;
 pub mod spending;
@@ -37,6 +38,7 @@ pub fn routes() -> Router<AppState> {
             "/spending/category-transactions",
             get(spending::category_transactions),
         )
+        .route("/recurring-expenses", get(recurring_expenses::index))
         .route("/transactions", get(transactions::index))
         .route("/import", get(import::index))
         .route("/settings", get(settings::index))

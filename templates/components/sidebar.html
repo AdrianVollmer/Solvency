@@ -29,7 +29,7 @@
         </div>
 
         {% call sidebar_section("Insights", "insights", title, icons,
-            title == "Balances" || title == "Spending" || title == "Positions" || title == "Net Worth"
+            title == "Balances" || title == "Spending" || title == "Recurring Expenses" || title == "Positions" || title == "Net Worth"
         ) %}
             <a href="/balances" class="nav-item {% if title == "Balances" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("wallet")|safe }}</span>
@@ -39,6 +39,11 @@
             <a href="/spending" class="nav-item {% if title == "Spending" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("bar-chart")|safe }}</span>
                 <span class="text-sm font-medium">Spending</span>
+            </a>
+
+            <a href="/recurring-expenses" class="nav-item {% if title == "Recurring Expenses" %}nav-item-active{% endif %}">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("repeat")|safe }}</span>
+                <span class="text-sm font-medium">Recurring</span>
             </a>
 
             <a href="/trading/positions" class="nav-item {% if title == "Positions" %}nav-item-active{% endif %}">
