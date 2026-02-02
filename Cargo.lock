@@ -3616,7 +3616,9 @@ dependencies = [
 name = "solvency-desktop"
 version = "0.1.1"
 dependencies = [
+ "axum",
  "dirs",
+ "http",
  "http-body-util",
  "solvency",
  "tauri",

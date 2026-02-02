@@ -10,6 +10,8 @@ license = "MIT"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+axum = "0.7"
+http = "1"
 solvency = { path = ".." }
 tauri = { version = "2", features = [] }
 tokio = { version = "1", features = ["full"] }
