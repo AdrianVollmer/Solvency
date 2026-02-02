@@ -1,9 +1,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use http_body_util::BodyExt;
 use solvency::config::{AuthMode, Config};
 use solvency::server;
 use std::path::PathBuf;
+use std::sync::{Arc, OnceLock};
 use tauri::Manager;
+use tower::ServiceExt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -16,12 +19,33 @@ fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    tauri::Builder::default()
-        .setup(|app| {
-            let app_handle = app.handle().clone();
+    let router: Arc<OnceLock<axum::Router>> = Arc::new(OnceLock::new());
 
-            // In bundled builds, resources are under resource_dir().
-            // In dev, fall back to the workspace root via CARGO_MANIFEST_DIR.
+    let protocol_router = Arc::clone(&router);
+    tauri::Builder::default()
+        .register_asynchronous_uri_scheme_protocol("solvency", move |_ctx, request, responder| {
+            let router = Arc::clone(&protocol_router);
+            tauri::async_runtime::spawn(async move {
+                let router = router.get().expect("Router not initialized").clone();
+
+                let (parts, body) = request.into_parts();
+                let body = axum::body::Body::from(body);
+                let request = http::Request::from_parts(parts, body);
+
+                let response = router.oneshot(request).await.expect("Infallible");
+
+                let (parts, body) = response.into_parts();
+                let bytes = body
+                    .collect()
+                    .await
+                    .expect("Failed to collect response body")
+                    .to_bytes();
+
+                let response = http::Response::from_parts(parts, bytes.to_vec());
+                responder.respond(response);
+            });
+        })
+        .setup(move |app| {
             let resource_dir = app.path().resource_dir().ok();
             let workspace_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .parent()
@@ -53,6 +77,7 @@ fn main() {
                 migrations_path,
                 static_path,
                 auth_mode: AuthMode::Unauthenticated,
+                secure_cookies: false,
             };
 
             tracing::info!(
@@ -61,28 +86,22 @@ fn main() {
                 "Starting embedded Solvency server"
             );
 
-            tauri::async_runtime::spawn(async move {
-                let (_state, router) =
-                    server::build_app(config).expect("Failed to build Solvency app");
+            let (_state, app_router) =
+                server::build_app(config).expect("Failed to build Solvency app");
+            router.set(app_router).expect("Router already initialized");
 
-                let (port, _handle) = server::serve(router, "127.0.0.1", 0)
-                    .await
-                    .expect("Failed to start server");
+            let window = tauri::WebviewWindowBuilder::new(
+                app.handle(),
+                "main",
+                tauri::WebviewUrl::CustomProtocol("solvency://localhost".parse().unwrap()),
+            )
+            .title("Solvency")
+            .inner_size(1280.0, 800.0)
+            .min_inner_size(800.0, 600.0)
+            .build()
+            .expect("Failed to create window");
 
-                tracing::info!("Solvency server listening on 127.0.0.1:{}", port);
-
-                let url = format!("http://127.0.0.1:{port}");
-                tauri::WebviewWindowBuilder::new(
-                    &app_handle,
-                    "main",
-                    tauri::WebviewUrl::External(url.parse().unwrap()),
-                )
-                .title("Solvency")
-                .inner_size(1280.0, 800.0)
-                .min_inner_size(800.0, 600.0)
-                .build()
-                .expect("Failed to create window");
-            });
+            let _ = window;
 
             Ok(())
         })

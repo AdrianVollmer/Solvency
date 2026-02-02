@@ -3617,10 +3617,12 @@ name = "solvency-desktop"
 version = "0.1.1"
 dependencies = [
  "dirs",
+ "http-body-util",
  "solvency",
  "tauri",
  "tauri-build",
  "tokio",
+ "tower",
  "tracing",
  "tracing-subscriber",
 ]

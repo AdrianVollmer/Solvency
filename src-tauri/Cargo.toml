@@ -13,6 +13,8 @@ tauri-build = { version = "2", features = [] }
 solvency = { path = ".." }
 tauri = { version = "2", features = [] }
 tokio = { version = "1", features = ["full"] }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
 dirs = "6"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
