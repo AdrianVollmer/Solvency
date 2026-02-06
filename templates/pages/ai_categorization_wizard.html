@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-start justify-between gap-4">
+        {% call ui::page_header(title="AI Categorization") %}{% endcall %}
+        <a href="/ai-categorization" class="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("x")|safe }}</span>
+        </a>
+    </div>
+
+    {% include "partials/ai_categorization_status.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var pollInterval = null;
+    var lastStatus = null;
+    var lastProcessed = null;
+
+    function startPolling() {
+        var content = document.getElementById('wizard-content');
+        if (!content || content.dataset.polling !== 'true') {
+            return;
+        }
+
+        var sessionId = content.dataset.sessionId;
+        lastStatus = content.dataset.status;
+        lastProcessed = parseInt(content.dataset.processed, 10);
+
+        pollInterval = setInterval(function() {
+            checkStatus(sessionId);
+        }, 500);
+    }
+
+    function checkStatus(sessionId) {
+        fetch('/ai-categorization/' + sessionId + '/status.json')
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                // Only update DOM if status or progress changed
+                if (data.status !== lastStatus || data.processed_transactions !== lastProcessed) {
+                    lastStatus = data.status;
+                    lastProcessed = data.processed_transactions;
+                    updateDOM(sessionId);
+                }
+
+                // Stop polling if no longer processing
+                if (data.status !== 'pending' && data.status !== 'processing') {
+                    stopPolling();
+                    // Do one final DOM update to show completed state
+                    updateDOM(sessionId);
+                }
+            })
+            .catch(function(err) {
+                console.error('Status check failed:', err);
+            });
+    }
+
+    function updateDOM(sessionId) {
+        fetch('/ai-categorization/' + sessionId + '/status')
+            .then(function(response) { return response.text(); })
+            .then(function(html) {
+                var content = document.getElementById('wizard-content');
+                if (content) {
+                    var temp = document.createElement('div');
+                    temp.innerHTML = html;
+                    var newContent = temp.firstElementChild;
+                    content.replaceWith(newContent);
+
+                    // Check if we need to continue polling
+                    if (newContent.dataset.polling === 'true') {
+                        // Restart polling with new element reference
+                        stopPolling();
+                        startPolling();
+                    }
+                }
+            });
+    }
+
+    function stopPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+    }
+
+    // Start polling on page load
+    document.addEventListener('DOMContentLoaded', startPolling);
+
+    // Also start if htmx swaps in new content
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'wizard-content' || evt.detail.target.contains(document.getElementById('wizard-content'))) {
+            stopPolling();
+            startPolling();
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -667,6 +667,99 @@ pub fn fetch_expenses_for_recurring_detection(
     Ok(rows)
 }
 
+/// Count all transactions
+pub fn count_all(conn: &Connection) -> rusqlite::Result<i64> {
+    conn.query_row("SELECT COUNT(*) FROM transactions", [], |row| row.get(0))
+}
+
+/// Count uncategorized transactions
+pub fn count_uncategorized(conn: &Connection) -> rusqlite::Result<i64> {
+    conn.query_row(
+        "SELECT COUNT(*) FROM transactions WHERE category_id IS NULL",
+        [],
+        |row| row.get(0),
+    )
+}
+
+/// List all transactions (simple version without relations, for AI categorization)
+pub fn list_all_transactions(conn: &Connection) -> rusqlite::Result<Vec<Transaction>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, date, amount_cents, currency, description, category_id, account_id,
+                notes, created_at, updated_at, value_date, payer, payee, reference,
+                transaction_type, counterparty_iban, creditor_id, mandate_reference, customer_reference
+         FROM transactions
+         ORDER BY date DESC, id DESC",
+    )?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(Transaction {
+                id: row.get(0)?,
+                date: row.get(1)?,
+                amount_cents: row.get(2)?,
+                currency: row.get(3)?,
+                description: row.get(4)?,
+                category_id: row.get(5)?,
+                account_id: row.get(6)?,
+                notes: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+                value_date: row.get(10)?,
+                payer: row.get(11)?,
+                payee: row.get(12)?,
+                reference: row.get(13)?,
+                transaction_type: row.get(14)?,
+                counterparty_iban: row.get(15)?,
+                creditor_id: row.get(16)?,
+                mandate_reference: row.get(17)?,
+                customer_reference: row.get(18)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(rows)
+}
+
+/// List uncategorized transactions (simple version without relations, for AI categorization)
+pub fn list_uncategorized_transactions(conn: &Connection) -> rusqlite::Result<Vec<Transaction>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, date, amount_cents, currency, description, category_id, account_id,
+                notes, created_at, updated_at, value_date, payer, payee, reference,
+                transaction_type, counterparty_iban, creditor_id, mandate_reference, customer_reference
+         FROM transactions
+         WHERE category_id IS NULL
+         ORDER BY date DESC, id DESC",
+    )?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(Transaction {
+                id: row.get(0)?,
+                date: row.get(1)?,
+                amount_cents: row.get(2)?,
+                currency: row.get(3)?,
+                description: row.get(4)?,
+                category_id: row.get(5)?,
+                account_id: row.get(6)?,
+                notes: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+                value_date: row.get(10)?,
+                payer: row.get(11)?,
+                payee: row.get(12)?,
+                reference: row.get(13)?,
+                transaction_type: row.get(14)?,
+                counterparty_iban: row.get(15)?,
+                creditor_id: row.get(16)?,
+                mandate_reference: row.get(17)?,
+                customer_reference: row.get(18)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(rows)
+}
+
 fn get_transaction_tags(conn: &Connection, transaction_id: i64) -> rusqlite::Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
         "SELECT t.id, t.name, t.color, t.style, t.created_at

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block content %}
+{% call ui::page_container(max_width="max-w-4xl") %}
+    {% call ui::page_header(title="AI Categorization") %}{% endcall %}
+
+    <div class="space-y-6">
+        {# Info Card #}
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+            <div class="flex gap-3">
+                <span class="icon-sm text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true">{{ icons.get("info")|safe }}</span>
+                <div class="text-sm text-blue-800 dark:text-blue-200">
+                    <p class="font-medium mb-1">Automatic Transaction Categorization</p>
+                    <p class="text-blue-700 dark:text-blue-300">
+                        Use AI to automatically suggest categories for your transactions.
+                        Supports OpenAI, Anthropic, or local Ollama models.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {# Settings Card #}
+        {% call ui::card() %}
+            <form action="/ai-categorization/settings" method="POST" hx-post="/ai-categorization/settings" hx-target="#settings-result" hx-swap="innerHTML">
+                <h2 class="text-lg font-semibold mb-4">AI Provider Settings</h2>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="provider" class="block text-sm font-medium mb-1">Provider</label>
+                        <select name="provider" id="provider" class="input w-full" onchange="updateProviderDefaults()">
+                            {% for item in providers %}
+                            <option value="{{ item.0.as_str() }}" {% if ai_settings.provider == item.0 %}selected{% endif %}>{{ item.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="base_url" class="block text-sm font-medium mb-1">API Base URL</label>
+                        <input type="text" name="base_url" id="base_url" class="input w-full"
+                               value="{{ ai_settings.base_url }}" placeholder="https://api.openai.com/v1">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="url-hint">
+                            For Ollama, use http://localhost:11434
+                        </p>
+                    </div>
+
+                    <div id="api-key-field">
+                        <label for="api_key" class="block text-sm font-medium mb-1">API Key</label>
+                        <input type="password" name="api_key" id="api_key" class="input w-full"
+                               value="{{ ai_settings.api_key }}" placeholder="sk-...">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Not required for local Ollama
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="model" class="block text-sm font-medium mb-1">Model</label>
+                        <input type="text" name="model" id="model" class="input w-full"
+                               value="{{ ai_settings.model }}" placeholder="gpt-4o-mini">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="model-hint">
+                            e.g., gpt-4o-mini, llama3.2, claude-sonnet-4-20250514
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 mt-6">
+                    <button type="submit" class="btn btn-secondary">
+                        <span class="icon-sm" aria-hidden="true">{{ icons.get("save")|safe }}</span>
+                        Save Settings
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                            hx-post="/ai-categorization/test"
+                            hx-target="#test-result"
+                            hx-swap="innerHTML"
+                            hx-disabled-elt="this">
+                        <span class="btn-spinner icon-sm animate-spin" aria-hidden="true">{{ icons.get("loader-circle")|safe }}</span>
+                        <span class="btn-label flex items-center gap-2">
+                            <span class="icon-sm" aria-hidden="true">{{ icons.get("wifi")|safe }}</span>
+                            Test Connection
+                        </span>
+                    </button>
+                </div>
+
+                <div id="settings-result" class="mt-4"></div>
+                <div id="test-result" class="mt-4"></div>
+            </form>
+        {% endcall %}
+
+        {# Start Categorization Card #}
+        {% call ui::card() %}
+            <h2 class="text-lg font-semibold mb-4">Start Categorization</h2>
+
+            <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Uncategorized transactions</span>
+                    <span class="font-semibold">{{ uncategorized_count }}</span>
+                </div>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Total transactions</span>
+                    <span class="font-medium text-gray-500">{{ total_count }}</span>
+                </div>
+            </div>
+
+            <form action="/ai-categorization/start" method="POST">
+                <div class="mb-4">
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" name="include_categorized" value="true" class="rounded">
+                        <span>Include already categorized transactions</span>
+                    </label>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
+                        Re-analyze all transactions, not just uncategorized ones
+                    </p>
+                </div>
+
+                <button type="submit" class="btn btn-primary" {% if uncategorized_count == 0 %}disabled{% endif %}>
+                    <span class="icon-sm" aria-hidden="true">{{ icons.get("sparkles")|safe }}</span>
+                    Start AI Categorization
+                </button>
+
+                {% if uncategorized_count == 0 %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    All transactions are already categorized. Check the box above to re-analyze them.
+                </p>
+                {% endif %}
+            </form>
+        {% endcall %}
+    </div>
+{% endcall %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateProviderDefaults() {
+    const provider = document.getElementById('provider').value;
+    const baseUrlInput = document.getElementById('base_url');
+    const modelInput = document.getElementById('model');
+    const urlHint = document.getElementById('url-hint');
+    const modelHint = document.getElementById('model-hint');
+    const apiKeyField = document.getElementById('api-key-field');
+
+    const defaults = {
+        'ollama': {
+            url: 'http://localhost:11434',
+            model: 'llama3.2',
+            urlHint: 'For Ollama, use http://localhost:11434',
+            modelHint: 'e.g., llama3.2, mistral, codellama',
+            showApiKey: false
+        },
+        'openai': {
+            url: 'https://api.openai.com/v1',
+            model: 'gpt-4o-mini',
+            urlHint: 'OpenAI API endpoint',
+            modelHint: 'e.g., gpt-4o-mini, gpt-4o, gpt-4-turbo',
+            showApiKey: true
+        },
+        'anthropic': {
+            url: 'https://api.anthropic.com',
+            model: 'claude-sonnet-4-20250514',
+            urlHint: 'Anthropic API endpoint',
+            modelHint: 'e.g., claude-sonnet-4-20250514, claude-3-haiku-20240307',
+            showApiKey: true
+        }
+    };
+
+    const d = defaults[provider] || defaults['openai'];
+
+    // Only update if the field is empty or matches a known default
+    const knownUrls = Object.values(defaults).map(x => x.url);
+    if (!baseUrlInput.value || knownUrls.includes(baseUrlInput.value)) {
+        baseUrlInput.value = d.url;
+    }
+
+    const knownModels = Object.values(defaults).map(x => x.model);
+    if (!modelInput.value || knownModels.includes(modelInput.value)) {
+        modelInput.value = d.model;
+    }
+
+    urlHint.textContent = d.urlHint;
+    modelHint.textContent = d.modelHint;
+    apiKeyField.style.display = d.showApiKey ? 'block' : 'none';
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateProviderDefaults();
+});
+</script>
+{% endblock %}

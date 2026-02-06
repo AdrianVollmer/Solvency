@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod ai_categorization;
 pub mod api;
 pub mod api_logs;
 pub mod balances;
@@ -249,6 +250,46 @@ pub fn routes() -> Router<AppState> {
         .route("/settings/export-database", get(settings::export_database))
         .route("/settings/import-database", post(settings::import_database))
         .route("/settings/clear-database", delete(settings::clear_database))
+        // AI Categorization
+        .route("/ai-categorization", get(ai_categorization::index))
+        .route(
+            "/ai-categorization/settings",
+            post(ai_categorization::save_settings),
+        )
+        .route("/ai-categorization/test", post(ai_categorization::test))
+        .route("/ai-categorization/start", post(ai_categorization::start))
+        .route(
+            "/ai-categorization/:session_id",
+            get(ai_categorization::wizard),
+        )
+        .route(
+            "/ai-categorization/:session_id/status",
+            get(ai_categorization::status),
+        )
+        .route(
+            "/ai-categorization/:session_id/status.json",
+            get(ai_categorization::status_json),
+        )
+        .route(
+            "/ai-categorization/:session_id/results",
+            get(ai_categorization::results),
+        )
+        .route(
+            "/ai-categorization/:session_id/results/:result_id/apply",
+            post(ai_categorization::apply_result),
+        )
+        .route(
+            "/ai-categorization/:session_id/results/:result_id/reject",
+            post(ai_categorization::reject_result),
+        )
+        .route(
+            "/ai-categorization/:session_id/apply-all",
+            post(ai_categorization::apply_all),
+        )
+        .route(
+            "/ai-categorization/:session_id/cancel",
+            post(ai_categorization::cancel),
+        )
         // API (JSON for charts)
         .route(
             "/api/analytics/spending-by-category",

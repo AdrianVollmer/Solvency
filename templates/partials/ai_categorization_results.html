@@ -1,0 +1,130 @@
+{% if results.is_empty() %}
+<div class="p-8 text-center text-gray-500">
+    <p>No suggestions to review. All transactions were skipped or had errors.</p>
+</div>
+{% else %}
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 dark:bg-gray-700/50">
+            <tr>
+                <th class="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Date</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Description</th>
+                <th class="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-300">Amount</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Current</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Suggested</th>
+                <th class="px-4 py-3 text-center font-medium text-gray-600 dark:text-gray-300">Confidence</th>
+                <th class="px-4 py-3 text-center font-medium text-gray-600 dark:text-gray-300">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for r in results %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <td class="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">
+                    {{ r.transaction_date }}
+                </td>
+                <td class="px-4 py-3">
+                    <div class="max-w-xs truncate" title="{{ r.transaction_description }}">
+                        {{ r.transaction_description }}
+                    </div>
+                    {% if r.result.ai_reasoning.is_some() %}
+                    <div class="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs truncate" title="{{ r.result.ai_reasoning.as_ref().unwrap() }}">
+                        {{ r.result.ai_reasoning.as_ref().unwrap() }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap font-mono">
+                    {% if r.transaction_amount_cents < 0 %}
+                    <span class="text-red-600 dark:text-red-400">{{ settings.format_money_neutral_with_currency(&r.transaction_amount_cents, &r.transaction_currency) }}</span>
+                    {% else %}
+                    <span class="text-green-600 dark:text-green-400">{{ settings.format_money_neutral_with_currency(&r.transaction_amount_cents, &r.transaction_currency) }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
+                    {{ r.original_category_name.as_deref().unwrap_or("Uncategorized") }}
+                </td>
+                <td class="px-4 py-3">
+                    {% if r.suggested_category_name.is_some() %}
+                    <span class="font-medium text-primary-600 dark:text-primary-400">
+                        {{ r.suggested_category_name.as_ref().unwrap() }}
+                    </span>
+                    {% else %}
+                    <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-center">
+                    {% if r.result.confidence.is_some() %}
+                    <span class="{{ r.confidence_color() }}">
+                        {{ r.confidence_percent().unwrap_or(0) }}%
+                    </span>
+                    {% else %}
+                    <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-center" id="result-actions-{{ r.result.id }}">
+                    {% if r.is_pending() && r.result.suggested_category_id.is_some() %}
+                    <div class="flex items-center justify-center gap-2">
+                        <button class="p-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                                title="Apply suggestion"
+                                hx-post="/ai-categorization/{{ session_id }}/results/{{ r.result.id }}/apply"
+                                hx-target="#result-actions-{{ r.result.id }}"
+                                hx-swap="innerHTML">
+                            <span class="icon-sm" aria-hidden="true">{{ crate::filters::Icons.get("check")|safe }}</span>
+                        </button>
+                        <button class="p-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                title="Reject suggestion"
+                                hx-post="/ai-categorization/{{ session_id }}/results/{{ r.result.id }}/reject"
+                                hx-target="#result-actions-{{ r.result.id }}"
+                                hx-swap="innerHTML">
+                            <span class="icon-sm" aria-hidden="true">{{ crate::filters::Icons.get("x")|safe }}</span>
+                        </button>
+                    </div>
+                    {% else if r.is_applied() %}
+                    <span class="text-green-600 dark:text-green-400 text-sm">Applied</span>
+                    {% else if r.is_rejected() %}
+                    <span class="text-gray-500 text-sm">Rejected</span>
+                    {% else %}
+                    <span class="text-gray-400 text-sm">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# Pagination #}
+{% if total_count > page_size %}
+<div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+    <div class="text-sm text-gray-500 dark:text-gray-400">
+        Showing {{ (page - 1) * page_size + 1 }} - {% if page * page_size < total_count %}{{ page * page_size }}{% else %}{{ total_count }}{% endif %} of {{ total_count }}
+    </div>
+    <div class="flex items-center gap-2">
+        {% if page > 1 %}
+        <button class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                hx-get="/ai-categorization/{{ session_id }}/results?page={{ page - 1 }}"
+                hx-target="#results-table"
+                hx-swap="innerHTML">
+            Previous
+        </button>
+        {% endif %}
+        <span class="text-sm text-gray-500">Page {{ page }} of {{ (total_count + page_size - 1) / page_size }}</span>
+        {% if page * page_size < total_count %}
+        <button class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                hx-get="/ai-categorization/{{ session_id }}/results?page={{ page + 1 }}"
+                hx-target="#results-table"
+                hx-swap="innerHTML">
+            Next
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% if pending_count > 0 %}
+<div class="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-200 dark:border-blue-800">
+    <p class="text-sm text-blue-700 dark:text-blue-300">
+        {{ pending_count }} suggestions pending review
+    </p>
+</div>
+{% endif %}
+{% endif %}

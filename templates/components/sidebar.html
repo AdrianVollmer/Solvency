@@ -65,6 +65,7 @@
             || title == "Import" || title == "Import Transactions" || title == "Import Trading Activities"
             || title == "Manage" || title == "Add Category" || title == "Edit Category"
             || title == "Add Tag" || title == "Add Rule" || title == "Edit Rule"
+            || title == "AI Categorization"
         ) %}
             <a href="/accounts" class="nav-item {% if title == "Accounts" || title == "Add Account" || title == "Edit Account" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("credit-card")|safe }}</span>
@@ -94,6 +95,11 @@
             <a href="/manage" class="nav-item {% if title == "Manage" || title == "Add Category" || title == "Edit Category" || title == "Add Tag" || title == "Add Rule" || title == "Edit Rule" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span>
                 <span class="text-sm font-medium">Manage</span>
+            </a>
+
+            <a href="/ai-categorization" class="nav-item {% if title == "AI Categorization" %}nav-item-active{% endif %}">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("sparkles")|safe }}</span>
+                <span class="text-sm font-medium">AI Categorize</span>
             </a>
         {% endcall %}
 

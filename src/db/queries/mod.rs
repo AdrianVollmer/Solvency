@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod ai_categorization;
 pub mod api_logs;
 pub mod balances;
 pub mod categories;

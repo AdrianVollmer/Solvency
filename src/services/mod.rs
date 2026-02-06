@@ -1,3 +1,4 @@
+pub mod ai_client;
 pub mod analytics;
 pub mod csv_parser;
 pub mod market_data;
