@@ -10,6 +10,7 @@ pub mod manage;
 pub mod market_data;
 pub mod net_worth;
 pub mod recurring_expenses;
+pub mod retirement;
 pub mod rules;
 pub mod settings;
 pub mod spending;
@@ -29,6 +30,16 @@ pub fn routes() -> Router<AppState> {
         // Pages
         .route("/", get(dashboard::index))
         .route("/balances", get(balances::index))
+        // Retirement Calculator
+        .route("/retirement", get(retirement::index))
+        .route("/retirement/new", get(retirement::new_form))
+        .route("/retirement/create", post(retirement::create))
+        .route("/retirement/:id/edit", get(retirement::edit_form))
+        .route("/retirement/:id/update", post(retirement::update))
+        .route("/retirement/:id/delete", post(retirement::delete))
+        .route("/retirement/:id/set-main", post(retirement::set_main))
+        .route("/api/retirement/:id/chart", get(retirement::chart_data))
+        .route("/api/retirement/simulate", post(retirement::simulate))
         .route("/spending", get(spending::index))
         .route(
             "/spending/monthly-transactions",

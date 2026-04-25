@@ -1,0 +1,22 @@
+CREATE TABLE scenarios (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    is_main INTEGER NOT NULL DEFAULT 0,
+    birthday TEXT,
+    desired_retirement_age INTEGER,
+    marriage_status TEXT NOT NULL DEFAULT 'single',
+    current_portfolio_override_cents INTEGER,
+    monthly_savings_cents INTEGER,
+    assumed_roi REAL NOT NULL DEFAULT 0.07,
+    expected_inflation REAL NOT NULL DEFAULT 0.02,
+    monthly_living_costs_cents INTEGER,
+    tax_rate REAL NOT NULL DEFAULT 0.26375,
+    monthly_pension_cents INTEGER,
+    official_retirement_age INTEGER,
+    life_expectancy INTEGER NOT NULL DEFAULT 95,
+    deposits_cents INTEGER,
+    monthly_barista_income_cents INTEGER,
+    savings_growth_rate REAL NOT NULL DEFAULT 0.0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

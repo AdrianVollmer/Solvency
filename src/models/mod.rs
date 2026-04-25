@@ -1,4 +1,5 @@
 pub mod account;
+pub mod retirement;
 pub mod api_log;
 pub mod category;
 pub mod import;
@@ -22,5 +23,9 @@ pub use tag::{NewTag, Tag, TagStyle, TagWithUsage, TAG_PALETTE};
 pub use trading::{
     NewTradingActivity, Position, PositionWithMarketData, TradingActivity, TradingActivityType,
     TradingImportRow, TradingImportRowStatus, TradingImportSession, TradingImportStatus,
+};
+pub use retirement::{
+    MonteCarloResult, RetirementChartData, RetirementProjection, Scenario, SimulateResponse,
+    SavingsRow, WithdrawalRow,
 };
 pub use transaction::{NewTransaction, Transaction, TransactionWithRelations};

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block content %}
+<div class="space-y-6">
+    {% if form_scenario.is_some() %}
+    {% call ui::page_header(title="Edit Scenario", back_url="/retirement", back_label="Retirement") %}{% endcall %}
+    {% else %}
+    {% call ui::page_header(title="New Scenario", back_url="/retirement", back_label="Retirement") %}{% endcall %}
+    {% endif %}
+
+    {% call ui::card(class="p-6") %}
+        {% include "partials/retirement_form.html" %}
+    {% endcall %}
+</div>
+{% endblock %}

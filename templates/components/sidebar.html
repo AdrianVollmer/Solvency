@@ -29,7 +29,7 @@
         </div>
 
         {% call sidebar_section("Insights", "insights", title, icons,
-            title == "Balances" || title == "Spending" || title == "Recurring Expenses" || title == "Positions" || title == "Net Worth"
+            title == "Balances" || title == "Spending" || title == "Recurring Expenses" || title == "Positions" || title == "Net Worth" || title == "Retirement"
         ) %}
             <a href="/balances" class="nav-item {% if title == "Balances" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("wallet")|safe }}</span>
@@ -54,6 +54,11 @@
             <a href="/trading/net-worth" class="nav-item {% if title == "Net Worth" %}nav-item-active{% endif %}">
                 <span class="icon-sm" aria-hidden="true">{{ icons.get("banknote")|safe }}</span>
                 <span class="text-sm font-medium">Net Worth</span>
+            </a>
+
+            <a href="/retirement" class="nav-item {% if title == "Retirement" %}nav-item-active{% endif %}">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("piggy-bank")|safe }}</span>
+                <span class="text-sm font-medium">Retirement</span>
             </a>
         {% endcall %}
 

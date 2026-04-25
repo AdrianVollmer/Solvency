@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./templates/**/*.html", "./src-frontend/ts/**/*.ts"],
+  safelist: ["group-hover:opacity-100"],
   darkMode: "class",
   theme: {
     extend: {

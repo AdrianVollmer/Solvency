@@ -55,6 +55,10 @@ urlencoding = "2"
 # UUID generation
 uuid = { version = "1", features = ["v4"] }
 
+# Monte Carlo simulation
+rand = "0.8"
+rand_distr = "0.4"
+
 # Configuration
 dotenvy = "0.15"
 

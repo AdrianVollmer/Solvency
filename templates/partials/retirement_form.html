@@ -1,0 +1,248 @@
+{% import "macros/ui.html" as ui %}
+
+<form
+    method="post"
+    action="{% if let Some(s) = form_scenario %}/retirement/{{ s.id }}/update{% else %}/retirement/create{% endif %}"
+    class="space-y-6"
+>
+    <input type="hidden" name="_xsrf" value="{{ xsrf_token }}">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {# Name — no tooltip needed #}
+        {% call ui::field(label="Name") %}
+            <input
+                type="text"
+                name="name"
+                class="input w-full"
+                required
+                value="{% if let Some(s) = form_scenario %}{{ s.name }}{% endif %}"
+                placeholder="My Retirement Plan"
+            >
+        {% endcall %}
+
+        {# Marriage status — no tooltip needed #}
+        {% call ui::field(label="Marriage Status") %}
+            <select name="marriage_status" class="input w-full select">
+                <option value="single" {% if let Some(s) = form_scenario %}{% if s.marriage_status == "single" %}selected{% endif %}{% else %}selected{% endif %}>Single</option>
+                <option value="married" {% if let Some(s) = form_scenario %}{% if s.marriage_status == "married" %}selected{% endif %}{% endif %}>Married</option>
+            </select>
+        {% endcall %}
+
+        {# Birthday — no tooltip needed #}
+        {% call ui::field(label="Birthday") %}
+            <input
+                type="date"
+                name="birthday"
+                class="input w-full"
+                value="{% if let Some(s) = form_scenario %}{% if let Some(b) = &s.birthday %}{{ b }}{% endif %}{% endif %}"
+            >
+        {% endcall %}
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Desired Retirement Age
+                <span title="The age at which you plan to stop working and start drawing from your portfolio." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="number"
+                name="desired_retirement_age"
+                class="input w-full"
+                min="30" max="90"
+                placeholder="63"
+                value="{% if let Some(s) = form_scenario %}{% if let Some(a) = s.desired_retirement_age %}{{ a }}{% endif %}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Official Pension Age
+                <span title="Age at which statutory pension payments begin (e.g. 67 in Germany). Pension income offsets withdrawals from this age onward." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="number"
+                name="official_retirement_age"
+                class="input w-full"
+                min="55" max="75"
+                placeholder="67"
+                value="{% if let Some(s) = form_scenario %}{% if let Some(a) = s.official_retirement_age %}{{ a }}{% endif %}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Life Expectancy
+                <span title="Planning horizon. The simulation ensures your portfolio survives to this age. Being conservative (90-100) is safer." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="number"
+                name="life_expectancy"
+                class="input w-full"
+                min="60" max="120"
+                placeholder="95"
+                value="{% if let Some(s) = form_scenario %}{{ s.life_expectancy }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Current Portfolio Override
+                <span title="Override the auto-detected net worth. Leave blank to use the live value computed from your accounts and holdings." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="current_portfolio_override"
+                class="input w-full"
+                placeholder="Current: {{ current_net_worth_formatted }}"
+                value="{% if let Some(s) = form_scenario %}{{ s.portfolio_override_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Cost Basis (Deposits)
+                <span title="Total amount you have invested to date (purchase cost, excluding gains). Used for FIFO tax: only the gain fraction of each withdrawal is taxed. Leave blank to compute automatically from your trading history." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="deposits"
+                class="input w-full"
+                placeholder="Auto-computed from trading history"
+                value="{% if let Some(s) = form_scenario %}{{ s.deposits_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Monthly Savings
+                <span title="How much you invest each month during the accumulation phase, in your currency." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="monthly_savings"
+                class="input w-full"
+                placeholder="e.g. 1500"
+                value="{% if let Some(s) = form_scenario %}{{ s.monthly_savings_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Monthly Living Costs After Retirement
+                <span title="Desired monthly spending in retirement, expressed in today&apos;s purchasing power. The model inflates this to nominal terms each year." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="monthly_living_costs"
+                class="input w-full"
+                placeholder="e.g. 3000"
+                value="{% if let Some(s) = form_scenario %}{{ s.monthly_living_costs_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Expected Monthly Pension
+                <span title="Expected statutory or private pension income per month, in today&apos;s money. Applied from Official Pension Age onward, reducing portfolio withdrawals." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="monthly_pension"
+                class="input w-full"
+                placeholder="e.g. 1200"
+                value="{% if let Some(s) = form_scenario %}{{ s.monthly_pension_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Barista FIRE Income (monthly)
+                <span title="Part-time or supplemental income earned between early retirement and official pension age — e.g. a simple job kept mainly for health insurance. In today&apos;s money; reduces portfolio withdrawals during the pre-pension gap." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="monthly_barista_income"
+                class="input w-full"
+                placeholder="e.g. 800"
+                value="{% if let Some(s) = form_scenario %}{{ s.monthly_barista_income_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Yearly Savings Increase (%)
+                <span title="Expected annual growth of your monthly savings — e.g. 2% if you expect regular raises and plan to save proportionally more each year. Leave blank or set to 0 for a fixed savings amount." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="savings_growth_rate"
+                class="input w-full"
+                placeholder="e.g. 2"
+                value="{% if let Some(s) = form_scenario %}{{ s.savings_growth_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Assumed Annual ROI (%)
+                <span title="Expected average annual return on your portfolio before inflation and taxes. 7% is a common long-term assumption for a globally diversified equity portfolio." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="assumed_roi"
+                class="input w-full"
+                placeholder="7"
+                value="{% if let Some(s) = form_scenario %}{{ s.roi_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Expected Annual Inflation (%)
+                <span title="Assumed annual price inflation rate. Used to convert real (today&apos;s money) amounts to nominal future amounts, and to display results in today&apos;s purchasing power." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="expected_inflation"
+                class="input w-full"
+                placeholder="2"
+                value="{% if let Some(s) = form_scenario %}{{ s.inflation_display() }}{% endif %}"
+            >
+        </div>
+
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Investment Income Tax Rate (%)
+                <span title="Tax on the gain portion of each withdrawal (FIFO). German default: 26.375% = 25% Abgeltungssteuer + 5.5% Solidaritätszuschlag. Only realized gains are taxed, not the return of principal." class="cursor-help inline-flex items-center justify-center w-4 h-4 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs">?</span>
+            </label>
+            <input
+                type="text"
+                name="tax_rate"
+                class="input w-full"
+                placeholder="26.375"
+                value="{% if let Some(s) = form_scenario %}{{ s.tax_rate_display() }}{% endif %}"
+            >
+        </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+        <input
+            type="checkbox"
+            name="is_main"
+            id="is_main_check"
+            class="checkbox"
+            {% if let Some(s) = form_scenario %}{% if s.is_main %}checked{% endif %}{% endif %}
+        >
+        <label for="is_main_check" class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Set as main scenario
+        </label>
+    </div>
+
+    <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">
+            {% if form_scenario.is_some() %}Save Changes{% else %}Create Scenario{% endif %}
+        </button>
+        {% if let Some(s) = form_scenario %}
+        <a href="/retirement?id={{ s.id }}" class="btn btn-secondary">Cancel</a>
+        {% endif %}
+    </div>
+</form>

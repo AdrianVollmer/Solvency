@@ -25,6 +25,7 @@
 # Generated screenshots (regenerate with scripts/take_screenshots.py)
 /docs/screenshots/
 /docs/collages/
+/docs/superpowers/
 
 # OS
 .DS_Store

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+
+{% block head %}
+<script src="/static/vendor/echarts/echarts.min.js" defer></script>
+<script src="/static/js/dist/{{ manifest.get("retirement-chart.js") }}" defer></script>
+<script src="/static/js/dist/{{ manifest.get("retirement-simulate.js") }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% call ui::page_header(title="Retirement", subtitle="Model your path to financial independence") %}{% endcall %}
+
+    {% if show_new_form %}
+    {# No scenarios yet — show inline form #}
+    {% call ui::card(class="p-6") %}
+        <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-6">New Scenario</h2>
+        {% include "partials/retirement_form.html" %}
+    {% endcall %}
+
+    {% else %}
+    {% if let Some(proj) = projection %}
+
+    {# Scenario selector header #}
+    <div class="flex flex-wrap items-center gap-3">
+        <select
+            class="input"
+            onchange="window.location.href='/retirement?id=' + this.value"
+        >
+            {% for s in all_scenarios %}
+            <option value="{{ s.id }}" {% if s.id == proj.scenario.id %}selected{% endif %}>
+                {{ s.name }}{% if s.is_main %} (main){% endif %}
+            </option>
+            {% endfor %}
+        </select>
+
+        <a href="/retirement/new" class="btn btn-secondary flex items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("plus")|safe }}</span>
+            New
+        </a>
+        <a href="/retirement/{{ proj.scenario.id }}/edit" class="btn btn-secondary flex items-center gap-2">
+            <span class="icon-sm" aria-hidden="true">{{ icons.get("pencil")|safe }}</span>
+            Edit
+        </a>
+
+        {% if !proj.scenario.is_main %}
+        <form method="post" action="/retirement/{{ proj.scenario.id }}/set-main" style="display:inline">
+            <input type="hidden" name="_xsrf" value="{{ xsrf_token }}">
+            <button type="submit" class="btn btn-secondary flex items-center gap-2">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("layers")|safe }}</span>
+                Set as Main
+            </button>
+        </form>
+        {% endif %}
+
+        <form method="post" action="/retirement/{{ proj.scenario.id }}/delete" style="display:inline"
+              onsubmit="return confirm('Delete scenario \'{{ proj.scenario.name }}\'? This cannot be undone.')">
+            <input type="hidden" name="_xsrf" value="{{ xsrf_token }}">
+            <button type="submit" class="btn btn-danger flex items-center gap-2">
+                <span class="icon-sm" aria-hidden="true">{{ icons.get("trash-2")|safe }}</span>
+                Delete
+            </button>
+        </form>
+    </div>
+
+    {# Summary metrics — hero layout matching Net Worth page #}
+    {% if let Some(prob) = &proj.success_probability_display %}
+    <div class="flex flex-col md:flex-row md:items-end gap-6 md:gap-12">
+        <div>
+            <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                Success Probability{% if let Some(age) = proj.scenario.desired_retirement_age %} · Retire at {{ age }}{% endif %}
+            </p>
+            <p id="hero-success-probability" class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums {{ proj.success_color_class }}">{{ prob }}</p>
+        </div>
+        <div class="flex gap-8 text-sm">
+            {% if let Some(age) = &proj.early_retirement_p10_display %}
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Early retirement (10%)</p>
+                <p id="hero-p10" class="mt-0.5 font-semibold text-neutral-900 dark:text-white">{{ age }}</p>
+            </div>
+            {% endif %}
+            {% if let Some(age) = &proj.early_retirement_p50_display %}
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Early retirement (50%)</p>
+                <p id="hero-p50" class="mt-0.5 font-semibold text-neutral-900 dark:text-white">{{ age }}</p>
+            </div>
+            {% endif %}
+            {% if let Some(age) = &proj.early_retirement_p90_display %}
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Early retirement (90%)</p>
+                <p id="hero-p90" class="mt-0.5 font-semibold text-neutral-900 dark:text-white">{{ age }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# Embedded scenario state for the slider JS #}
+    <script id="retirement-state" type="application/json">{{ slider_state_json|safe }}</script>
+
+    {# Scenario parameters summary — values show a slider button on hover #}
+    {% call ui::card(class="p-4") %}
+    <dl class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+        {% if let Some(bd) = &proj.scenario.birthday %}
+        <div>
+            <dt class="text-neutral-500 dark:text-neutral-400">Birthday</dt>
+            <dd class="font-medium text-neutral-900 dark:text-white">{{ bd }}</dd>
+        </div>
+        {% endif %}
+        {% if let Some(age) = proj.scenario.desired_retirement_age %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Retire At</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white">
+                <span id="val-desired_retirement_age">Age {{ age }}</span>
+                <button onclick="openSlider('desired_retirement_age', {{ age }}, 40, 80, 1, 'Retire At', 'age')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        {% endif %}
+        {% if let Some(age) = proj.scenario.official_retirement_age %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Pension Age</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white">
+                <span id="val-official_retirement_age">{{ age }}</span>
+                <button onclick="openSlider('official_retirement_age', {{ age }}, 55, 75, 1, 'Pension Age', 'age')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        {% endif %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Life Expectancy</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white">
+                <span id="val-life_expectancy">{{ proj.scenario.life_expectancy }}</span>
+                <button onclick="openSlider('life_expectancy', {{ proj.scenario.life_expectancy }}, 70, 105, 1, 'Life Expectancy', 'age')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Current Portfolio</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white tabular-nums">
+                <span id="val-current_portfolio_override">{{ settings.format_money_neutral(&proj.current_portfolio_cents) }}</span>
+                <button onclick="openSlider('current_portfolio_override', {{ proj.current_portfolio_cents }}, 0, {{ proj.current_portfolio_cents * 3 }}, {{ (proj.current_portfolio_cents / 100).max(100) }}, 'Current Portfolio', 'money')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        {% if let Some(s) = proj.scenario.monthly_savings_cents %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Monthly Savings</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white tabular-nums">
+                <span id="val-monthly_savings">{{ settings.format_money_neutral(&s) }}</span>
+                <button onclick="openSlider('monthly_savings', {{ s }}, 0, {{ (s * 3).max(500_00) }}, {{ (s / 100).max(100) }}, 'Monthly Savings', 'money')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        {% endif %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Savings Growth</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white">
+                <span id="val-savings_growth_rate">{{ proj.scenario.savings_growth_display() }}%</span>
+                <button onclick="openSlider('savings_growth_rate', {{ proj.scenario.savings_growth_rate * 100.0 }}, 0, 10, 0.25, 'Yearly Savings Increase', 'percent')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        {% if let Some(c) = proj.scenario.monthly_living_costs_cents %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Monthly Costs (real)</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white tabular-nums">
+                <span id="val-monthly_living_costs">{{ settings.format_money_neutral(&c) }}</span>
+                <button onclick="openSlider('monthly_living_costs', {{ c }}, 0, {{ (c * 3).max(500_00) }}, {{ (c / 100).max(100) }}, 'Monthly Costs', 'money')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        {% endif %}
+        {% if let Some(p) = proj.scenario.monthly_pension_cents %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Monthly Pension (real)</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white tabular-nums">
+                <span id="val-monthly_pension">{{ settings.format_money_neutral(&p) }}</span>
+                <button onclick="openSlider('monthly_pension', {{ p }}, 0, {{ (p * 3).max(300_00) }}, {{ (p / 100).max(50) }}, 'Monthly Pension', 'money')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        {% endif %}
+        {% if let Some(b) = proj.scenario.monthly_barista_income_cents %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Barista FIRE Income (real)</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white tabular-nums">
+                <span id="val-monthly_barista_income">{{ settings.format_money_neutral(&b) }}</span>
+                <button onclick="openSlider('monthly_barista_income', {{ b }}, 0, {{ (b * 3).max(300_00) }}, {{ (b / 100).max(50) }}, 'Barista FIRE Income', 'money')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        {% endif %}
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">ROI</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white">
+                <span id="val-assumed_roi">{{ proj.scenario.roi_display() }}%</span>
+                <button onclick="openSlider('assumed_roi', {{ proj.scenario.assumed_roi * 100.0 }}, 1, 15, 0.5, 'Assumed ROI', 'percent')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Inflation</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white">
+                <span id="val-expected_inflation">{{ proj.scenario.inflation_display() }}%</span>
+                <button onclick="openSlider('expected_inflation', {{ proj.scenario.expected_inflation * 100.0 }}, 0, 8, 0.25, 'Expected Inflation', 'percent')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+        <div class="group">
+            <dt class="text-neutral-500 dark:text-neutral-400">Tax Rate</dt>
+            <dd class="flex items-center gap-1 font-medium text-neutral-900 dark:text-white">
+                <span id="val-tax_rate">{{ proj.scenario.tax_rate_display() }}%</span>
+                <button onclick="openSlider('tax_rate', {{ proj.scenario.tax_rate * 100.0 }}, 0, 50, 0.5, 'Tax Rate', 'percent')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" title="Adjust with slider"><span class="icon-xs" aria-hidden="true">{{ icons.get("sliders-horizontal")|safe }}</span></button>
+            </dd>
+        </div>
+    </dl>
+
+    {# Slider bar — appears at the bottom of the card when a param is being adjusted #}
+    <div id="slider-bar" class="hidden mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+        <div class="flex items-center gap-3">
+            <span id="slider-field-label" class="text-xs font-medium text-neutral-500 dark:text-neutral-400 w-32 shrink-0"></span>
+            <input id="slider-input" type="range" class="flex-1 accent-indigo-500"
+                oninput="onSliderInput(this.value)">
+            <span id="slider-value-display" class="text-sm font-semibold tabular-nums text-neutral-900 dark:text-white w-28 text-right"></span>
+            <button onclick="closeSlider()" class="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 shrink-0" title="Close slider">
+                <span class="icon-xs" aria-hidden="true">{{ icons.get("x")|safe }}</span>
+            </button>
+        </div>
+    </div>
+    {% endcall %}
+
+    {# ECharts band chart #}
+    {% if proj.has_simulation %}
+    {% call ui::card(class="", overflow="overflow-hidden") %}
+        <div class="p-4 flex items-start justify-between gap-4">
+            <div>
+                <h3 class="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Portfolio Projection</h3>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Shaded bands show 10th–90th and 25th–75th percentile outcomes from 1000 Monte Carlo simulations.
+                </p>
+            </div>
+            <div class="flex-shrink-0 flex rounded-lg border border-neutral-200 dark:border-neutral-700 overflow-hidden text-xs font-medium">
+                <button
+                    id="chart-mode-real"
+                    onclick="setChartMode('real')"
+                    title="Real (inflation-adjusted): all values shown in today's purchasing power, so amounts are directly comparable across years."
+                    class="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-white"
+                >
+                    <span class="icon-xs" aria-hidden="true">{{ icons.get("wallet")|safe }}</span>
+                    Real
+                </button>
+                <button
+                    id="chart-mode-nominal"
+                    onclick="setChartMode('nominal')"
+                    title="Nominal: values shown as future cash amounts, including the effect of inflation. A higher number doesn't mean more purchasing power."
+                    class="flex items-center gap-1.5 px-3 py-1.5 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
+                >
+                    <span class="icon-xs" aria-hidden="true">{{ icons.get("trending-up")|safe }}</span>
+                    Nominal
+                </button>
+            </div>
+        </div>
+        <div
+            id="retirement-chart"
+            class="w-full"
+            style="height: 420px;"
+            data-scenario-id="{{ proj.scenario.id }}"
+            data-currency="{{ settings.currency }}"
+            data-locale="{{ settings.locale }}"
+            data-inflation="{{ proj.scenario.expected_inflation }}"
+        ></div>
+    {% endcall %}
+    {% endif %}
+
+    {# Savings phase collapsible table #}
+    {% if !proj.savings_rows.is_empty() %}
+    <details class="group">
+        <summary class="cursor-pointer list-none flex items-center gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300 py-2 select-none">
+            <span class="icon-xs transition-transform group-open:rotate-90" aria-hidden="true">{{ icons.get("chevron-right")|safe }}</span>
+            Savings Phase ({{ proj.savings_rows.len() }} years)
+        </summary>
+        {% call ui::card(class="", overflow="overflow-x-auto") %}
+        <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700 text-sm">
+            <thead class="bg-neutral-50 dark:bg-neutral-900">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Year</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Age</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Portfolio Start</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Savings</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Gain</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Portfolio End</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-100 dark:divide-neutral-700">
+                {% for row in proj.savings_rows %}
+                <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
+                    <td class="px-4 py-2 whitespace-nowrap text-neutral-900 dark:text-white">{{ row.year }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-neutral-500 dark:text-neutral-400">{{ row.age_display }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-neutral-900 dark:text-white">{{ settings.format_money_neutral(&row.portfolio_start_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-emerald-600 dark:text-emerald-400">{{ settings.format_money_neutral(&row.annual_savings_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-neutral-900 dark:text-white">{{ settings.format_money_neutral(&row.gain_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right font-semibold text-neutral-900 dark:text-white">{{ settings.format_money_neutral(&row.portfolio_end_cents) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endcall %}
+    </details>
+    {% endif %}
+
+    {# Withdrawal phase collapsible table #}
+    {% if !proj.withdrawal_rows.is_empty() %}
+    <details class="group">
+        <summary class="cursor-pointer list-none flex items-center gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300 py-2 select-none">
+            <span class="icon-xs transition-transform group-open:rotate-90" aria-hidden="true">{{ icons.get("chevron-right")|safe }}</span>
+            Withdrawal Phase ({{ proj.withdrawal_rows.len() }} years)
+        </summary>
+        {% call ui::card(class="", overflow="overflow-x-auto") %}
+        <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700 text-sm">
+            <thead class="bg-neutral-50 dark:bg-neutral-900">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Year</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Age</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Portfolio Start</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Withdrawal</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Pension</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Barista</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Net Withdrawal</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Gain</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Tax</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Portfolio End</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-neutral-800 divide-y divide-neutral-100 dark:divide-neutral-700">
+                {% for row in proj.withdrawal_rows %}
+                <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 {% if row.is_ruined %}bg-red-50 dark:bg-red-900/20{% endif %}">
+                    <td class="px-4 py-2 whitespace-nowrap text-neutral-900 dark:text-white">{{ row.year }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-neutral-500 dark:text-neutral-400">{{ row.age_display }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-neutral-900 dark:text-white">{{ settings.format_money_neutral(&row.portfolio_start_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-red-500 dark:text-red-400">{{ settings.format_money_neutral(&row.withdrawal_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-emerald-600 dark:text-emerald-400">{{ settings.format_money_neutral(&row.pension_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-emerald-600 dark:text-emerald-400">{{ settings.format_money_neutral(&row.barista_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-neutral-900 dark:text-white">{{ settings.format_money_neutral(&row.net_withdrawal_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-neutral-900 dark:text-white">{{ settings.format_money_neutral(&row.gain_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right text-red-500 dark:text-red-400">{{ settings.format_money_neutral(&row.tax_cents) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap tabular-nums text-right font-semibold {% if row.is_ruined %}text-red-600 dark:text-red-400{% else %}text-neutral-900 dark:text-white{% endif %}">{{ settings.format_money_neutral(&row.portfolio_end_cents) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endcall %}
+    </details>
+    {% endif %}
+
+    {% endif %}{# end if let Some(proj) #}
+    {% endif %}{# end if show_new_form #}
+</div>
+{% endblock %}
