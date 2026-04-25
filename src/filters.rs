@@ -12,13 +12,14 @@
 //! 2. **Differences in absolute** (`format_money_plain`): always green/red, always with
 //!    sign (+/-). Applies to G/L amounts.
 //!
-//! 3. **Neutral amounts** (`format_money_neutral`): positive = white (no plus sign),
-//!    negative = red (with minus sign). Applies to transactions, min/max, prices.
+//! 3. **Neutral amounts** (`format_money_neutral`): no plus sign for positive, "-" for
+//!    negative. Applies to transactions, min/max, prices.
 //!
-//! 4. **Other amounts** (`format_money_balance`): positive = green (no plus sign),
-//!    negative = red (with minus sign). Applies to balances, position values, totals.
+//! 4. **Other amounts** (`format_money_balance`): no plus sign for positive, "-" for
+//!    negative. Applies to balances, position values, totals.
 //!
-//! Colors are applied via CSS classes in templates; the text formatters handle signs only.
+//! Both functions 3 and 4 produce identical text. Colors (white vs green for positives)
+//! are applied via CSS classes in templates; the text formatters handle signs only.
 //!
 //! ## Icons
 //!
