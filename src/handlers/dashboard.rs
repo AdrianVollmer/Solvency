@@ -6,8 +6,7 @@ use tracing::debug;
 use crate::db::queries::transactions;
 use crate::error::{AppResult, RenderHtml};
 use crate::models::{Settings, TransactionWithRelations};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
 #[template(path = "pages/dashboard.html")]
@@ -28,7 +27,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     debug!("Loading dashboard");
     let conn = state.db.get()?;
 
-    let settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let now = chrono::Local::now();
     let this_month_start = now.format("%Y-%m-01").to_string();
@@ -59,10 +58,10 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let template = DashboardTemplate {
         title: "Dashboard".into(),
         settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         recent_transactions,
         total_this_month,
         total_last_month,

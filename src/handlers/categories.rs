@@ -8,8 +8,7 @@ use std::collections::HashMap;
 use crate::db::queries::{categories, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{Category, CategoryWithPath, NewCategory, Settings, TAG_PALETTE, DEFAULT_COLOR, DEFAULT_ICON};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
 #[template(path = "pages/category_form.html")]
@@ -62,7 +61,7 @@ pub async fn new_form(
     State(state): State<AppState>,
     Query(query): Query<NewFormQuery>,
 ) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let cats = state.cached_categories_with_path()?;
 
     let prefill = if let Some(id) = query.clone_from {
@@ -74,11 +73,11 @@ pub async fn new_form(
 
     let template = CategoryFormTemplate {
         title: "Add Category".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         categories: cats,
         editing: None,
         prefill,
@@ -102,17 +101,17 @@ pub async fn edit_form(
         return Ok(Redirect::to("/manage?tab=categories").into_response());
     }
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let cats = state.cached_categories_with_path()?;
 
     let back_url = format!("/categories/{}", id);
     let template = CategoryFormTemplate {
         title: "Edit Category".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         categories: cats,
         editing: Some(category),
         prefill: None,
@@ -129,7 +128,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     let category = categories::get_category_with_path(&conn, id)?
         .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let filter = transactions::TransactionFilter {
         category_id: Some(id),
@@ -145,11 +144,11 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 
     let template = CategoryDetailTemplate {
         title: category.category.name.clone(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         category,
         transaction_count,
         children,

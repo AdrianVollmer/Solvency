@@ -15,8 +15,7 @@ use crate::models::Settings;
 use crate::services::retirement::{
     build_chart_data, run_monte_carlo, savings_phase, withdrawal_phase, ProjectionInputs,
 };
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 fn today_year() -> i32 {
     Utc::now().format("%Y").to_string().parse::<i32>().unwrap_or(2025)
@@ -59,14 +58,14 @@ pub async fn index(
     Query(params): Query<RetirementPageParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let all_scenarios = db::list_scenarios(&conn)?;
     let current_net_worth_cents = db::get_current_net_worth_cents(&conn)?;
     let current_net_worth_formatted = filters::format_money_neutral(
         current_net_worth_cents,
-        &app_settings.currency,
-        &app_settings.locale,
+        &settings.currency,
+        &settings.locale,
     );
 
     let (projection, show_new_form, slider_state_json) = if all_scenarios.is_empty() {
@@ -152,11 +151,11 @@ pub async fn index(
 
     RetirementTemplate {
         title: "Retirement".into(),
-        settings: app_settings,
-        icons: filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         all_scenarios,
         projection,
         show_new_form,
@@ -184,21 +183,21 @@ pub struct RetirementFormTemplate {
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let current_net_worth_cents = db::get_current_net_worth_cents(&conn)?;
     let current_net_worth_formatted = filters::format_money_neutral(
         current_net_worth_cents,
-        &app_settings.currency,
-        &app_settings.locale,
+        &settings.currency,
+        &settings.locale,
     );
 
     RetirementFormTemplate {
         title: "New Scenario".into(),
-        settings: app_settings,
-        icons: filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         form_scenario: None,
         current_net_worth_cents,
         current_net_worth_formatted,
@@ -211,23 +210,23 @@ pub async fn edit_form(
     Path(id): Path<String>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let scenario = db::get_scenario(&conn, &id)?
         .ok_or_else(|| AppError::NotFound(format!("Scenario {id} not found")))?;
     let current_net_worth_cents = db::get_current_net_worth_cents(&conn)?;
     let current_net_worth_formatted = filters::format_money_neutral(
         current_net_worth_cents,
-        &app_settings.currency,
-        &app_settings.locale,
+        &settings.currency,
+        &settings.locale,
     );
 
     RetirementFormTemplate {
         title: "Edit Scenario".into(),
-        settings: app_settings,
-        icons: filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         form_scenario: Some(scenario),
         current_net_worth_cents,
         current_net_worth_formatted,

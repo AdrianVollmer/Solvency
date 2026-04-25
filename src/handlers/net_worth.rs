@@ -13,8 +13,7 @@ use crate::models::net_worth::NetWorthDataPoint;
 use crate::models::trading::{Position, PositionWithMarketData};
 use crate::models::Settings;
 use crate::services::net_worth::{calculate_net_worth_history, decimate_for_display};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 const MAX_CHART_POINTS: usize = 500;
 
@@ -57,12 +56,12 @@ pub async fn index(
     Query(params): Query<NetWorthParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let summary = calculate_net_worth_history(&conn)?;
 
-    let currency = &app_settings.currency;
-    let locale = &app_settings.locale;
+    let currency = settings.currency.clone();
+    let locale = settings.locale.clone();
 
     let has_data = !summary.data_points.is_empty();
     let total_days = summary.data_points.len();
@@ -83,14 +82,14 @@ pub async fn index(
     };
 
     let current_net_worth_formatted =
-        filters::format_money_neutral(summary.current_net_worth_cents, currency, locale);
+        filters::format_money_neutral(summary.current_net_worth_cents, &currency, &locale);
     let highest_net_worth_formatted =
-        filters::format_money_neutral(summary.highest_net_worth_cents, currency, locale);
+        filters::format_money_neutral(summary.highest_net_worth_cents, &currency, &locale);
     let lowest_net_worth_formatted =
-        filters::format_money_neutral(summary.lowest_net_worth_cents, currency, locale);
+        filters::format_money_neutral(summary.lowest_net_worth_cents, &currency, &locale);
     let starting_net_worth_formatted =
-        filters::format_money_neutral(starting_net_worth_cents, currency, locale);
-    let change_formatted = filters::format_money_plain(change_cents, currency, locale);
+        filters::format_money_neutral(starting_net_worth_cents, &currency, &locale);
+    let change_formatted = filters::format_money_plain(change_cents, &currency, &locale);
     let change_percent_formatted = format!(
         "{}{:.2}%",
         if change_percent >= 0.0 { "+" } else { "" },
@@ -104,11 +103,11 @@ pub async fn index(
 
     let template = NetWorthTemplate {
         title: "Net Worth".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         has_data,
         current_net_worth_formatted,
         highest_net_worth_formatted,
@@ -181,7 +180,7 @@ pub async fn top_transactions(
     Query(params): Query<TopTransactionsParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, .. } = state.page_base()?;
 
     let filter = transactions::TransactionFilter {
         from_date: Some(params.from_date.clone()),
@@ -200,8 +199,8 @@ pub async fn top_transactions(
     );
 
     let template = TransactionPreviewTemplate {
-        settings: app_settings,
-        icons: crate::filters::Icons,
+        settings,
+        icons,
         title: "Largest Transactions".to_string(),
         subtitle: format!("{} to {}", params.from_date, params.to_date),
         transactions: transaction_list,

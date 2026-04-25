@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::db::queries::api_logs;
 use crate::error::{AppResult, RenderHtml};
 use crate::models::{ApiLog, Settings};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
 #[template(path = "pages/api_logs.html")]
@@ -24,17 +23,17 @@ pub struct ApiLogsTemplate {
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let logs = api_logs::get_all_logs(&conn, 100)?;
     let latest_log_id = api_logs::get_latest_log_id(&conn)?;
 
     let template = ApiLogsTemplate {
         title: "API Logs".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         logs,
         latest_log_id,
     };
@@ -56,17 +55,17 @@ pub struct ApiLogDetailTemplate {
 
 pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let log = api_logs::get_log_by_id(&conn, id)?
         .ok_or_else(|| crate::error::AppError::NotFound("API log not found".into()))?;
 
     let template = ApiLogDetailTemplate {
         title: format!("API Log #{}", id),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         log,
     };
 

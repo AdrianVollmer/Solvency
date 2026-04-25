@@ -12,8 +12,7 @@ use tracing::{info, warn};
 use crate::db::queries::settings;
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::Settings;
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
 #[template(path = "pages/settings.html")]
@@ -49,17 +48,17 @@ pub struct ThemeFormData {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let database_size = get_database_size(&state.config.database_path);
 
     let template = SettingsTemplate {
         title: "Settings".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         database_size,
     };
 

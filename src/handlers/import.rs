@@ -14,8 +14,7 @@ use crate::models::{
     CategoryWithPath, ImportSession, ImportStatus, NewTransaction, RuleActionType, Settings,
 };
 use crate::services::csv_parser::parse_csv;
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 const PREVIEW_PAGE_SIZE: i64 = 50;
 
@@ -114,30 +113,30 @@ pub struct StatusResponse {
 // Handlers
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let template = ImportTemplate {
         title: "Import".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
     };
 
     template.render_html()
 }
 
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let template = ImportFormatTemplate {
         title: "CSV Import Format".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
     };
 
     template.render_html()
@@ -285,16 +284,16 @@ pub async fn wizard(
     let conn = state.db.get()?;
 
     let session = import::get_session(&conn, &session_id)?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let cats = state.cached_categories_with_path()?;
 
     let template = ImportWizardTemplate {
         title: "Import".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         session,
         categories: cats,
     };

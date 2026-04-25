@@ -10,8 +10,7 @@ use crate::error::{AppResult, RenderHtml};
 use crate::handlers::transactions::TransactionPreviewTemplate;
 use crate::models::category::CategoryWithPath;
 use crate::models::Settings;
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Debug, Default, Deserialize)]
 pub struct SpendingFilterParams {
@@ -70,7 +69,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let date_range = params
         .resolve_date_range()
@@ -109,11 +108,11 @@ pub async fn index(
 
     let template = SpendingTemplate {
         title: "Spending".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         date_range,
         presets: DatePreset::all(),
         active_tab,
@@ -137,7 +136,7 @@ pub async fn monthly_transactions(
     Query(params): Query<MonthlyTransactionsParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, .. } = state.page_base()?;
 
     // Parse "2024-01" or "Jan 2024" style month strings
     let (from_date, to_date, month_label) = parse_month_range(&params.month)?;
@@ -165,8 +164,8 @@ pub async fn monthly_transactions(
     let view_all_url = format!("/transactions?from_date={}&to_date={}", from_date, to_date);
 
     let template = TransactionPreviewTemplate {
-        settings: app_settings,
-        icons: crate::filters::Icons,
+        settings,
+        icons,
         title: "Monthly Transactions".to_string(),
         subtitle: month_label,
         transactions: transaction_list,
@@ -191,7 +190,7 @@ pub async fn category_transactions(
     Query(params): Query<CategoryTransactionsParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, .. } = state.page_base()?;
 
     let mut filter = transactions::TransactionFilter {
         from_date: params.from_date.clone(),
@@ -244,8 +243,8 @@ pub async fn category_transactions(
     }
 
     let template = TransactionPreviewTemplate {
-        settings: app_settings,
-        icons: crate::filters::Icons,
+        settings,
+        icons,
         title,
         subtitle,
         transactions: transaction_list,

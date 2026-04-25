@@ -8,8 +8,7 @@ use crate::filters;
 use crate::models::account::{Account, AccountType};
 use crate::models::trading::PositionWithMarketData;
 use crate::models::Settings;
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 pub struct AccountBalance {
     pub account: Account,
@@ -46,13 +45,13 @@ fn gain_loss_color(cents: i64) -> &'static str {
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let all_accounts = state.cached_accounts()?;
     let cash_balances = balances::get_cash_account_balances(&conn)?;
 
-    let currency = &app_settings.currency;
-    let locale = &app_settings.locale;
+    let currency = settings.currency.clone();
+    let locale = settings.locale.clone();
 
     let mut account_balances: Vec<AccountBalance> = Vec::new();
 
@@ -89,7 +88,7 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
         };
 
         account_balances.push(AccountBalance {
-            balance_formatted: filters::format_money_balance(balance_cents, currency, locale),
+            balance_formatted: filters::format_money_balance(balance_cents, &currency, &locale),
             balance_color: gain_loss_color(balance_cents),
             account,
             balance_cents,
@@ -108,17 +107,17 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 
     let template = BalancesTemplate {
         title: "Balances".into(),
-        settings: app_settings.clone(),
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         accounts: active_accounts,
         inactive_accounts,
         total_balance_formatted: filters::format_money_balance(
             total_balance_cents,
-            currency,
-            locale,
+            &currency,
+            &locale,
         ),
         total_balance_color: gain_loss_color(total_balance_cents),
         total_balance_cents,

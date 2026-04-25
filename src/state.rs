@@ -3,9 +3,11 @@ use crate::cache::AppCache;
 use crate::config::Config;
 use crate::db::DbPool;
 use crate::error::AppResult;
+use crate::filters::Icons;
 use crate::handlers::recurring_expenses::RecurringExpense;
 use crate::models::{Account, Category, CategoryWithPath, Settings, Tag};
 use crate::xsrf::XsrfToken;
+use crate::VERSION;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -45,10 +47,31 @@ pub struct AppState {
     pub login_rate_limiter: Arc<LoginRateLimiter>,
 }
 
+/// Pre-built base fields shared by every page template.
+/// Construct via [`AppState::page_base()`] and destructure into template structs.
+pub struct PageBase {
+    pub settings: Settings,
+    pub icons: Icons,
+    pub manifest: JsManifest,
+    pub version: &'static str,
+    pub xsrf_token: String,
+}
+
 impl AppState {
     /// Load settings from the database with runtime auth state populated.
     pub fn load_settings(&self) -> AppResult<Settings> {
         self.cache.load_settings(&self.db, &self.config.auth_mode)
+    }
+
+    /// Build the common page fields shared by every full-page template.
+    pub fn page_base(&self) -> AppResult<PageBase> {
+        Ok(PageBase {
+            settings: self.load_settings()?,
+            icons: Icons,
+            manifest: self.manifest.clone(),
+            version: VERSION,
+            xsrf_token: self.xsrf_token.value().to_string(),
+        })
     }
 
     pub fn cached_categories_with_path(&self) -> AppResult<Vec<CategoryWithPath>> {
