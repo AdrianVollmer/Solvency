@@ -1,5 +1,7 @@
 declare const echarts: any;
 
+import { formatMoney, isDarkMode, getTheme } from "./utils";
+
 interface RetirementChartData {
   years: number[];
   p10: number[];
@@ -17,38 +19,6 @@ type ChartMode = "real" | "nominal";
 
 let retirementChart: any = null;
 let currentMode: ChartMode = "real";
-
-function getCurrencySymbol(currency: string): string {
-  const symbols: Record<string, string> = {
-    USD: "$",
-    EUR: "€",
-    GBP: "£",
-    JPY: "¥",
-    CHF: "CHF ",
-    CAD: "C$",
-    AUD: "A$",
-    SEK: "kr ",
-    NOK: "kr ",
-    DKK: "kr ",
-  };
-  return symbols[currency.toUpperCase()] || currency + " ";
-}
-
-function formatMoney(cents: number, currency: string, locale: string): string {
-  const symbol = getCurrencySymbol(currency);
-  const value = cents / 100;
-  return (
-    symbol +
-    value.toLocaleString(locale, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })
-  );
-}
-
-function isDarkMode(): boolean {
-  return document.documentElement.classList.contains("dark");
-}
 
 /** Convert real series to nominal by multiplying each point by (1+inflation)^i. */
 function toNominal(real: number[], inflation: number): number[] {
@@ -122,7 +92,7 @@ function buildOption(
               ? null
               : p.value;
           const val =
-            cents !== null ? formatMoney(Number(cents), currency, locale) : "";
+            cents !== null ? formatMoney(Number(cents), currency, locale, 0) : "";
           return val
             ? `<div style="display:flex;justify-content:space-between;gap:16px"><span>${p.marker}${p.seriesName}</span><span style="font-weight:600">${val}</span></div>`
             : "";
@@ -152,7 +122,7 @@ function buildOption(
       type: "value",
       axisLabel: {
         fontSize: 11,
-        formatter: (v: number) => formatMoney(v, currency, locale),
+        formatter: (v: number) => formatMoney(v, currency, locale, 0),
       },
     },
     series: [
@@ -333,7 +303,7 @@ function initChart(container: HTMLElement): void {
 
       retirementChart = echarts.init(
         container,
-        isDarkMode() ? "dark" : undefined
+        getTheme()
       );
       retirementChart.setOption(
         buildOption(
@@ -348,7 +318,7 @@ function initChart(container: HTMLElement): void {
         retirementChart?.dispose();
         retirementChart = echarts.init(
           container,
-          isDarkMode() ? "dark" : undefined
+          getTheme()
         );
         const s = (window as any)._retirementChartState;
         const [p10, p25, p50, p75, p90, det] =

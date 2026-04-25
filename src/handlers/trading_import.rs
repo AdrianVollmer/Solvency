@@ -10,8 +10,7 @@ use crate::models::{
     NewTradingActivity, Settings, TradingActivityType, TradingImportSession, TradingImportStatus,
 };
 use crate::services::trading_csv_parser::parse_csv;
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 const PREVIEW_PAGE_SIZE: i64 = 50;
 
@@ -99,30 +98,30 @@ pub struct StatusResponse {
 // Handlers
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let template = TradingImportTemplate {
         title: "Import Trading Activities".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
     };
 
     template.render_html()
 }
 
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let template = TradingImportFormatTemplate {
         title: "Trading CSV Format".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         activity_types: TradingActivityType::all(),
     };
 
@@ -266,15 +265,15 @@ pub async fn wizard(
     let conn = state.db.get()?;
 
     let session = trading::get_import_session(&conn, &session_id)?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let template = TradingImportWizardTemplate {
         title: "Import Trading Activities".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         session,
     };
 

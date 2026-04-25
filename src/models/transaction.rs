@@ -1,5 +1,6 @@
 use crate::filters::currency_symbol;
 use crate::models::tag::Tag;
+use crate::models::category::DEFAULT_COLOR;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
@@ -90,7 +91,7 @@ impl Deref for TransactionWithRelations {
 
 impl TransactionWithRelations {
     pub fn category_color_or_default(&self) -> &str {
-        self.category_color.as_deref().unwrap_or("#6b7280")
+        self.category_color.as_deref().unwrap_or(DEFAULT_COLOR)
     }
 
     pub fn category_name_or_default(&self) -> &str {

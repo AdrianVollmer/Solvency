@@ -12,13 +12,14 @@
 //! 2. **Differences in absolute** (`format_money_plain`): always green/red, always with
 //!    sign (+/-). Applies to G/L amounts.
 //!
-//! 3. **Neutral amounts** (`format_money_neutral`): positive = white (no plus sign),
-//!    negative = red (with minus sign). Applies to transactions, min/max, prices.
+//! 3. **Neutral amounts** (`format_money_neutral`): no plus sign for positive, "-" for
+//!    negative. Applies to transactions, min/max, prices.
 //!
-//! 4. **Other amounts** (`format_money_balance`): positive = green (no plus sign),
-//!    negative = red (with minus sign). Applies to balances, position values, totals.
+//! 4. **Other amounts** (`format_money_balance`): no plus sign for positive, "-" for
+//!    negative. Applies to balances, position values, totals.
 //!
-//! Colors are applied via CSS classes in templates; the text formatters handle signs only.
+//! Both functions 3 and 4 produce identical text. Colors (white vs green for positives)
+//! are applied via CSS classes in templates; the text formatters handle signs only.
 //!
 //! ## Icons
 //!
@@ -96,9 +97,9 @@ pub fn format_money_plain(cents: i64, currency: &str, locale: &str) -> String {
     formatted
 }
 
-/// Format cents for balance display: shows "-" for negative, no sign for positive/zero.
-/// Suitable for account balances where "+" is not expected.
-pub fn format_money_balance(cents: i64, currency: &str, locale: &str) -> String {
+/// Format cents without sign prefix: "-" for negative, no sign for positive/zero.
+/// Shared helper for balance and neutral formatting.
+fn format_unsigned_money(cents: i64, currency: &str, locale: &str) -> String {
     let abs_cents = cents.abs();
     let whole = abs_cents / 100;
     let fractional = abs_cents % 100;
@@ -117,26 +118,17 @@ pub fn format_money_balance(cents: i64, currency: &str, locale: &str) -> String 
     }
 }
 
+/// Format cents for balance display: shows "-" for negative, no sign for positive/zero.
+/// Suitable for account balances where "+" is not expected.
+pub fn format_money_balance(cents: i64, currency: &str, locale: &str) -> String {
+    format_unsigned_money(cents, currency, locale)
+}
+
 /// Format cents as plain text without plus prefix, useful for prices/fees.
 /// This is "neutral" formatting - no color coding.
 /// Positive values have no sign, negative values show "-".
 pub fn format_money_neutral(cents: i64, currency: &str, locale: &str) -> String {
-    let abs_cents = cents.abs();
-    let whole = abs_cents / 100;
-    let fractional = abs_cents % 100;
-
-    let (thousands_sep, decimal_sep) = locale_separators(locale);
-    let whole_str = format_with_thousands(whole, thousands_sep);
-    let symbol = currency_symbol(currency);
-
-    if cents < 0 {
-        format!(
-            "-\u{2060}{}{}{}{:02}",
-            symbol, whole_str, decimal_sep, fractional
-        )
-    } else {
-        format!("{}{}{}{:02}", symbol, whole_str, decimal_sep, fractional)
-    }
+    format_unsigned_money(cents, currency, locale)
 }
 
 /// Format a percentage value with locale-aware decimal and thousands separators.
@@ -405,5 +397,22 @@ mod tests {
     fn test_percent_thousands_separator_de() {
         let result = format_percent(1234.56, "de-DE");
         assert_eq!(result, "+1.234,56%");
+    }
+
+    #[test]
+    fn balance_and_neutral_produce_same_text() {
+        let cases: &[(i64, &str, &str)] = &[
+            (12345, "USD", "en-US"),
+            (-12345, "USD", "en-US"),
+            (0, "USD", "en-US"),
+            (123456789, "EUR", "de-DE"),
+        ];
+        for (cents, currency, locale) in cases {
+            assert_eq!(
+                format_money_balance(*cents, currency, locale),
+                format_money_neutral(*cents, currency, locale),
+                "mismatch at cents={cents}"
+            );
+        }
     }
 }

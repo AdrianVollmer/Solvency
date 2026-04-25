@@ -13,7 +13,7 @@ pub mod transaction;
 
 pub use account::{Account, AccountType, NewAccount};
 pub use api_log::{ApiLog, NewApiLog};
-pub use category::{Category, CategoryWithPath, NewCategory};
+pub use category::{Category, CategoryWithPath, NewCategory, DEFAULT_COLOR, DEFAULT_ICON};
 pub use import::{ImportRow, ImportRowStatus, ImportSession, ImportStatus};
 pub use market_data::{MarketData, NewMarketData, SymbolDataCoverage};
 pub use net_worth::{NetWorthDataPoint, NetWorthSummary};

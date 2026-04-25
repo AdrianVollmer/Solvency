@@ -13,8 +13,7 @@ use crate::models::{
     Account, CategoryWithPath, NewTransaction, Settings, Tag, TransactionWithRelations,
 };
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 /// Sortable columns for the transactions table.
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -372,10 +371,10 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let page = params.page.unwrap_or(1).max(1);
-    let page_size = app_settings.page_size;
+    let page_size = settings.page_size;
 
     let date_range = params
         .resolve_date_range()
@@ -405,11 +404,11 @@ pub async fn index(
 
     let template = TransactionsTemplate {
         title: "Transactions".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         transactions: transaction_list,
         categories: cats,
         total_count,
@@ -430,10 +429,10 @@ pub async fn table_partial(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, .. } = state.page_base()?;
 
     let page = params.page.unwrap_or(1).max(1);
-    let page_size = app_settings.page_size;
+    let page_size = settings.page_size;
 
     let date_range = params
         .resolve_date_range()
@@ -461,8 +460,8 @@ pub async fn table_partial(
     let total_count = transactions::count_transactions(&conn, &filter)?;
 
     let template = TransactionTableTemplate {
-        settings: app_settings,
-        icons: crate::filters::Icons,
+        settings,
+        icons,
         transactions: transaction_list,
         total_count,
         page,
@@ -480,7 +479,7 @@ pub async fn bulk_page(
     Query(params): Query<TransactionFilterParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let date_range = params
         .resolve_date_range()
@@ -514,11 +513,11 @@ pub async fn bulk_page(
 
     let template = TransactionBulkTemplate {
         title: "Bulk Operations".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         categories: cats,
         tags: tag_list,
         accounts: cash_accounts,
@@ -537,7 +536,7 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     let transaction = transactions::get_transaction(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Transaction {} not found", id)))?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let cats = state.cached_categories_with_path()?;
     let tag_list = state.cached_tags()?;
@@ -545,11 +544,11 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 
     let template = TransactionDetailTemplate {
         title: format!("Transaction #{}", id),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         transaction,
         categories: cats,
         tags: tag_list,
@@ -560,18 +559,18 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let cats = state.cached_categories_with_path()?;
     let tag_list = state.cached_tags()?;
     let cash_accounts = state.cached_cash_accounts()?;
 
     let template = TransactionNewTemplate {
         title: "Add Transaction".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         categories: cats,
         tags: tag_list,
         accounts: cash_accounts,
@@ -589,7 +588,7 @@ pub async fn edit_form(
     let transaction = transactions::get_transaction(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Transaction {} not found", id)))?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let cats = state.cached_categories_with_path()?;
     let tag_list = state.cached_tags()?;
@@ -597,11 +596,11 @@ pub async fn edit_form(
 
     let template = TransactionEditTemplate {
         title: "Edit Transaction".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         transaction,
         categories: cats,
         tags: tag_list,
@@ -664,15 +663,10 @@ pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>
     Ok(Html(String::new()))
 }
 
+/// Common filter fields shared by bulk-operation forms.
+/// Populated via hx-include from #filter-form on the transactions page.
 #[derive(Debug, Deserialize)]
-pub struct BulkCategoryForm {
-    /// Action value: which category to set (0 = clear).
-    #[serde(
-        default,
-        deserialize_with = "crate::form_utils::deserialize_optional_i64"
-    )]
-    pub set_category_id: Option<i64>,
-    /// Filter fields — included from #filter-form via hx-include.
+pub struct BulkFilterFields {
     pub search: Option<String>,
     #[serde(
         default,
@@ -686,6 +680,19 @@ pub struct BulkCategoryForm {
     pub tag_id: Option<i64>,
     pub from_date: Option<String>,
     pub to_date: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BulkCategoryForm {
+    /// Action value: which category to set (0 = clear).
+    #[serde(
+        default,
+        deserialize_with = "crate::form_utils::deserialize_optional_i64"
+    )]
+    pub set_category_id: Option<i64>,
+    /// Filter fields — included from #filter-form via hx-include.
+    #[serde(flatten)]
+    pub filter: BulkFilterFields,
 }
 
 #[derive(Debug, Deserialize)]
@@ -697,19 +704,8 @@ pub struct BulkTagForm {
     )]
     pub set_tag_id: Option<i64>,
     /// Filter fields — included from #filter-form via hx-include.
-    pub search: Option<String>,
-    #[serde(
-        default,
-        deserialize_with = "crate::form_utils::deserialize_optional_i64"
-    )]
-    pub category_id: Option<i64>,
-    #[serde(
-        default,
-        deserialize_with = "crate::form_utils::deserialize_optional_i64"
-    )]
-    pub tag_id: Option<i64>,
-    pub from_date: Option<String>,
-    pub to_date: Option<String>,
+    #[serde(flatten)]
+    pub filter: BulkFilterFields,
 }
 
 #[derive(Debug, Deserialize)]
@@ -721,39 +717,18 @@ pub struct BulkAccountForm {
     )]
     pub set_account_id: Option<i64>,
     /// Filter fields — included from #filter-form via hx-include.
-    pub search: Option<String>,
-    #[serde(
-        default,
-        deserialize_with = "crate::form_utils::deserialize_optional_i64"
-    )]
-    pub category_id: Option<i64>,
-    #[serde(
-        default,
-        deserialize_with = "crate::form_utils::deserialize_optional_i64"
-    )]
-    pub tag_id: Option<i64>,
-    pub from_date: Option<String>,
-    pub to_date: Option<String>,
+    #[serde(flatten)]
+    pub filter: BulkFilterFields,
 }
 
-fn build_bulk_filter(
-    search: &Option<String>,
-    category_id: Option<i64>,
-    tag_id: Option<i64>,
-    from_date: &Option<String>,
-    to_date: &Option<String>,
-) -> transactions::TransactionFilter {
-    let uncategorized_only = category_id == Some(0);
+fn build_bulk_filter(f: &BulkFilterFields) -> transactions::TransactionFilter {
+    let uncategorized_only = f.category_id == Some(0);
     transactions::TransactionFilter {
-        search: search.clone(),
-        category_id: if uncategorized_only {
-            None
-        } else {
-            category_id
-        },
-        tag_id,
-        from_date: from_date.clone(),
-        to_date: to_date.clone(),
+        search: f.search.clone(),
+        category_id: if uncategorized_only { None } else { f.category_id },
+        tag_id: f.tag_id,
+        from_date: f.from_date.clone(),
+        to_date: f.to_date.clone(),
         uncategorized_only,
         ..Default::default()
     }
@@ -764,13 +739,7 @@ pub async fn bulk_set_category(
     Form(form): Form<BulkCategoryForm>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let filter = build_bulk_filter(
-        &form.search,
-        form.category_id,
-        form.tag_id,
-        &form.from_date,
-        &form.to_date,
-    );
+    let filter = build_bulk_filter(&form.filter);
     // set_category_id=0 means "clear category" (set to NULL)
     let category_id = form
         .set_category_id
@@ -788,13 +757,7 @@ pub async fn bulk_add_tag(
     let tag_id = form
         .set_tag_id
         .ok_or_else(|| AppError::Validation("Tag is required".into()))?;
-    let filter = build_bulk_filter(
-        &form.search,
-        form.category_id,
-        form.tag_id,
-        &form.from_date,
-        &form.to_date,
-    );
+    let filter = build_bulk_filter(&form.filter);
     let count = transactions::bulk_add_tag(&conn, &filter, tag_id)?;
     info!(count, tag_id, "Bulk added tag via web");
     Ok(Html(String::new()))
@@ -805,13 +768,7 @@ pub async fn bulk_set_account(
     Form(form): Form<BulkAccountForm>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let filter = build_bulk_filter(
-        &form.search,
-        form.category_id,
-        form.tag_id,
-        &form.from_date,
-        &form.to_date,
-    );
+    let filter = build_bulk_filter(&form.filter);
     // set_account_id=0 means "clear account" (set to NULL)
     let account_id = form
         .set_account_id

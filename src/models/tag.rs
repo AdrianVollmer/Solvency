@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::category::DEFAULT_COLOR;
+
 /// Curated color palette for tags (Tailwind 500 values).
 pub const TAG_PALETTE: &[(&str, &str)] = &[
     ("Red", "#ef4444"),
@@ -17,7 +19,7 @@ pub const TAG_PALETTE: &[(&str, &str)] = &[
     ("Purple", "#a855f7"),
     ("Fuchsia", "#d946ef"),
     ("Pink", "#ec4899"),
-    ("Gray", "#6b7280"),
+    ("Gray", DEFAULT_COLOR),
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -72,7 +74,7 @@ pub struct NewTag {
 }
 
 fn default_color() -> String {
-    "#6b7280".to_string()
+    DEFAULT_COLOR.to_string()
 }
 
 /// Tag with its transaction usage count (for listing pages).

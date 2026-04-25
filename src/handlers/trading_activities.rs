@@ -10,8 +10,7 @@ use crate::db::queries::trading;
 use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{NewTradingActivity, Settings, TradingActivity, TradingActivityType};
 use crate::sort_utils::{Sortable, SortableColumn, TableSort};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 /// Sortable columns for the trading activities table.
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -324,10 +323,10 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let page = params.page.unwrap_or(1).max(1);
-    let page_size = app_settings.page_size;
+    let page_size = settings.page_size;
 
     let date_range = params
         .resolve_date_range()
@@ -355,11 +354,11 @@ pub async fn index(
 
     let template = TradingActivitiesTemplate {
         title: "Trading Activities".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         activities: activity_list,
         symbols,
         activity_types: TradingActivityType::all(),
@@ -382,10 +381,10 @@ pub async fn table_partial(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, .. } = state.page_base()?;
 
     let page = params.page.unwrap_or(1).max(1);
-    let page_size = app_settings.page_size;
+    let page_size = settings.page_size;
 
     let date_range = params
         .resolve_date_range()
@@ -411,8 +410,8 @@ pub async fn table_partial(
     let total_count = trading::count_activities(&conn, &filter)?;
 
     let template = TradingActivityTableTemplate {
-        settings: app_settings,
-        icons: crate::filters::Icons,
+        settings,
+        icons,
         activities: activity_list,
         total_count,
         page,
@@ -431,15 +430,15 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let template = TradingActivityDetailTemplate {
         title: format!("{} - {}", activity.symbol, activity.activity_type.label()),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         activity,
     };
 
@@ -449,16 +448,16 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let symbols = trading::get_unique_symbols(&conn)?;
 
     let template = TradingActivityNewTemplate {
         title: "Add Activity".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         symbols,
         activity_types: TradingActivityType::all(),
     };
@@ -475,17 +474,17 @@ pub async fn edit_form(
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let symbols = trading::get_unique_symbols(&conn)?;
 
     let template = TradingActivityEditTemplate {
         title: "Edit Activity".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         activity,
         symbols,
         activity_types: TradingActivityType::all(),

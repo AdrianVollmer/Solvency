@@ -1,5 +1,7 @@
 declare const echarts: any;
 
+import { getCurrencySymbol, isDarkMode, getTheme } from "./utils";
+
 interface PriceData {
   date: string;
   price_cents: number;
@@ -22,25 +24,16 @@ interface ChartResponse {
 
 let positionChart: any = null;
 
-function formatPrice(cents: number): string {
-  return "$" + (cents / 100).toFixed(2);
-}
-
 function formatQuantity(qty: number): string {
   return qty.toFixed(4).replace(/\.?0+$/, "");
-}
-
-function isDarkMode(): boolean {
-  return document.documentElement.classList.contains("dark");
-}
-
-function getTheme(): string | undefined {
-  return isDarkMode() ? "dark" : undefined;
 }
 
 async function loadPositionChart(symbol: string): Promise<void> {
   const container = document.getElementById("position-chart");
   if (!container) return;
+
+  const currency = (container as HTMLElement).dataset.currency ?? "USD";
+  const sym = getCurrencySymbol(currency);
 
   try {
     const response = await fetch(`/api/positions/${encodeURIComponent(symbol)}/chart`);
@@ -99,17 +92,17 @@ async function loadPositionChart(symbol: string): Promise<void> {
         formatter: (params: any) => {
           const point = params[0];
           const date = point.axisValue;
-          const price = formatPrice(point.value * 100);
+          const price = sym + point.value.toFixed(2);
 
           const activity = activityMap.get(date);
           if (activity) {
             const type = activity.activity_type === "BUY" ? "Buy" : "Sell";
             const qty = formatQuantity(activity.quantity);
-            const total = formatPrice(activity.total_cents);
+            const total = sym + (activity.total_cents / 100).toFixed(2);
             return [
               `<strong>${date}</strong>`,
               `Price: ${price}`,
-              `${type}: ${qty} shares @ ${formatPrice(activity.price_cents)}`,
+              `${type}: ${qty} shares @ ${sym + (activity.price_cents / 100).toFixed(2)}`,
               `Total: ${total}`,
             ].join("<br/>");
           }
@@ -135,7 +128,7 @@ async function loadPositionChart(symbol: string): Promise<void> {
       yAxis: {
         type: "value",
         axisLabel: {
-          formatter: (value: number) => formatPrice(value * 100),
+          formatter: (value: number) => sym + value.toFixed(2),
         },
       },
       series: [

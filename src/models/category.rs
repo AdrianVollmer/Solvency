@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+pub const DEFAULT_COLOR: &str = "#6b7280";
+pub const DEFAULT_ICON: &str = "folder";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Category {
     pub id: i64,
@@ -64,9 +67,9 @@ pub struct NewCategory {
 }
 
 fn default_color() -> String {
-    "#6b7280".to_string()
+    DEFAULT_COLOR.to_string()
 }
 
 fn default_icon() -> String {
-    "folder".to_string()
+    DEFAULT_ICON.to_string()
 }

@@ -11,8 +11,7 @@ use crate::error::{AppError, AppResult, RenderHtml};
 use crate::models::{
     CategoryWithPath, NewRule, Rule, RuleActionType, Settings, Tag, TransactionWithRelations,
 };
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
 #[template(path = "pages/rule_form.html")]
@@ -99,17 +98,17 @@ pub struct ApplyFormData {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let category_list = state.cached_categories_with_path()?;
     let tag_list = state.cached_tags()?;
 
     let template = RuleFormTemplate {
         title: "Add Rule".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         categories: category_list,
         tags: tag_list,
     };
@@ -119,7 +118,7 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
 
 pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let rule =
         rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
@@ -128,11 +127,11 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 
     let template = RuleDetailTemplate {
         title: format!("Rule: {}", rule.name),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         rule,
         categories: category_list,
         tags: tag_list,
@@ -146,7 +145,7 @@ pub async fn edit_form(
     Path(id): Path<i64>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let rule =
         rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
@@ -155,11 +154,11 @@ pub async fn edit_form(
 
     let template = RuleEditTemplate {
         title: format!("Edit Rule: {}", rule.name),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         rule,
         categories: category_list,
         tags: tag_list,
@@ -258,7 +257,7 @@ pub async fn preview(
     Query(params): Query<PreviewQuery>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let rule =
         rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
@@ -270,11 +269,11 @@ pub async fn preview(
 
     let template = RulePreviewTemplate {
         title: format!("Preview: {}", rule.name),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         rule,
         scope,
         matched,

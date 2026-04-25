@@ -11,8 +11,7 @@ use crate::handlers::import_preview::{
     ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus, ImportPreviewTemplate,
 };
 use crate::models::{Account, AccountType, NewAccount, Settings};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
 #[template(path = "pages/accounts.html")]
@@ -49,16 +48,16 @@ pub struct AccountFormData {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let account_list = state.cached_accounts()?;
 
     let template = AccountsTemplate {
         title: "Accounts".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         delete_count: account_list.len() as i64,
         accounts: account_list,
     };
@@ -67,15 +66,15 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let template = AccountFormTemplate {
         title: "Add Account".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         account: None,
     };
 
@@ -87,18 +86,18 @@ pub async fn edit_form(
     Path(id): Path<i64>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let account = accounts::get_account(&conn, id)?
         .ok_or_else(|| AppError::NotFound("Account not found".into()))?;
 
     let template = AccountFormTemplate {
         title: "Edit Account".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         account: Some(account),
     };
 
@@ -239,7 +238,7 @@ pub async fn import_preview(
     let data: Vec<AccountImport> = serde_json::from_str(&form.data)
         .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let existing = state.cached_accounts()?;
     let existing_names: std::collections::HashSet<String> =
@@ -271,11 +270,11 @@ pub async fn import_preview(
 
     let template = ImportPreviewTemplate {
         title: "Import Accounts — Preview".to_string(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         resource_name: "Accounts".to_string(),
         back_url: "/accounts".to_string(),
         import_url: "/accounts/import".to_string(),

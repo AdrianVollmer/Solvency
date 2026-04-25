@@ -6,9 +6,8 @@ use serde::Deserialize;
 
 use crate::db::queries::tags;
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{NewTag, Settings, Tag, TagStyle, TAG_PALETTE};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::models::{NewTag, Settings, Tag, TagStyle, TAG_PALETTE, DEFAULT_COLOR};
+use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
 #[template(path = "pages/tag_form.html")]
@@ -43,15 +42,15 @@ pub struct TagSearchParams {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let template = TagFormTemplate {
         title: "Add Tag".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         editing: None,
         palette: TAG_PALETTE,
     };
@@ -64,18 +63,18 @@ pub async fn edit_form(
     Path(id): Path<i64>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let tag =
         tags::get_tag(&conn, id)?.ok_or_else(|| AppError::NotFound("Tag not found".into()))?;
 
     let template = TagFormTemplate {
         title: format!("Edit Tag: {}", tag.name),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         editing: Some(tag),
         palette: TAG_PALETTE,
     };
@@ -92,7 +91,7 @@ pub async fn update(
 
     let updated_tag = NewTag {
         name: form.name,
-        color: form.color.unwrap_or_else(|| "#6b7280".into()),
+        color: form.color.unwrap_or_else(|| DEFAULT_COLOR.into()),
         style: form.style.map(|s| TagStyle::parse(&s)).unwrap_or_default(),
     };
 
@@ -125,7 +124,7 @@ pub async fn create(
 
     let new_tag = NewTag {
         name: form.name,
-        color: form.color.unwrap_or_else(|| "#6b7280".into()),
+        color: form.color.unwrap_or_else(|| DEFAULT_COLOR.into()),
         style: form.style.map(|s| TagStyle::parse(&s)).unwrap_or_default(),
     };
 

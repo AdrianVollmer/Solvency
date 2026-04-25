@@ -11,9 +11,9 @@ use crate::error::{AppError, AppResult, RenderHtml};
 use crate::handlers::import_preview::{ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus};
 use crate::models::{
     CategoryWithPath, NewCategory, NewRule, NewTag, Rule, RuleActionType, Settings, Tag, TagStyle,
-    TagWithUsage, TAG_PALETTE,
+    TagWithUsage, TAG_PALETTE, DEFAULT_COLOR, DEFAULT_ICON,
 };
-use crate::state::{AppState, JsManifest};
+use crate::state::{AppState, JsManifest, PageBase};
 use crate::VERSION;
 
 #[derive(Debug, Deserialize)]
@@ -46,7 +46,7 @@ pub async fn index(
     axum::extract::Query(params): axum::extract::Query<ManageQuery>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     let active_tab = params.tab.unwrap_or_else(|| "categories".into());
 
@@ -61,11 +61,11 @@ pub async fn index(
 
     let template = ManageTemplate {
         title: "Manage".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         active_tab,
         categories,
         tags_with_usage,
@@ -265,11 +265,11 @@ struct RuleImport {
 }
 
 fn default_color() -> String {
-    "#6b7280".to_string()
+    DEFAULT_COLOR.to_string()
 }
 
 fn default_icon() -> String {
-    "folder".to_string()
+    DEFAULT_ICON.to_string()
 }
 
 pub async fn import(
@@ -493,7 +493,7 @@ pub async fn import_preview(
     }
 
     let conn = state.db.get()?;
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     // Categories preview
     let existing_cats = state.cached_categories()?;
@@ -660,11 +660,11 @@ pub async fn import_preview(
 
     let template = ManageImportPreviewTemplate {
         title: "Import Manage Data — Preview".to_string(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         category_items,
         tag_items,
         rule_items,

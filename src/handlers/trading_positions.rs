@@ -14,8 +14,7 @@ use crate::models::trading::{
 use crate::models::{MarketData, Position, Settings};
 use crate::services::xirr::{calculate_xirr, CashFlow};
 use crate::sort_utils::{SortDirection, Sortable, SortableColumn, TableSort};
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 /// Sortable columns for the positions table.
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -205,7 +204,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let sort: TableSort<PositionSortColumn> = params.resolve_sort();
 
     let all_positions = trading::get_positions(&conn)?;
@@ -263,16 +262,16 @@ pub async fn index(
         _ => "text-neutral-600 dark:text-neutral-400",
     };
 
-    let currency = &app_settings.currency;
-    let locale = &app_settings.locale;
+    let currency = settings.currency.clone();
+    let locale = settings.locale.clone();
 
     let total_gain_loss_formatted =
-        total_gain_loss.map(|gl| filters::format_money_plain(gl, currency, locale));
+        total_gain_loss.map(|gl| filters::format_money_plain(gl, &currency, &locale));
 
-    let total_cost_formatted = filters::format_money_neutral(total_cost, currency, locale);
+    let total_cost_formatted = filters::format_money_neutral(total_cost, &currency, &locale);
 
     let total_current_value_formatted =
-        total_current_value.map(|val| filters::format_money_balance(val, currency, locale));
+        total_current_value.map(|val| filters::format_money_balance(val, &currency, &locale));
 
     let total_current_value_color = match total_current_value {
         Some(v) if v > 0 => "text-green-600 dark:text-green-400",
@@ -299,17 +298,18 @@ pub async fn index(
     };
 
     let total_realized_gl_formatted =
-        filters::format_money_plain(total_realized_gl, currency, locale);
-    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, currency, locale);
-    let total_taxes_formatted = filters::format_money_neutral(total_taxes_cents, currency, locale);
+        filters::format_money_plain(total_realized_gl, &currency, &locale);
+    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, &currency, &locale);
+    let total_taxes_formatted =
+        filters::format_money_neutral(total_taxes_cents, &currency, &locale);
 
     let template = TradingPositionsTemplate {
         title: "Positions".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         positions: all_positions,
         security_positions,
         total_current_value,
@@ -359,7 +359,7 @@ pub async fn closed_positions(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let sort: TableSort<ClosedPositionSortColumn> = params.resolve_sort();
 
     let mut positions = trading::get_closed_positions(&conn)?;
@@ -381,22 +381,22 @@ pub async fn closed_positions(
     };
 
     let total_cost_formatted =
-        filters::format_money_neutral(total_cost, &app_settings.currency, &app_settings.locale);
+        filters::format_money_neutral(total_cost, &settings.currency, &settings.locale);
     let total_proceeds_formatted =
-        filters::format_money_neutral(total_proceeds, &app_settings.currency, &app_settings.locale);
+        filters::format_money_neutral(total_proceeds, &settings.currency, &settings.locale);
     let total_gain_loss_formatted = filters::format_money_plain(
         total_gain_loss,
-        &app_settings.currency,
-        &app_settings.locale,
+        &settings.currency,
+        &settings.locale,
     );
 
     let template = ClosedPositionsTemplate {
         title: "Closed Positions".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         positions,
         total_cost,
         total_cost_formatted,
@@ -466,7 +466,7 @@ pub async fn detail(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     // Get cached symbol metadata from DB
     let symbol_info = match market_data::get_symbol_metadata(&conn, &symbol) {
@@ -510,7 +510,7 @@ pub async fn detail(
 
     // Calculate XIRR
     let xirr = calculate_position_xirr(&all_activities, &position, &latest_price);
-    let xirr_formatted = xirr.map(|x| filters::format_percent(x * 100.0, &app_settings.locale));
+    let xirr_formatted = xirr.map(|x| filters::format_percent(x * 100.0, &settings.locale));
 
     // Calculate total fees, taxes, dividends, and realized gain/loss
     let (total_fees_cents, total_taxes_cents, total_dividends_cents, realized_gain_loss_cents) =
@@ -526,19 +526,19 @@ pub async fn detail(
         .rev()
         .collect();
 
+    let locale = settings.locale.clone();
     let currency = position
         .as_ref()
-        .map(|p| p.position.currency.as_str())
-        .unwrap_or(&app_settings.currency);
+        .map(|p| p.position.currency.clone())
+        .unwrap_or_else(|| settings.currency.clone());
 
-    let locale = &app_settings.locale;
-
-    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, currency, locale);
-    let total_taxes_formatted = filters::format_money_neutral(total_taxes_cents, currency, locale);
+    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, &currency, &locale);
+    let total_taxes_formatted =
+        filters::format_money_neutral(total_taxes_cents, &currency, &locale);
     let total_dividends_formatted =
-        filters::format_money_neutral(total_dividends_cents, currency, locale);
+        filters::format_money_neutral(total_dividends_cents, &currency, &locale);
     let realized_gain_loss_formatted =
-        filters::format_money_plain(realized_gain_loss_cents, currency, locale);
+        filters::format_money_plain(realized_gain_loss_cents, &currency, &locale);
 
     let realized_gain_loss_color = if realized_gain_loss_cents > 0 {
         "text-green-600 dark:text-green-400"
@@ -555,11 +555,11 @@ pub async fn detail(
 
     let template = PositionDetailTemplate {
         title: display_name,
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         symbol: symbol.clone(),
         symbol_info,
         position,

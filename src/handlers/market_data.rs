@@ -11,8 +11,7 @@ use crate::error::{AppResult, RenderHtml};
 use crate::models::{MarketData, NewApiLog, Settings, SymbolDataCoverage};
 use crate::services::market_data as market_data_service;
 use crate::sort_utils::{SortDirection, Sortable, SortableColumn, TableSort};
-use crate::state::{AppState, JsManifest, MarketDataRefreshState};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, MarketDataRefreshState, PageBase};
 
 /// Sortable columns for the market data coverage table.
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -118,7 +117,7 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let sort: TableSort<MarketDataSortColumn> = params.resolve_sort();
 
     let mut coverage = market_data::get_symbol_coverage(&conn)?;
@@ -153,11 +152,11 @@ pub async fn index(
 
     let template = MarketDataTemplate {
         title: "Market Data".into(),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         coverage,
         total_data_points,
         symbols_needing_data,
@@ -560,7 +559,7 @@ pub async fn symbol_detail(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
 
     // Get cached symbol metadata from DB
     let symbol_info = match market_data::get_symbol_metadata(&conn, &symbol) {
@@ -599,11 +598,11 @@ pub async fn symbol_detail(
 
     let template = MarketDataSymbolTemplate {
         title: format!("{} - Market Data", display_name),
-        settings: app_settings,
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         symbol: symbol.clone(),
         symbol_info,
         coverage,

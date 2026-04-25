@@ -9,8 +9,7 @@ use crate::db::queries::transactions;
 use crate::error::{AppResult, RenderHtml};
 use crate::filters;
 use crate::models::Settings;
-use crate::state::{AppState, JsManifest};
-use crate::VERSION;
+use crate::state::{AppState, JsManifest, PageBase};
 
 /// Frequency classification for recurring expenses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -97,7 +96,7 @@ pub struct RecurringExpensesTemplate {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let app_settings = state.load_settings()?;
+    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
     let all_expenses = state.cached_recurring_expenses()?;
 
     let (inactive_expenses, expenses): (Vec<_>, Vec<_>) =
@@ -107,26 +106,23 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let total_annual: i64 = expenses.iter().map(|e| e.annual_cost_cents).sum();
     let total_monthly = total_annual / 12;
 
+    let total_annual_cost_formatted =
+        filters::format_money_neutral(total_annual, &settings.currency, &settings.locale);
+    let total_monthly_cost_formatted =
+        filters::format_money_neutral(total_monthly, &settings.currency, &settings.locale);
+
     let template = RecurringExpensesTemplate {
         title: "Recurring Expenses".into(),
-        settings: app_settings.clone(),
-        icons: crate::filters::Icons,
-        manifest: state.manifest.clone(),
-        version: VERSION,
-        xsrf_token: state.xsrf_token.value().to_string(),
         subscription_count: expenses.len(),
+        total_annual_cost_formatted,
+        total_monthly_cost_formatted,
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
         expenses,
         inactive_expenses,
-        total_annual_cost_formatted: filters::format_money_neutral(
-            total_annual,
-            &app_settings.currency,
-            &app_settings.locale,
-        ),
-        total_monthly_cost_formatted: filters::format_money_neutral(
-            total_monthly,
-            &app_settings.currency,
-            &app_settings.locale,
-        ),
     };
 
     template.render_html()
