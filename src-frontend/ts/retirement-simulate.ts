@@ -2,6 +2,8 @@
 // Reads scenario state from the embedded JSON tag, sends PATCH requests to
 // /api/retirement/simulate on slider change, and updates the hero stats + chart.
 
+import { getCurrencySymbol } from "./utils";
+
 interface ScenarioState {
   scenario_id: string;
   birthday: string | null;
@@ -46,14 +48,6 @@ const MONEY_FIELDS = new Set([
   "monthly_barista_income",
   "current_portfolio_override",
 ]);
-
-function getCurrencySymbol(cur: string): string {
-  const symbols: Record<string, string> = {
-    USD: "$", EUR: "€", GBP: "£", JPY: "¥", CHF: "CHF ",
-    CAD: "C$", AUD: "A$", SEK: "kr ", NOK: "kr ", DKK: "kr ",
-  };
-  return symbols[cur.toUpperCase()] || cur + " ";
-}
 
 function formatSliderValue(value: number, format: SliderFormat): string {
   if (format === "age") return `Age ${Math.round(value)}`;

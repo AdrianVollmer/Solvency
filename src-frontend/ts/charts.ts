@@ -1,5 +1,7 @@
 declare const echarts: any;
 
+import { isDarkMode, getTheme } from "./utils";
+
 interface CategoryTreeNode {
   name: string;
   color: string;
@@ -63,14 +65,6 @@ function showEmptyState(container: HTMLElement): void {
 
 function formatCurrency(cents: number): string {
   return "$" + (cents / 100).toFixed(2);
-}
-
-function isDarkMode(): boolean {
-  return document.documentElement.classList.contains("dark");
-}
-
-function getTheme(): string | undefined {
-  return isDarkMode() ? "dark" : undefined;
 }
 
 async function fetchData<T>(

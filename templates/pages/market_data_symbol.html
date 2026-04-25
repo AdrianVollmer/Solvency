@@ -77,7 +77,7 @@
             </div>
         </div>
         {% else %}
-        <div id="price-chart" class="h-80" data-symbol="{{ symbol }}" role="img" aria-label="Price chart for {{ symbol }}"></div>
+        <div id="price-chart" class="h-80" data-symbol="{{ symbol }}" data-currency="{{ settings.currency }}" role="img" aria-label="Price chart for {{ symbol }}"></div>
         {% endif %}
     {% endcall %}
 

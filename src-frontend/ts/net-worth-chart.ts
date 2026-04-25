@@ -1,5 +1,7 @@
 declare const echarts: any;
 
+import { getCurrencySymbol, formatMoney, isDarkMode, getTheme } from "./utils";
+
 interface NetWorthChartResponse {
   labels: string[];
   net_worth: number[];
@@ -18,55 +20,6 @@ let netWorthChart: any = null;
 let allocationChart: any = null;
 let chartLabels: string[] = [];
 let isShiftPressed = false;
-
-function getCurrencySymbol(currency: string): string {
-  const symbols: Record<string, string> = {
-    USD: "$",
-    EUR: "€",
-    GBP: "£",
-    JPY: "¥",
-    CNY: "¥",
-    CAD: "C$",
-    AUD: "A$",
-    CHF: "CHF ",
-    INR: "₹",
-    BRL: "R$",
-    MXN: "MX$",
-    KRW: "₩",
-    SEK: "kr ",
-    NOK: "kr ",
-    DKK: "kr ",
-    PLN: "zł ",
-    RUB: "₽",
-    TRY: "₺",
-    ZAR: "R ",
-    SGD: "S$",
-    HKD: "HK$",
-    NZD: "NZ$",
-    THB: "฿",
-  };
-  return symbols[currency.toUpperCase()] || "$";
-}
-
-function formatMoney(cents: number, currency: string, locale: string): string {
-  const value = cents / 100;
-  const symbol = getCurrencySymbol(currency);
-  return (
-    symbol +
-    value.toLocaleString(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  );
-}
-
-function isDarkMode(): boolean {
-  return document.documentElement.classList.contains("dark");
-}
-
-function getTheme(): string | undefined {
-  return isDarkMode() ? "dark" : undefined;
-}
 
 function updateBrushMode(): void {
   if (!netWorthChart) return;

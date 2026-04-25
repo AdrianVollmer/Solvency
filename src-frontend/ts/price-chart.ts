@@ -1,5 +1,7 @@
 declare const echarts: any;
 
+import { getCurrencySymbol, isDarkMode, getTheme } from "./utils";
+
 interface PriceData {
   date: string;
   price_cents: number;
@@ -13,21 +15,12 @@ interface ChartResponse {
 
 let priceChart: any = null;
 
-function formatPrice(cents: number): string {
-  return "$" + (cents / 100).toFixed(2);
-}
-
-function isDarkMode(): boolean {
-  return document.documentElement.classList.contains("dark");
-}
-
-function getTheme(): string | undefined {
-  return isDarkMode() ? "dark" : undefined;
-}
-
 async function loadPriceChart(symbol: string): Promise<void> {
   const container = document.getElementById("price-chart");
   if (!container) return;
+
+  const currency = (container as HTMLElement).dataset.currency ?? "USD";
+  const sym = getCurrencySymbol(currency);
 
   try {
     const response = await fetch(`/api/market-data/${encodeURIComponent(symbol)}`);
@@ -64,7 +57,7 @@ async function loadPriceChart(symbol: string): Promise<void> {
         trigger: "axis",
         formatter: (params: any) => {
           const point = params[0];
-          return `<strong>${point.axisValue}</strong><br/>${formatPrice(point.value * 100)}`;
+          return `<strong>${point.axisValue}</strong><br/>${sym + point.value.toFixed(2)}`;
         },
       },
       grid: {
@@ -85,7 +78,7 @@ async function loadPriceChart(symbol: string): Promise<void> {
       yAxis: {
         type: "value",
         axisLabel: {
-          formatter: (value: number) => formatPrice(value * 100),
+          formatter: (value: number) => sym + value.toFixed(2),
         },
       },
       series: [
