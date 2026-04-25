@@ -1,6 +1,6 @@
 declare const echarts: any;
 
-import { formatMoney, isDarkMode } from "./utils";
+import { formatMoney, isDarkMode, getTheme } from "./utils";
 
 interface RetirementChartData {
   years: number[];
@@ -303,7 +303,7 @@ function initChart(container: HTMLElement): void {
 
       retirementChart = echarts.init(
         container,
-        isDarkMode() ? "dark" : undefined
+        getTheme()
       );
       retirementChart.setOption(
         buildOption(
@@ -318,7 +318,7 @@ function initChart(container: HTMLElement): void {
         retirementChart?.dispose();
         retirementChart = echarts.init(
           container,
-          isDarkMode() ? "dark" : undefined
+          getTheme()
         );
         const s = (window as any)._retirementChartState;
         const [p10, p25, p50, p75, p90, det] =

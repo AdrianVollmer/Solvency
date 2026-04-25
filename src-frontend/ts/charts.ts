@@ -1,6 +1,6 @@
 declare const echarts: any;
 
-import { isDarkMode, getTheme } from "./utils";
+import { isDarkMode, getTheme, getCurrencySymbol } from "./utils";
 
 interface CategoryTreeNode {
   name: string;
@@ -63,8 +63,10 @@ function showEmptyState(container: HTMLElement): void {
     "</div>";
 }
 
+// TODO: thread currency from a data attribute on the chart container so this
+// doesn't need a hardcoded default. Tracked as a follow-up task.
 function formatCurrency(cents: number): string {
-  return "$" + (cents / 100).toFixed(2);
+  return getCurrencySymbol("USD") + (cents / 100).toFixed(2);
 }
 
 async function fetchData<T>(

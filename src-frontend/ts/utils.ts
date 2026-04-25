@@ -36,8 +36,10 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   THB: "฿",
 };
 
+// Falls back to the currency code + non-breaking space for unrecognised currencies
+// (e.g. "CZK ") so the symbol is always visually distinct and correct.
 export function getCurrencySymbol(currency: string): string {
-  return CURRENCY_SYMBOLS[currency.toUpperCase()] ?? "$";
+  return CURRENCY_SYMBOLS[currency.toUpperCase()] ?? (currency.toUpperCase() + " ");
 }
 
 export function formatMoney(
