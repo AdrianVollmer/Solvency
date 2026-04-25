@@ -526,19 +526,19 @@ pub async fn detail(
         .rev()
         .collect();
 
-    let currency_owned = settings.currency.clone();
     let locale = settings.locale.clone();
     let currency = position
         .as_ref()
-        .map(|p| p.position.currency.as_str())
-        .unwrap_or(&currency_owned);
+        .map(|p| p.position.currency.clone())
+        .unwrap_or_else(|| settings.currency.clone());
 
-    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, currency, &locale);
-    let total_taxes_formatted = filters::format_money_neutral(total_taxes_cents, currency, &locale);
+    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, &currency, &locale);
+    let total_taxes_formatted =
+        filters::format_money_neutral(total_taxes_cents, &currency, &locale);
     let total_dividends_formatted =
-        filters::format_money_neutral(total_dividends_cents, currency, &locale);
+        filters::format_money_neutral(total_dividends_cents, &currency, &locale);
     let realized_gain_loss_formatted =
-        filters::format_money_plain(realized_gain_loss_cents, currency, &locale);
+        filters::format_money_plain(realized_gain_loss_cents, &currency, &locale);
 
     let realized_gain_loss_color = if realized_gain_loss_cents > 0 {
         "text-green-600 dark:text-green-400"
