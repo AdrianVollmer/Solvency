@@ -664,6 +664,8 @@ pub async fn delete_all(State(state): State<AppState>) -> AppResult<Html<String>
     Ok(Html(String::new()))
 }
 
+/// Common filter fields shared by bulk-operation forms.
+/// Populated via hx-include from #filter-form on the transactions page.
 #[derive(Debug, Deserialize)]
 pub struct BulkFilterFields {
     pub search: Option<String>,
