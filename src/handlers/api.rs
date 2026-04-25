@@ -7,6 +7,7 @@ use tracing::{debug, warn};
 use crate::db::queries::transactions;
 use crate::error::AppResult;
 use crate::filters::Icons;
+use crate::models::DEFAULT_COLOR;
 use crate::state::AppState;
 
 /// Collect a category and all its descendants into a set of IDs.
@@ -411,7 +412,7 @@ pub async fn spending_by_category_tree(
     if uncategorized_total > 0 {
         result.push(CategoryTreeNode {
             name: "Uncategorized".into(),
-            color: "#6b7280".into(),
+            color: DEFAULT_COLOR.into(),
             id: None,
             amount_cents: Some(uncategorized_total),
             children: Vec::new(),
@@ -934,7 +935,7 @@ pub async fn flow_sankey(
             &mut nodes,
             &mut node_names,
             "Uncategorized",
-            "#6b7280",
+            DEFAULT_COLOR,
             income_root_col,
         );
         links.push(SankeyLink {
@@ -1020,7 +1021,7 @@ pub async fn flow_sankey(
             &mut nodes,
             &mut node_names,
             name,
-            "#6b7280",
+            DEFAULT_COLOR,
             expense_root_col,
         );
         links.push(SankeyLink {

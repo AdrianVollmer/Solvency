@@ -1,4 +1,4 @@
-use crate::models::TransactionWithRelations;
+use crate::models::{TransactionWithRelations, DEFAULT_COLOR};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -69,7 +69,7 @@ pub fn spending_by_category(transactions: &[TransactionWithRelations]) -> Vec<Ca
         let color = transaction
             .category_color
             .clone()
-            .unwrap_or_else(|| "#6b7280".into());
+            .unwrap_or_else(|| DEFAULT_COLOR.into());
 
         let entry = category_data.entry(category).or_insert((color, 0, 0));
         entry.1 += transaction.transaction.amount_cents;

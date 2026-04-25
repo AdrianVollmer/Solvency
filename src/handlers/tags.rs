@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::db::queries::tags;
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{NewTag, Settings, Tag, TagStyle, TAG_PALETTE};
+use crate::models::{NewTag, Settings, Tag, TagStyle, TAG_PALETTE, DEFAULT_COLOR};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -92,7 +92,7 @@ pub async fn update(
 
     let updated_tag = NewTag {
         name: form.name,
-        color: form.color.unwrap_or_else(|| "#6b7280".into()),
+        color: form.color.unwrap_or_else(|| DEFAULT_COLOR.into()),
         style: form.style.map(|s| TagStyle::parse(&s)).unwrap_or_default(),
     };
 
@@ -125,7 +125,7 @@ pub async fn create(
 
     let new_tag = NewTag {
         name: form.name,
-        color: form.color.unwrap_or_else(|| "#6b7280".into()),
+        color: form.color.unwrap_or_else(|| DEFAULT_COLOR.into()),
         style: form.style.map(|s| TagStyle::parse(&s)).unwrap_or_default(),
     };
 

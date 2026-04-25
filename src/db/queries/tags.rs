@@ -1,4 +1,5 @@
 use crate::models::tag::{NewTag, Tag, TagStyle, TagWithUsage};
+use crate::models::DEFAULT_COLOR;
 use rusqlite::{params, Connection, OptionalExtension};
 use tracing::{info, warn};
 
@@ -132,7 +133,7 @@ pub fn create_or_get_tag(conn: &Connection, name: &str) -> rusqlite::Result<Tag>
 
     let tag = NewTag {
         name: name.to_string(),
-        color: "#6b7280".to_string(),
+        color: DEFAULT_COLOR.to_string(),
         style: TagStyle::Solid,
     };
     let id = create_tag(conn, &tag)?;

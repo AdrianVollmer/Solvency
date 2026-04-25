@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use crate::db::queries::{categories, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{Category, CategoryWithPath, NewCategory, Settings, TAG_PALETTE};
+use crate::models::{Category, CategoryWithPath, NewCategory, Settings, TAG_PALETTE, DEFAULT_COLOR, DEFAULT_ICON};
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
 
@@ -167,8 +167,8 @@ pub async fn create(
     let new_category = NewCategory {
         name: form.name,
         parent_id: form.parent_id,
-        color: form.color.unwrap_or_else(|| "#6b7280".into()),
-        icon: form.icon.unwrap_or_else(|| "folder".into()),
+        color: form.color.unwrap_or_else(|| DEFAULT_COLOR.into()),
+        icon: form.icon.unwrap_or_else(|| DEFAULT_ICON.into()),
     };
 
     categories::create_category(&conn, &new_category)?;
@@ -221,8 +221,8 @@ pub async fn update(
     let new_category = NewCategory {
         name: form.name,
         parent_id: form.parent_id,
-        color: form.color.unwrap_or_else(|| "#6b7280".into()),
-        icon: form.icon.unwrap_or_else(|| "folder".into()),
+        color: form.color.unwrap_or_else(|| DEFAULT_COLOR.into()),
+        icon: form.icon.unwrap_or_else(|| DEFAULT_ICON.into()),
     };
 
     categories::update_category(&conn, id, &new_category)?;
@@ -249,8 +249,8 @@ pub async fn update_form(
     let new_category = NewCategory {
         name: form.name,
         parent_id: form.parent_id,
-        color: form.color.unwrap_or_else(|| "#6b7280".into()),
-        icon: form.icon.unwrap_or_else(|| "folder".into()),
+        color: form.color.unwrap_or_else(|| DEFAULT_COLOR.into()),
+        icon: form.icon.unwrap_or_else(|| DEFAULT_ICON.into()),
     };
 
     categories::update_category(&conn, id, &new_category)?;

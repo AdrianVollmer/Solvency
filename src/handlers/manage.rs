@@ -11,7 +11,7 @@ use crate::error::{AppError, AppResult, RenderHtml};
 use crate::handlers::import_preview::{ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus};
 use crate::models::{
     CategoryWithPath, NewCategory, NewRule, NewTag, Rule, RuleActionType, Settings, Tag, TagStyle,
-    TagWithUsage, TAG_PALETTE,
+    TagWithUsage, TAG_PALETTE, DEFAULT_COLOR, DEFAULT_ICON,
 };
 use crate::state::{AppState, JsManifest};
 use crate::VERSION;
@@ -265,11 +265,11 @@ struct RuleImport {
 }
 
 fn default_color() -> String {
-    "#6b7280".to_string()
+    DEFAULT_COLOR.to_string()
 }
 
 fn default_icon() -> String {
-    "folder".to_string()
+    DEFAULT_ICON.to_string()
 }
 
 pub async fn import(
