@@ -332,6 +332,8 @@ pub struct ClosedPosition {
     pub total_cost_cents: i64,
     pub total_proceeds_cents: i64,
     pub realized_gain_loss_cents: i64,
+    pub total_fees_cents: i64,
+    pub total_taxes_cents: i64,
     pub currency: String,
     pub first_activity_date: String,
     pub last_activity_date: String,

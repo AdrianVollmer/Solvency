@@ -137,6 +137,129 @@ async fn test_fractional_shares() {
 }
 
 // =============================================================================
+// XIRR Tests
+// =============================================================================
+
+/// With only buy activities and no market data all cash flows are negative,
+/// so XIRR cannot be computed and the stat does not appear on the positions page.
+#[tokio::test]
+async fn test_positions_page_no_xirr_with_only_buys() {
+    let client = TestClient::new();
+
+    assert!(
+        client
+            .create_trading_activity("2024-01-01", "MSFT", "BUY", "5", "200.00")
+            .await
+    );
+
+    let (status, body) = client.get("/trading/positions").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        !body.contains("Portfolio XIRR"),
+        "XIRR should not appear when it cannot be computed"
+    );
+}
+
+/// A partial sell creates both negative and positive cash flows, allowing XIRR
+/// to converge. The stat should appear on the positions page.
+#[tokio::test]
+async fn test_positions_page_shows_xirr_with_partial_sell() {
+    let client = TestClient::new();
+
+    assert!(
+        client
+            .create_trading_activity("2023-01-01", "AAPL", "BUY", "10", "100.00")
+            .await
+    );
+    assert!(
+        client
+            .create_trading_activity("2024-01-01", "AAPL", "SELL", "5", "150.00")
+            .await
+    );
+
+    let (status, body) = client.get("/trading/positions").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains("Portfolio XIRR"),
+        "Portfolio XIRR stat should appear when XIRR is computable"
+    );
+}
+
+/// Without real market data the remaining open position has no current value,
+/// so the XIRR is marked incomplete and the warning tooltip is rendered.
+#[tokio::test]
+async fn test_positions_page_xirr_incomplete_without_market_data() {
+    let client = TestClient::new();
+
+    assert!(
+        client
+            .create_trading_activity("2023-01-01", "AAPL", "BUY", "10", "100.00")
+            .await
+    );
+    assert!(
+        client
+            .create_trading_activity("2024-01-01", "AAPL", "SELL", "5", "150.00")
+            .await
+    );
+
+    let (status, body) = client.get("/trading/positions").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains("approximated prices"),
+        "Incomplete XIRR warning tooltip should appear when market data is unavailable"
+    );
+}
+
+/// Closed positions page shows Realized G/L as the hero stat.
+#[tokio::test]
+async fn test_closed_positions_hero_shows_realized_gl() {
+    let client = TestClient::new();
+
+    assert!(
+        client
+            .create_trading_activity("2024-01-01", "GOOG", "BUY", "10", "100.00")
+            .await
+    );
+    assert!(
+        client
+            .create_trading_activity("2024-06-01", "GOOG", "SELL", "10", "120.00")
+            .await
+    );
+
+    let (status, body) = client.get("/trading/positions/closed").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains("Realized G/L"),
+        "Realized G/L hero should appear on closed positions page"
+    );
+}
+
+/// XIRR appears as a secondary stat on the closed positions page when a full
+/// buy-sell cycle exists and all cash flows are known.
+#[tokio::test]
+async fn test_closed_positions_shows_xirr() {
+    let client = TestClient::new();
+
+    assert!(
+        client
+            .create_trading_activity("2023-01-01", "TSLA", "BUY", "10", "100.00")
+            .await
+    );
+    assert!(
+        client
+            .create_trading_activity("2024-01-01", "TSLA", "SELL", "10", "110.00")
+            .await
+    );
+
+    let (status, body) = client.get("/trading/positions/closed").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains("XIRR"),
+        "XIRR stat should appear on closed positions page"
+    );
+}
+
+// =============================================================================
 // Position Chart API Tests
 // =============================================================================
 

@@ -14,6 +14,34 @@
     {% endcall %}
     {% else %}
 
+    {# Hero: Realized G/L with secondary xirr/tax/fee stats #}
+    <div class="flex flex-col md:flex-row md:items-end gap-6 md:gap-12">
+        <div>
+            <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide inline-flex items-center gap-1" title="Net realized gain/loss after fees and taxes, including dividends">Realized G/L<span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span></p>
+            <p class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums {{ total_realized_gl_color }}">
+                {{ total_realized_gl_formatted }}
+            </p>
+        </div>
+        <div class="flex gap-8 text-sm">
+            {% match closed_xirr_formatted %}
+            {% when Some with (xirr) %}
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">XIRR</p>
+                <p class="mt-0.5 font-semibold tabular-nums {{ closed_xirr_color }}">{{ xirr }}</p>
+            </div>
+            {% when None %}
+            {% endmatch %}
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Taxes</p>
+                <p class="mt-0.5 font-semibold tabular-nums">{{ total_taxes_formatted }}</p>
+            </div>
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Fees</p>
+                <p class="mt-0.5 font-semibold tabular-nums">{{ total_fees_formatted }}</p>
+            </div>
+        </div>
+    </div>
+
     {# Closed Positions Table #}
     {% call ui::card(class="", overflow="overflow-hidden") %}
         <div class="overflow-x-auto">

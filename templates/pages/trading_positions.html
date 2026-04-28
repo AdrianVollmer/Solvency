@@ -11,7 +11,7 @@
     {% else %}
 
     {% if has_closed_positions %}
-    {# Hero: Realized G/L with secondary fee/tax stats #}
+    {# Hero: Realized G/L with secondary fee/tax/xirr stats #}
     <div class="flex flex-col md:flex-row md:items-end gap-6 md:gap-12">
         <div>
             <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide inline-flex items-center gap-1" title="Net realized gain/loss after taxes and fees">Realized G/L<span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span></p>
@@ -28,8 +28,38 @@
                 <p class="text-neutral-500 dark:text-neutral-400">Fees</p>
                 <p class="mt-0.5 font-semibold tabular-nums">{{ total_fees_formatted }}</p>
             </div>
+            {% match portfolio_xirr_formatted %}
+            {% when Some with (xirr) %}
+            <div>
+                <p class="text-neutral-500 dark:text-neutral-400">Portfolio XIRR</p>
+                {% if portfolio_xirr_incomplete %}
+                <p class="mt-0.5 font-semibold tabular-nums text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-1" title="Some positions use approximated prices — XIRR may be inaccurate">
+                    {{ xirr }}<span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
+                </p>
+                {% else %}
+                <p class="mt-0.5 font-semibold tabular-nums {{ portfolio_xirr_color }}">{{ xirr }}</p>
+                {% endif %}
+            </div>
+            {% when None %}
+            {% endmatch %}
         </div>
     </div>
+    {% else %}
+    {% match portfolio_xirr_formatted %}
+    {% when Some with (xirr) %}
+    {# Standalone Portfolio XIRR hero when there are no closed positions #}
+    <div>
+        <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide inline-flex items-center gap-1" title="Annualized portfolio return (XIRR) based on all cash flows and current market values">Portfolio XIRR<span class="icon-xs" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span></p>
+        {% if portfolio_xirr_incomplete %}
+        <p class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums text-yellow-600 dark:text-yellow-400 inline-flex items-center gap-2" title="Some positions use approximated prices — XIRR may be inaccurate">
+            {{ xirr }}<span class="icon-sm" aria-hidden="true">{{ icons.get("help-circle")|safe }}</span>
+        </p>
+        {% else %}
+        <p class="mt-1 font-display text-4xl md:text-5xl font-bold tracking-tight tabular-nums {{ portfolio_xirr_color }}">{{ xirr }}</p>
+        {% endif %}
+    </div>
+    {% when None %}
+    {% endmatch %}
     {% endif %}
 
     {# Security Positions #}

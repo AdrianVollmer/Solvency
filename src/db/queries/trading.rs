@@ -490,6 +490,8 @@ pub fn get_closed_positions(conn: &Connection) -> rusqlite::Result<Vec<ClosedPos
                 total_cost_cents: acc.total_cost,
                 total_proceeds_cents: acc.total_proceeds,
                 realized_gain_loss_cents,
+                total_fees_cents: acc.total_fees,
+                total_taxes_cents: acc.total_taxes,
                 currency: acc.currency,
                 first_activity_date: acc.first_date,
                 last_activity_date: acc.last_date,

@@ -4,6 +4,7 @@ use axum::response::Html;
 use axum::Json;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 use crate::db::queries::{market_data, trading};
 use crate::error::{AppResult, RenderHtml};
@@ -196,6 +197,9 @@ pub struct TradingPositionsTemplate {
     pub total_fees_formatted: String,
     pub total_taxes_formatted: String,
     pub has_closed_positions: bool,
+    pub portfolio_xirr_formatted: Option<String>,
+    pub portfolio_xirr_color: &'static str,
+    pub portfolio_xirr_incomplete: bool,
 }
 
 pub async fn index(
@@ -204,7 +208,13 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let sort: TableSort<PositionSortColumn> = params.resolve_sort();
 
     let all_positions = trading::get_positions(&conn)?;
@@ -289,6 +299,20 @@ pub async fn index(
     let has_closed_positions =
         !closed_positions.is_empty() || total_fees_cents != 0 || total_taxes_cents != 0;
 
+    // Portfolio-wide XIRR
+    let all_activities = trading::list_activities(
+        &conn,
+        &trading::TradingActivityFilter {
+            sort_sql: Some("date ASC".to_string()),
+            ..Default::default()
+        },
+    )?;
+    let (portfolio_xirr, portfolio_xirr_incomplete) =
+        calculate_portfolio_xirr(&all_activities, &security_positions);
+    let portfolio_xirr_formatted =
+        portfolio_xirr.map(|x| filters::format_percent(x * 100.0, &settings.locale));
+    let portfolio_xirr_color = xirr_color(portfolio_xirr, portfolio_xirr_incomplete);
+
     let total_realized_gl_color = if total_realized_gl > 0 {
         "text-green-600 dark:text-green-400"
     } else if total_realized_gl < 0 {
@@ -326,6 +350,9 @@ pub async fn index(
         total_fees_formatted,
         total_taxes_formatted,
         has_closed_positions,
+        portfolio_xirr_formatted,
+        portfolio_xirr_color,
+        portfolio_xirr_incomplete,
     };
 
     template.render_html()
@@ -351,6 +378,13 @@ pub struct ClosedPositionsTemplate {
     pub total_gain_loss_formatted: String,
     pub total_gain_loss_color: &'static str,
     pub sort: TableSort<ClosedPositionSortColumn>,
+    pub total_realized_gl: i64,
+    pub total_realized_gl_formatted: String,
+    pub total_realized_gl_color: &'static str,
+    pub total_fees_formatted: String,
+    pub total_taxes_formatted: String,
+    pub closed_xirr_formatted: Option<String>,
+    pub closed_xirr_color: &'static str,
 }
 
 pub async fn closed_positions(
@@ -359,7 +393,13 @@ pub async fn closed_positions(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let sort: TableSort<ClosedPositionSortColumn> = params.resolve_sort();
 
     let mut positions = trading::get_closed_positions(&conn)?;
@@ -371,6 +411,9 @@ pub async fn closed_positions(
     let total_cost: i64 = positions.iter().map(|p| p.total_cost_cents).sum();
     let total_proceeds: i64 = positions.iter().map(|p| p.total_proceeds_cents).sum();
     let total_gain_loss = total_proceeds - total_cost;
+    let total_realized_gl: i64 = positions.iter().map(|p| p.realized_gain_loss_cents).sum();
+    let total_fees_cents: i64 = positions.iter().map(|p| p.total_fees_cents).sum();
+    let total_taxes_cents: i64 = positions.iter().map(|p| p.total_taxes_cents).sum();
 
     let total_gain_loss_color = if total_gain_loss > 0 {
         "text-green-600 dark:text-green-400"
@@ -380,15 +423,37 @@ pub async fn closed_positions(
         "text-neutral-600 dark:text-neutral-400"
     };
 
-    let total_cost_formatted =
-        filters::format_money_neutral(total_cost, &settings.currency, &settings.locale);
-    let total_proceeds_formatted =
-        filters::format_money_neutral(total_proceeds, &settings.currency, &settings.locale);
-    let total_gain_loss_formatted = filters::format_money_plain(
-        total_gain_loss,
-        &settings.currency,
-        &settings.locale,
-    );
+    let total_realized_gl_color = if total_realized_gl > 0 {
+        "text-green-600 dark:text-green-400"
+    } else if total_realized_gl < 0 {
+        "text-red-600 dark:text-red-400"
+    } else {
+        "text-neutral-600 dark:text-neutral-400"
+    };
+
+    let currency = &settings.currency;
+    let locale = &settings.locale;
+
+    let total_cost_formatted = filters::format_money_neutral(total_cost, currency, locale);
+    let total_proceeds_formatted = filters::format_money_neutral(total_proceeds, currency, locale);
+    let total_gain_loss_formatted = filters::format_money_plain(total_gain_loss, currency, locale);
+    let total_realized_gl_formatted =
+        filters::format_money_plain(total_realized_gl, currency, locale);
+    let total_fees_formatted = filters::format_money_neutral(total_fees_cents, currency, locale);
+    let total_taxes_formatted = filters::format_money_neutral(total_taxes_cents, currency, locale);
+
+    // XIRR for closed positions
+    let closed_symbols: HashSet<String> = positions.iter().map(|p| p.symbol.clone()).collect();
+    let all_activities = trading::list_activities(
+        &conn,
+        &trading::TradingActivityFilter {
+            sort_sql: Some("date ASC".to_string()),
+            ..Default::default()
+        },
+    )?;
+    let closed_xirr = calculate_closed_portfolio_xirr(&all_activities, &closed_symbols);
+    let closed_xirr_formatted = closed_xirr.map(|x| filters::format_percent(x * 100.0, locale));
+    let closed_xirr_color = xirr_color(closed_xirr, false);
 
     let template = ClosedPositionsTemplate {
         title: "Closed Positions".into(),
@@ -406,6 +471,13 @@ pub async fn closed_positions(
         total_gain_loss_formatted,
         total_gain_loss_color,
         sort,
+        total_realized_gl,
+        total_realized_gl_formatted,
+        total_realized_gl_color,
+        total_fees_formatted,
+        total_taxes_formatted,
+        closed_xirr_formatted,
+        closed_xirr_color,
     };
 
     template.render_html()
@@ -466,7 +538,13 @@ pub async fn detail(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     // Get cached symbol metadata from DB
     let symbol_info = match market_data::get_symbol_metadata(&conn, &symbol) {
@@ -582,65 +660,119 @@ pub async fn detail(
     template.render_html()
 }
 
-/// Calculate XIRR for a position based on its activities
+/// Convert a single trading activity into a (date, amount) cash flow for XIRR.
+/// Returns None for activity types that don't affect XIRR (splits, fees, taxes)
+/// or for amounts too small to matter.
+fn activity_to_cash_flow(activity: &TradingActivity) -> Option<CashFlow> {
+    let date = NaiveDate::parse_from_str(&activity.date, "%Y-%m-%d").ok()?;
+    let amount = match activity.activity_type {
+        TradingActivityType::Buy => {
+            let qty = activity.quantity.unwrap_or(0.0);
+            let price = activity.unit_price_cents.unwrap_or(0) as f64 / 100.0;
+            let fee = activity.fee_cents as f64 / 100.0;
+            -(qty * price + fee)
+        }
+        TradingActivityType::Sell => {
+            let qty = activity.quantity.unwrap_or(0.0);
+            let price = activity.unit_price_cents.unwrap_or(0) as f64 / 100.0;
+            let fee = activity.fee_cents as f64 / 100.0;
+            qty * price - fee
+        }
+        TradingActivityType::Dividend => {
+            let qty = activity.quantity.unwrap_or(0.0);
+            let price = activity.unit_price_cents.unwrap_or(0) as f64 / 100.0;
+            qty * price
+        }
+        _ => return None,
+    };
+    if amount.abs() <= 0.001 {
+        return None;
+    }
+    Some(CashFlow { date, amount })
+}
+
+/// Calculate XIRR for a single position based on its activities and current market value.
 fn calculate_position_xirr(
     activities: &[TradingActivity],
     position: &Option<PositionWithMarketData>,
     latest_price: &Option<MarketData>,
 ) -> Option<f64> {
-    let mut cash_flows: Vec<CashFlow> = Vec::new();
+    let mut cash_flows: Vec<CashFlow> = activities
+        .iter()
+        .filter_map(activity_to_cash_flow)
+        .collect();
 
-    for activity in activities {
-        let date = match NaiveDate::parse_from_str(&activity.date, "%Y-%m-%d") {
-            Ok(d) => d,
-            Err(_) => continue, // Skip activities with invalid dates
-        };
-
-        let amount = match activity.activity_type {
-            // Buys are cash outflows (negative)
-            TradingActivityType::Buy => {
-                let qty = activity.quantity.unwrap_or(0.0);
-                let price = activity.unit_price_cents.unwrap_or(0) as f64 / 100.0;
-                let fee = activity.fee_cents as f64 / 100.0;
-                -(qty * price + fee)
-            }
-            // Sells are cash inflows (positive)
-            TradingActivityType::Sell => {
-                let qty = activity.quantity.unwrap_or(0.0);
-                let price = activity.unit_price_cents.unwrap_or(0) as f64 / 100.0;
-                let fee = activity.fee_cents as f64 / 100.0;
-                qty * price - fee
-            }
-            // Dividends are cash inflows (positive)
-            TradingActivityType::Dividend => {
-                let qty = activity.quantity.unwrap_or(0.0);
-                let price = activity.unit_price_cents.unwrap_or(0) as f64 / 100.0;
-                qty * price
-            }
-            // Other activity types don't affect XIRR calculation for securities
-            _ => continue,
-        };
-
-        if amount.abs() > 0.001 {
-            cash_flows.push(CashFlow { date, amount });
-        }
-    }
-
-    // Add current position value as final cash flow (as if selling today)
     if let (Some(pos), Some(price_data)) = (position, latest_price) {
-        if pos.current_value_cents.is_some() {
-            let current_value = pos.current_value_cents.unwrap() as f64 / 100.0;
+        if let Some(current_value) = pos.current_value_cents {
             let date = NaiveDate::parse_from_str(&price_data.date, "%Y-%m-%d")
                 .unwrap_or_else(|_| chrono::Local::now().date_naive());
-
             cash_flows.push(CashFlow {
                 date,
-                amount: current_value,
+                amount: current_value as f64 / 100.0,
             });
         }
     }
 
     calculate_xirr(&cash_flows)
+}
+
+/// Calculate portfolio-wide XIRR across all activities, using current position values
+/// as the terminal cash flows. Returns (xirr, is_incomplete) where is_incomplete
+/// means at least one position has no real market data (missing or approximated price).
+fn calculate_portfolio_xirr(
+    activities: &[TradingActivity],
+    security_positions: &[PositionWithMarketData],
+) -> (Option<f64>, bool) {
+    let mut cash_flows: Vec<CashFlow> = activities
+        .iter()
+        .filter_map(activity_to_cash_flow)
+        .collect();
+
+    let mut is_incomplete = false;
+    for pos in security_positions {
+        if pos.current_value_cents.is_none() || pos.price_is_approximated {
+            is_incomplete = true;
+        }
+        if let Some(value_cents) = pos.current_value_cents {
+            let date = pos
+                .price_date
+                .as_ref()
+                .and_then(|d| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+                .unwrap_or_else(|| chrono::Local::now().date_naive());
+            cash_flows.push(CashFlow {
+                date,
+                amount: value_cents as f64 / 100.0,
+            });
+        }
+    }
+
+    (calculate_xirr(&cash_flows), is_incomplete)
+}
+
+/// Calculate XIRR across all activities for closed positions only.
+/// No terminal cash flow is needed since the positions are fully exited.
+fn calculate_closed_portfolio_xirr(
+    activities: &[TradingActivity],
+    closed_symbols: &HashSet<String>,
+) -> Option<f64> {
+    let cash_flows: Vec<CashFlow> = activities
+        .iter()
+        .filter(|a| closed_symbols.contains(&a.symbol))
+        .filter_map(activity_to_cash_flow)
+        .collect();
+
+    calculate_xirr(&cash_flows)
+}
+
+fn xirr_color(xirr: Option<f64>, incomplete: bool) -> &'static str {
+    if incomplete {
+        return "text-yellow-600 dark:text-yellow-400";
+    }
+    match xirr {
+        Some(x) if x > 0.0 => "text-green-600 dark:text-green-400",
+        Some(x) if x < 0.0 => "text-red-600 dark:text-red-400",
+        _ => "text-neutral-600 dark:text-neutral-400",
+    }
 }
 
 /// Calculate total fees, taxes, dividends, and realized gain/loss for a position
