@@ -96,7 +96,13 @@ pub struct RecurringExpensesTemplate {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let all_expenses = state.cached_recurring_expenses()?;
 
     let (inactive_expenses, expenses): (Vec<_>, Vec<_>) =

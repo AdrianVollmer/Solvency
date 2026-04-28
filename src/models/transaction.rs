@@ -1,6 +1,6 @@
 use crate::filters::currency_symbol;
-use crate::models::tag::Tag;
 use crate::models::category::DEFAULT_COLOR;
+use crate::models::tag::Tag;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 

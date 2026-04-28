@@ -56,7 +56,13 @@ pub async fn index(
     Query(params): Query<NetWorthParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let summary = calculate_net_worth_history(&conn)?;
 
@@ -180,7 +186,9 @@ pub async fn top_transactions(
     Query(params): Query<TopTransactionsParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, .. } = state.page_base()?;
+    let PageBase {
+        settings, icons, ..
+    } = state.page_base()?;
 
     let filter = transactions::TransactionFilter {
         from_date: Some(params.from_date.clone()),

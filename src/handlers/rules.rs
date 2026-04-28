@@ -98,7 +98,13 @@ pub struct ApplyFormData {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let category_list = state.cached_categories_with_path()?;
     let tag_list = state.cached_tags()?;
 
@@ -118,7 +124,13 @@ pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> 
 
 pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let rule =
         rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
@@ -145,7 +157,13 @@ pub async fn edit_form(
     Path(id): Path<i64>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let rule =
         rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;
@@ -257,7 +275,13 @@ pub async fn preview(
     Query(params): Query<PreviewQuery>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let rule =
         rules::get_rule(&conn, id)?.ok_or_else(|| AppError::NotFound("Rule not found".into()))?;

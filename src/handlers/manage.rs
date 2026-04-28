@@ -11,7 +11,7 @@ use crate::error::{AppError, AppResult, RenderHtml};
 use crate::handlers::import_preview::{ImportPreviewForm, ImportPreviewItem, ImportPreviewStatus};
 use crate::models::{
     CategoryWithPath, NewCategory, NewRule, NewTag, Rule, RuleActionType, Settings, Tag, TagStyle,
-    TagWithUsage, TAG_PALETTE, DEFAULT_COLOR, DEFAULT_ICON,
+    TagWithUsage, DEFAULT_COLOR, DEFAULT_ICON, TAG_PALETTE,
 };
 use crate::state::{AppState, JsManifest, PageBase};
 use crate::VERSION;
@@ -46,7 +46,13 @@ pub async fn index(
     axum::extract::Query(params): axum::extract::Query<ManageQuery>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let active_tab = params.tab.unwrap_or_else(|| "categories".into());
 
@@ -493,7 +499,13 @@ pub async fn import_preview(
     }
 
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     // Categories preview
     let existing_cats = state.cached_categories()?;

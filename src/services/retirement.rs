@@ -2,7 +2,7 @@ use rand_distr::{Distribution, LogNormal};
 
 use crate::error::AppResult;
 use crate::models::retirement::{
-    MonteCarloResult, RetirementChartData, Scenario, SavingsRow, WithdrawalRow,
+    MonteCarloResult, RetirementChartData, SavingsRow, Scenario, WithdrawalRow,
 };
 
 /// Annual return volatility assumed for all simulations (15% std dev).
@@ -75,8 +75,8 @@ pub fn savings_phase(inputs: &ProjectionInputs, today_year: i32) -> Vec<SavingsR
 
     for y in 0..years_to_retirement {
         let portfolio_start = portfolio as i64;
-        let savings = inputs.annual_savings_cents as f64
-            * (1.0 + inputs.savings_growth_rate).powi(y as i32);
+        let savings =
+            inputs.annual_savings_cents as f64 * (1.0 + inputs.savings_growth_rate).powi(y as i32);
         let gain = portfolio * inputs.roi;
         let portfolio_end = portfolio + gain + savings;
 
@@ -265,10 +265,7 @@ fn percentile_sorted(sorted: &[f64], p: f64) -> f64 {
 }
 
 /// Run full Monte Carlo and return an in-memory `MonteCarloResult`.
-pub fn run_monte_carlo(
-    inputs: &ProjectionInputs,
-    today_year: i32,
-) -> AppResult<MonteCarloResult> {
+pub fn run_monte_carlo(inputs: &ProjectionInputs, today_year: i32) -> AppResult<MonteCarloResult> {
     let total_years = (inputs.life_expectancy - inputs.current_age).ceil() as usize;
 
     let mut rng = rand::thread_rng();
@@ -341,9 +338,7 @@ pub fn run_monte_carlo(
     let early_retirement_p50_age = find_viable_age(0.50);
     let early_retirement_p10_age = find_viable_age(0.10);
 
-    let years: Vec<i32> = (0..total_years)
-        .map(|y| today_year + y as i32)
-        .collect();
+    let years: Vec<i32> = (0..total_years).map(|y| today_year + y as i32).collect();
 
     Ok(MonteCarloResult {
         success_probability,
@@ -373,10 +368,13 @@ pub fn build_chart_data(
     let years_savings = savings.len() as i64;
     let cost_basis_at_retirement =
         inputs.cost_basis_cents + inputs.annual_savings_cents * years_savings;
-    let retirement_year =
-        today_year + (inputs.retirement_age - inputs.current_age).ceil() as i32;
-    let withdrawal =
-        withdrawal_phase(inputs, portfolio_at_retirement, cost_basis_at_retirement, retirement_year);
+    let retirement_year = today_year + (inputs.retirement_age - inputs.current_age).ceil() as i32;
+    let withdrawal = withdrawal_phase(
+        inputs,
+        portfolio_at_retirement,
+        cost_basis_at_retirement,
+        retirement_year,
+    );
 
     let mut deterministic: Vec<i64> = savings
         .iter()
@@ -506,7 +504,10 @@ mod tests {
         // First row: is_ruined because portfolio is positive but after one
         // withdrawal it goes to zero.
         let first_ruined = rows.iter().position(|r| r.is_ruined).unwrap_or(rows.len());
-        assert!(first_ruined <= 2, "tiny portfolio should deplete within 2 years");
+        assert!(
+            first_ruined <= 2,
+            "tiny portfolio should deplete within 2 years"
+        );
     }
 
     #[test]
@@ -515,11 +516,14 @@ mod tests {
         // Set pension to cover full living costs from day 1 of retirement
         inputs.annual_pension_cents = 36_000_00;
         inputs.official_pension_age = 65.0; // same as retirement age
-        // Large enough portfolio that investment returns easily cover anything
+                                            // Large enough portfolio that investment returns easily cover anything
         let rows = withdrawal_phase(&inputs, 1_000_000_00, 0, 2065);
         // Net withdrawal should be 0 (pension covers costs), so portfolio should grow
         for row in &rows {
-            assert_eq!(row.net_withdrawal_cents, 0, "pension should cover all costs");
+            assert_eq!(
+                row.net_withdrawal_cents, 0,
+                "pension should cover all costs"
+            );
             assert!(!row.is_ruined);
         }
     }
@@ -600,7 +604,10 @@ mod tests {
             "tight scenario should not have 100% success, got {:.1}%",
             result.success_probability * 100.0
         );
-        assert!(result.success_probability > 0.0, "scenario should succeed sometimes");
+        assert!(
+            result.success_probability > 0.0,
+            "scenario should succeed sometimes"
+        );
     }
 
     #[test]

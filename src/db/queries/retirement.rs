@@ -156,7 +156,6 @@ pub fn promote_new_main(conn: &Connection) -> AppResult<()> {
     Ok(())
 }
 
-
 /// Returns the current net worth in cents by delegating to the net worth service.
 pub fn get_current_net_worth_cents(conn: &Connection) -> AppResult<i64> {
     use crate::services::net_worth::calculate_net_worth_history;

@@ -48,7 +48,13 @@ pub struct ThemeFormData {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let database_size = get_database_size(&state.config.database_path);
 

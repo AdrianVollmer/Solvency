@@ -18,7 +18,11 @@ use crate::services::retirement::{
 use crate::state::{AppState, JsManifest, PageBase};
 
 fn today_year() -> i32 {
-    Utc::now().format("%Y").to_string().parse::<i32>().unwrap_or(2025)
+    Utc::now()
+        .format("%Y")
+        .to_string()
+        .parse::<i32>()
+        .unwrap_or(2025)
 }
 
 fn success_color_class(p: f64) -> &'static str {
@@ -58,7 +62,13 @@ pub async fn index(
     Query(params): Query<RetirementPageParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let all_scenarios = db::list_scenarios(&conn)?;
     let current_net_worth_cents = db::get_current_net_worth_cents(&conn)?;
@@ -103,8 +113,7 @@ pub async fn index(
             let years_savings = savings.len() as i64;
             let cost_basis_at_retirement =
                 cost_basis_cents + inputs.annual_savings_cents * years_savings;
-            let retirement_year =
-                year + (inputs.retirement_age - inputs.current_age).ceil() as i32;
+            let retirement_year = year + (inputs.retirement_age - inputs.current_age).ceil() as i32;
             let withdrawal = withdrawal_phase(
                 &inputs,
                 portfolio_at_retirement,
@@ -183,7 +192,13 @@ pub struct RetirementFormTemplate {
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let current_net_worth_cents = db::get_current_net_worth_cents(&conn)?;
     let current_net_worth_formatted = filters::format_money_neutral(
         current_net_worth_cents,
@@ -210,7 +225,13 @@ pub async fn edit_form(
     Path(id): Path<String>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let scenario = db::get_scenario(&conn, &id)?
         .ok_or_else(|| AppError::NotFound(format!("Scenario {id} not found")))?;
     let current_net_worth_cents = db::get_current_net_worth_cents(&conn)?;
@@ -262,7 +283,10 @@ fn parse_money_euros(s: Option<&str>) -> Option<i64> {
         if trimmed.is_empty() {
             None
         } else {
-            trimmed.parse::<f64>().ok().map(|f| (f * 100.0).round() as i64)
+            trimmed
+                .parse::<f64>()
+                .ok()
+                .map(|f| (f * 100.0).round() as i64)
         }
     })
 }
@@ -280,7 +304,8 @@ fn parse_pct(s: Option<&str>, default: f64) -> f64 {
 }
 
 fn parse_int(s: Option<&str>, default: i64) -> i64 {
-    s.and_then(|v| v.trim().parse::<i64>().ok()).unwrap_or(default)
+    s.and_then(|v| v.trim().parse::<i64>().ok())
+        .unwrap_or(default)
 }
 
 fn form_to_scenario(form: ScenarioFormData, id: String, is_main_default: bool) -> Scenario {
@@ -355,10 +380,7 @@ pub async fn update(
     Ok(Redirect::to(&format!("/retirement?id={id}")))
 }
 
-pub async fn delete(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> AppResult<Redirect> {
+pub async fn delete(State(state): State<AppState>, Path(id): Path<String>) -> AppResult<Redirect> {
     let conn = state.db.get()?;
 
     let was_main = db::get_scenario(&conn, &id)?
@@ -472,12 +494,12 @@ pub async fn simulate(
         monthly_savings_cents: req.monthly_savings.map(|e| (e * 100.0).round() as i64),
         assumed_roi: req.assumed_roi.map(|p| p / 100.0).unwrap_or(0.07),
         expected_inflation: req.expected_inflation.map(|p| p / 100.0).unwrap_or(0.02),
-        monthly_living_costs_cents: req
-            .monthly_living_costs
-            .map(|e| (e * 100.0).round() as i64),
+        monthly_living_costs_cents: req.monthly_living_costs.map(|e| (e * 100.0).round() as i64),
         tax_rate: req.tax_rate.map(|p| p / 100.0).unwrap_or(0.26375),
         monthly_pension_cents: req.monthly_pension.map(|e| (e * 100.0).round() as i64),
-        monthly_barista_income_cents: req.monthly_barista_income.map(|e| (e * 100.0).round() as i64),
+        monthly_barista_income_cents: req
+            .monthly_barista_income
+            .map(|e| (e * 100.0).round() as i64),
         savings_growth_rate: req.savings_growth_rate.map(|p| p / 100.0).unwrap_or(0.0),
         official_retirement_age: req.official_retirement_age,
         life_expectancy: req.life_expectancy.unwrap_or(95),
@@ -486,10 +508,11 @@ pub async fn simulate(
         updated_at: String::new(),
     };
 
-    let inputs = ProjectionInputs::from_scenario(&scenario, portfolio_cents, cost_basis_cents, year)
-        .ok_or_else(|| {
-            AppError::Validation("Scenario is missing birthday or retirement age".into())
-        })?;
+    let inputs =
+        ProjectionInputs::from_scenario(&scenario, portfolio_cents, cost_basis_cents, year)
+            .ok_or_else(|| {
+                AppError::Validation("Scenario is missing birthday or retirement age".into())
+            })?;
 
     let mc = run_monte_carlo(&inputs, year)?;
     let chart = build_chart_data(&mc, &inputs, year)?;

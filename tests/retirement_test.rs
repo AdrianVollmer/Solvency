@@ -19,7 +19,7 @@ fn tight_scenario_form<'a>(name: &'a str) -> Vec<(&'a str, &'a str)> {
         ("name", name),
         ("birthday", "1985-01-01"),
         ("desired_retirement_age", "60"),
-        ("monthly_savings", "500"),      // low savings
+        ("monthly_savings", "500"),       // low savings
         ("monthly_living_costs", "5000"), // high costs
         ("official_retirement_age", "67"),
         ("life_expectancy", "90"),
@@ -65,7 +65,11 @@ async fn test_create_scenario_redirects() {
     let (status, _) = client
         .post_form("/retirement/create", &scenario_form("Test Plan"))
         .await;
-    assert_eq!(status, StatusCode::SEE_OTHER, "Expected redirect after create");
+    assert_eq!(
+        status,
+        StatusCode::SEE_OTHER,
+        "Expected redirect after create"
+    );
 }
 
 /// Created scenario appears in page dropdown.
@@ -261,10 +265,8 @@ async fn test_set_main() {
     let value_search = "value=\"";
     // Walk backwards from second_pos to find the preceding option value
     let before = &body[..second_pos];
-    let val_start = before
-        .rfind(value_search)
-        .expect("no value= before Second")
-        + value_search.len();
+    let val_start =
+        before.rfind(value_search).expect("no value= before Second") + value_search.len();
     let val_end = before[val_start..]
         .find('"')
         .map(|i| val_start + i)
@@ -303,7 +305,8 @@ async fn test_success_probability_not_always_100_percent() {
     assert!(
         !body.contains(">100.0%<"),
         "Success Probability should not be 100% for a tight scenario: {:?}",
-        body.find("Success Probability").map(|i| &body[i..i.min(body.len()).min(i + 200)])
+        body.find("Success Probability")
+            .map(|i| &body[i..i.min(body.len()).min(i + 200)])
     );
 }
 
@@ -319,7 +322,10 @@ async fn test_chart_p50_values_are_plausible() {
     let (_, body) = client.get("/retirement").await;
     let search = "data-scenario-id=\"";
     let id_start = body.find(search).expect("no data-scenario-id") + search.len();
-    let id_end = body[id_start..].find('"').map(|i| id_start + i).unwrap_or(id_start + 36);
+    let id_end = body[id_start..]
+        .find('"')
+        .map(|i| id_start + i)
+        .unwrap_or(id_start + 36);
     let scenario_id = body[id_start..id_end].to_string();
 
     let (status, data): (_, Option<RetirementChartData>) = client
@@ -350,7 +356,10 @@ async fn test_chart_percentile_bands_are_ordered() {
     let (_, body) = client.get("/retirement").await;
     let search = "data-scenario-id=\"";
     let id_start = body.find(search).expect("no data-scenario-id") + search.len();
-    let id_end = body[id_start..].find('"').map(|i| id_start + i).unwrap_or(id_start + 36);
+    let id_end = body[id_start..]
+        .find('"')
+        .map(|i| id_start + i)
+        .unwrap_or(id_start + 36);
     let scenario_id = body[id_start..id_end].to_string();
 
     let (_, data): (_, Option<RetirementChartData>) = client

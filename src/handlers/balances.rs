@@ -45,7 +45,13 @@ fn gain_loss_color(cents: i64) -> &'static str {
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let all_accounts = state.cached_accounts()?;
     let cash_balances = balances::get_cash_account_balances(&conn)?;

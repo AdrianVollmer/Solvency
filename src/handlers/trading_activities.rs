@@ -323,7 +323,13 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = settings.page_size;
@@ -381,7 +387,9 @@ pub async fn table_partial(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, .. } = state.page_base()?;
+    let PageBase {
+        settings, icons, ..
+    } = state.page_base()?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = settings.page_size;
@@ -430,7 +438,13 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let template = TradingActivityDetailTemplate {
         title: format!("{} - {}", activity.symbol, activity.activity_type.label()),
@@ -448,7 +462,13 @@ pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppRe
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let symbols = trading::get_unique_symbols(&conn)?;
 
     let template = TradingActivityNewTemplate {
@@ -474,7 +494,13 @@ pub async fn edit_form(
     let activity = trading::get_activity(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Activity {} not found", id)))?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let symbols = trading::get_unique_symbols(&conn)?;
 

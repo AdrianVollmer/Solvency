@@ -1,11 +1,11 @@
 pub mod accounts;
-pub mod retirement;
 pub mod api_logs;
 pub mod balances;
 pub mod categories;
 pub mod import;
 pub mod market_data;
 pub mod net_worth;
+pub mod retirement;
 pub mod rules;
 pub mod settings;
 pub mod tags;

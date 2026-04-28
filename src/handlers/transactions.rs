@@ -371,7 +371,13 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = settings.page_size;
@@ -429,7 +435,9 @@ pub async fn table_partial(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, .. } = state.page_base()?;
+    let PageBase {
+        settings, icons, ..
+    } = state.page_base()?;
 
     let page = params.page.unwrap_or(1).max(1);
     let page_size = settings.page_size;
@@ -479,7 +487,13 @@ pub async fn bulk_page(
     Query(params): Query<TransactionFilterParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let date_range = params
         .resolve_date_range()
@@ -536,7 +550,13 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     let transaction = transactions::get_transaction(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Transaction {} not found", id)))?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let cats = state.cached_categories_with_path()?;
     let tag_list = state.cached_tags()?;
@@ -559,7 +579,13 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let cats = state.cached_categories_with_path()?;
     let tag_list = state.cached_tags()?;
     let cash_accounts = state.cached_cash_accounts()?;
@@ -588,7 +614,13 @@ pub async fn edit_form(
     let transaction = transactions::get_transaction(&conn, id)?
         .ok_or_else(|| AppError::NotFound(format!("Transaction {} not found", id)))?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let cats = state.cached_categories_with_path()?;
     let tag_list = state.cached_tags()?;
@@ -725,7 +757,11 @@ fn build_bulk_filter(f: &BulkFilterFields) -> transactions::TransactionFilter {
     let uncategorized_only = f.category_id == Some(0);
     transactions::TransactionFilter {
         search: f.search.clone(),
-        category_id: if uncategorized_only { None } else { f.category_id },
+        category_id: if uncategorized_only {
+            None
+        } else {
+            f.category_id
+        },
         tag_id: f.tag_id,
         from_date: f.from_date.clone(),
         to_date: f.to_date.clone(),

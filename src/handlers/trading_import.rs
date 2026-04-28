@@ -98,7 +98,13 @@ pub struct StatusResponse {
 // Handlers
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let template = TradingImportTemplate {
         title: "Import Trading Activities".into(),
@@ -113,7 +119,13 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 }
 
 pub async fn format(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let template = TradingImportFormatTemplate {
         title: "Trading CSV Format".into(),
@@ -265,7 +277,13 @@ pub async fn wizard(
     let conn = state.db.get()?;
 
     let session = trading::get_import_session(&conn, &session_id)?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let template = TradingImportWizardTemplate {
         title: "Import Trading Activities".into(),

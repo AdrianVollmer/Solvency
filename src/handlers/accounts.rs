@@ -48,7 +48,13 @@ pub struct AccountFormData {
 }
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let account_list = state.cached_accounts()?;
 
     let template = AccountsTemplate {
@@ -66,7 +72,13 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let template = AccountFormTemplate {
         title: "Add Account".into(),
@@ -86,7 +98,13 @@ pub async fn edit_form(
     Path(id): Path<i64>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let account = accounts::get_account(&conn, id)?
         .ok_or_else(|| AppError::NotFound("Account not found".into()))?;
@@ -238,7 +256,13 @@ pub async fn import_preview(
     let data: Vec<AccountImport> = serde_json::from_str(&form.data)
         .map_err(|e| AppError::Validation(format!("Invalid JSON format: {}", e)))?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let existing = state.cached_accounts()?;
     let existing_names: std::collections::HashSet<String> =

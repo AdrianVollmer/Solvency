@@ -69,7 +69,13 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let date_range = params
         .resolve_date_range()
@@ -136,7 +142,9 @@ pub async fn monthly_transactions(
     Query(params): Query<MonthlyTransactionsParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, .. } = state.page_base()?;
+    let PageBase {
+        settings, icons, ..
+    } = state.page_base()?;
 
     // Parse "2024-01" or "Jan 2024" style month strings
     let (from_date, to_date, month_label) = parse_month_range(&params.month)?;
@@ -190,7 +198,9 @@ pub async fn category_transactions(
     Query(params): Query<CategoryTransactionsParams>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, .. } = state.page_base()?;
+    let PageBase {
+        settings, icons, ..
+    } = state.page_base()?;
 
     let mut filter = transactions::TransactionFilter {
         from_date: params.from_date.clone(),

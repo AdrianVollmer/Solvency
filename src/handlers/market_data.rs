@@ -117,7 +117,13 @@ pub async fn index(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let sort: TableSort<MarketDataSortColumn> = params.resolve_sort();
 
     let mut coverage = market_data::get_symbol_coverage(&conn)?;
@@ -559,7 +565,13 @@ pub async fn symbol_detail(
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     // Get cached symbol metadata from DB
     let symbol_info = match market_data::get_symbol_metadata(&conn, &symbol) {

@@ -23,7 +23,13 @@ pub struct ApiLogsTemplate {
 
 pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let logs = api_logs::get_all_logs(&conn, 100)?;
     let latest_log_id = api_logs::get_latest_log_id(&conn)?;
 
@@ -55,7 +61,13 @@ pub struct ApiLogDetailTemplate {
 
 pub async fn detail(State(state): State<AppState>, Path(id): Path<i64>) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let log = api_logs::get_log_by_id(&conn, id)?
         .ok_or_else(|| crate::error::AppError::NotFound("API log not found".into()))?;
 

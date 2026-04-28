@@ -27,7 +27,13 @@ pub async fn index(State(state): State<AppState>) -> AppResult<Html<String>> {
     debug!("Loading dashboard");
     let conn = state.db.get()?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let now = chrono::Local::now();
     let this_month_start = now.format("%Y-%m-01").to_string();

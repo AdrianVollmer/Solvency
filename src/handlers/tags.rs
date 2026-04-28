@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::db::queries::tags;
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{NewTag, Settings, Tag, TagStyle, TAG_PALETTE, DEFAULT_COLOR};
+use crate::models::{NewTag, Settings, Tag, TagStyle, DEFAULT_COLOR, TAG_PALETTE};
 use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
@@ -42,7 +42,13 @@ pub struct TagSearchParams {
 }
 
 pub async fn new_form(State(state): State<AppState>) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let template = TagFormTemplate {
         title: "Add Tag".into(),
@@ -63,7 +69,13 @@ pub async fn edit_form(
     Path(id): Path<i64>,
 ) -> AppResult<Html<String>> {
     let conn = state.db.get()?;
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let tag =
         tags::get_tag(&conn, id)?.ok_or_else(|| AppError::NotFound("Tag not found".into()))?;

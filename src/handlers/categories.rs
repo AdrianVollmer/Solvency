@@ -7,7 +7,9 @@ use std::collections::HashMap;
 
 use crate::db::queries::{categories, transactions};
 use crate::error::{AppError, AppResult, RenderHtml};
-use crate::models::{Category, CategoryWithPath, NewCategory, Settings, TAG_PALETTE, DEFAULT_COLOR, DEFAULT_ICON};
+use crate::models::{
+    Category, CategoryWithPath, NewCategory, Settings, DEFAULT_COLOR, DEFAULT_ICON, TAG_PALETTE,
+};
 use crate::state::{AppState, JsManifest, PageBase};
 
 #[derive(Template)]
@@ -61,7 +63,13 @@ pub async fn new_form(
     State(state): State<AppState>,
     Query(query): Query<NewFormQuery>,
 ) -> AppResult<Html<String>> {
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let cats = state.cached_categories_with_path()?;
 
     let prefill = if let Some(id) = query.clone_from {
@@ -101,7 +109,13 @@ pub async fn edit_form(
         return Ok(Redirect::to("/manage?tab=categories").into_response());
     }
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
     let cats = state.cached_categories_with_path()?;
 
     let back_url = format!("/categories/{}", id);
@@ -128,7 +142,13 @@ pub async fn show(State(state): State<AppState>, Path(id): Path<i64>) -> AppResu
     let category = categories::get_category_with_path(&conn, id)?
         .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
 
-    let PageBase { settings, icons, manifest, version, xsrf_token } = state.page_base()?;
+    let PageBase {
+        settings,
+        icons,
+        manifest,
+        version,
+        xsrf_token,
+    } = state.page_base()?;
 
     let filter = transactions::TransactionFilter {
         category_id: Some(id),
