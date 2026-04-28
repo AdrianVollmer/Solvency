@@ -2,6 +2,41 @@ declare const echarts: any;
 
 import { getCurrencySymbol, formatMoney, isDarkMode, getTheme } from "./utils";
 
+// Milestone thresholds in dollars (net worth amounts worth celebrating).
+const MILESTONE_THRESHOLDS = [
+  10_000, 20_000, 50_000, 100_000, 200_000, 500_000,
+  1_000_000, 2_000_000, 5_000_000, 10_000_000,
+];
+
+function formatMilestoneLabel(dollars: number, currency: string): string {
+  const sym = getCurrencySymbol(currency);
+  if (dollars >= 1_000_000) return `${sym}${dollars / 1_000_000}M`;
+  return `${sym}${dollars / 1_000}K`;
+}
+
+interface MilestonePoint {
+  name: string;
+  value: [string, number];
+}
+
+function computeMilestones(
+  labels: string[],
+  netWorthDollars: number[],
+  currency: string,
+): MilestonePoint[] {
+  const points: MilestonePoint[] = [];
+  for (const threshold of MILESTONE_THRESHOLDS) {
+    const idx = netWorthDollars.findIndex((v) => v >= threshold);
+    if (idx !== -1) {
+      points.push({
+        name: formatMilestoneLabel(threshold, currency),
+        value: [labels[idx], netWorthDollars[idx]],
+      });
+    }
+  }
+  return points;
+}
+
 interface NetWorthChartResponse {
   labels: string[];
   net_worth: number[];
@@ -100,6 +135,8 @@ async function loadNetWorthChart(): Promise<void> {
     const transactionDollars = data.transaction_component.map((c) => c / 100);
     const portfolioDollars = data.portfolio_component.map((c) => c / 100);
 
+    const milestonePoints = computeMilestones(data.labels, netWorthDollars, currency);
+
     const showSymbols = data.labels.length <= 100;
 
     const option = {
@@ -109,19 +146,24 @@ async function loadNetWorthChart(): Promise<void> {
         formatter: (params: any) => {
           let result = `<strong>${params[0].axisValue}</strong><br/>`;
           for (const param of params) {
-            const value = formatMoney(param.value * 100, currency, locale);
-            result += `${param.marker} ${param.seriesName}: ${value}<br/>`;
+            if (param.seriesName === "Milestones") {
+              result += `${param.marker} ${param.name}<br/>`;
+            } else {
+              const value = formatMoney(param.value * 100, currency, locale);
+              result += `${param.marker} ${param.seriesName}: ${value}<br/>`;
+            }
           }
           return result;
         },
       },
       legend: {
-        data: ["Net Worth", "Transactions (Cumulative)", "Portfolio Value"],
+        data: ["Net Worth", "Transactions (Cumulative)", "Portfolio Value", "Milestones"],
         top: 0,
         selected: {
           "Net Worth": true,
           "Transactions (Cumulative)": false,
           "Portfolio Value": false,
+          "Milestones": true,
         },
       },
       toolbox: {
@@ -239,6 +281,25 @@ async function loadNetWorthChart(): Promise<void> {
           symbol: "none",
           data: portfolioDollars,
           z: 1,
+        },
+        {
+          name: "Milestones",
+          type: "scatter",
+          symbol: "diamond",
+          symbolSize: 10,
+          itemStyle: {
+            color: "#a855f7",
+          },
+          label: {
+            show: true,
+            formatter: (p: any) => p.name,
+            position: "top",
+            fontSize: 10,
+            fontWeight: "bold",
+            color: "#a855f7",
+          },
+          data: milestonePoints,
+          z: 4,
         },
       ],
     };
