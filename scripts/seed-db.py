@@ -17,6 +17,7 @@ This script generates 3 years of demo data including:
 import argparse
 import random
 import sqlite3
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -278,7 +279,105 @@ def clear_existing_data(conn: sqlite3.Connection) -> None:
     conn.execute("DELETE FROM accounts")
     conn.execute("DELETE FROM rules")
     conn.execute("DELETE FROM tags")
+    conn.execute("DELETE FROM scenarios")
     conn.commit()
+
+
+def seed_scenarios(conn: sqlite3.Connection) -> None:
+    """Insert realistic retirement planning scenarios.
+
+    Three scenarios covering common FIRE archetypes:
+      1. Balanced FIRE (main) - mid-career professional, retire at 50 with barista income bridge
+      2. Traditional retirement - married couple, full pension, retire at 65
+      3. Aggressive FIRE - young high-earner targeting retirement at 40
+    """
+    print("Seeding retirement scenarios...")
+
+    scenarios = [
+        {
+            # Main scenario: 37-year-old aiming for semi-early retirement at 50.
+            # Saves $3,500/month, plans barista-FIRE income until pension kicks in at 67.
+            "id": str(uuid.uuid4()),
+            "name": "Balanced FIRE (Retire at 50)",
+            "is_main": 1,
+            "birthday": "1988-06-15",
+            "desired_retirement_age": 50,
+            "marriage_status": "single",
+            "current_portfolio_override_cents": None,
+            "monthly_savings_cents": 350_000,  # $3,500/month
+            "assumed_roi": 0.07,
+            "expected_inflation": 0.025,
+            "monthly_living_costs_cents": 420_000,  # $4,200/month
+            "tax_rate": 0.26375,
+            "monthly_pension_cents": None,
+            "official_retirement_age": 67,
+            "life_expectancy": 90,
+            "deposits_cents": None,
+            "monthly_barista_income_cents": 120_000,  # $1,200/month part-time work
+            "savings_growth_rate": 0.03,
+        },
+        {
+            # Married couple, 45-year-old, conservative plan targeting 65 with full pension.
+            # Lower ROI assumption, higher living costs, substantial pension benefit.
+            "id": str(uuid.uuid4()),
+            "name": "Traditional Retirement (Retire at 65)",
+            "is_main": 0,
+            "birthday": "1980-03-22",
+            "desired_retirement_age": 65,
+            "marriage_status": "married",
+            "current_portfolio_override_cents": None,
+            "monthly_savings_cents": 280_000,  # $2,800/month
+            "assumed_roi": 0.06,
+            "expected_inflation": 0.02,
+            "monthly_living_costs_cents": 600_000,  # $6,000/month (two people)
+            "tax_rate": 0.26375,
+            "monthly_pension_cents": 250_000,  # $2,500/month combined pension
+            "official_retirement_age": 67,
+            "life_expectancy": 88,
+            "deposits_cents": None,
+            "monthly_barista_income_cents": None,
+            "savings_growth_rate": 0.02,
+        },
+        {
+            # 28-year-old aggressive saver targeting lean FIRE at 40.
+            # High savings rate, higher ROI assumption (equity-heavy portfolio), no pension.
+            "id": str(uuid.uuid4()),
+            "name": "Aggressive FIRE (Retire at 40)",
+            "is_main": 0,
+            "birthday": "1997-09-10",
+            "desired_retirement_age": 40,
+            "marriage_status": "single",
+            "current_portfolio_override_cents": None,
+            "monthly_savings_cents": 600_000,  # $6,000/month - very aggressive
+            "assumed_roi": 0.09,
+            "expected_inflation": 0.025,
+            "monthly_living_costs_cents": 350_000,  # $3,500/month lean lifestyle
+            "tax_rate": 0.30,
+            "monthly_pension_cents": None,
+            "official_retirement_age": 67,
+            "life_expectancy": 95,
+            "deposits_cents": None,
+            "monthly_barista_income_cents": None,
+            "savings_growth_rate": 0.05,
+        },
+    ]
+
+    conn.executemany(
+        """INSERT OR IGNORE INTO scenarios
+           (id, name, is_main, birthday, desired_retirement_age, marriage_status,
+            current_portfolio_override_cents, monthly_savings_cents, assumed_roi,
+            expected_inflation, monthly_living_costs_cents, tax_rate,
+            monthly_pension_cents, official_retirement_age, life_expectancy,
+            deposits_cents, monthly_barista_income_cents, savings_growth_rate)
+           VALUES (:id, :name, :is_main, :birthday, :desired_retirement_age, :marriage_status,
+                   :current_portfolio_override_cents, :monthly_savings_cents, :assumed_roi,
+                   :expected_inflation, :monthly_living_costs_cents, :tax_rate,
+                   :monthly_pension_cents, :official_retirement_age, :life_expectancy,
+                   :deposits_cents, :monthly_barista_income_cents, :savings_growth_rate)""",
+        scenarios,
+    )
+    conn.commit()
+    print(f"  Created {len(scenarios)} retirement scenarios")
 
 
 def seed_tags(conn: sqlite3.Connection) -> None:
@@ -862,6 +961,9 @@ def print_summary(conn: sqlite3.Connection) -> None:
     cursor = conn.execute("SELECT COUNT(*) as count FROM trading_activities")
     print(f"Trading activities: {cursor.fetchone()['count']}")
 
+    cursor = conn.execute("SELECT COUNT(*) as count FROM scenarios")
+    print(f"Retirement scenarios: {cursor.fetchone()['count']}")
+
     # Transaction summary
     cursor = conn.execute(
         "SELECT SUM(amount_cents) / 100.0 as total FROM transactions WHERE amount_cents < 0"
@@ -939,6 +1041,7 @@ def main() -> None:
         seed_rules(conn)
         seed_transactions(conn, num_transactions=args.transactions, days_back=args.days)
         seed_trading_activities(conn, days_back=args.days)
+        seed_scenarios(conn)
         print_summary(conn)
 
     finally:

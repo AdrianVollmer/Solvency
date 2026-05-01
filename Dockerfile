@@ -81,6 +81,13 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Install demo-mode tools: faketime offsets the process clock to match seed data,
+# sqlite3 reads the latest transaction date from the pre-seeded database
+RUN if [ "$DEMO" = "true" ]; then \
+        apt-get update && apt-get install -y faketime sqlite3 \
+        && rm -rf /var/lib/apt/lists/*; \
+    fi
+
 # Copy binary from rust builder
 COPY --from=rust-builder /build/target/release/solvency /app/solvency
 
@@ -98,17 +105,35 @@ RUN mkdir -p /app/data
 COPY --from=demo-builder /build/demo.db /tmp/demo.db
 RUN if [ "$DEMO" = "true" ]; then \
         mv /tmp/demo.db /app/data/solvency.db; \
+        touch /app/.demo; \
     else \
         rm /tmp/demo.db; \
     fi
+
+# Entrypoint: in demo mode, fake the clock to the latest seed date and default to no auth
+RUN { \
+        echo '#!/bin/sh'; \
+        echo 'if [ -f /app/.demo ] && [ -z "${SOLVENCY_PASSWORD_HASH}" ]; then'; \
+        echo '    export SOLVENCY_PASSWORD_HASH=DANGEROUSLY_ALLOW_UNAUTHENTICATED_USERS'; \
+        echo 'fi'; \
+        echo 'if [ -f /app/.demo ]; then'; \
+        echo '    DB="${SOLVENCY_DATABASE_URL#sqlite://}"'; \
+        echo '    LATEST=$(sqlite3 "$DB" "SELECT MAX(d) FROM (SELECT MAX(date) d FROM transactions UNION ALL SELECT MAX(date) FROM trading_activities)" 2>/dev/null)'; \
+        echo '    if [ -n "$LATEST" ]; then'; \
+        echo '        exec faketime "$LATEST 00:00:00" /app/solvency'; \
+        echo '    fi'; \
+        echo 'fi'; \
+        echo 'exec /app/solvency'; \
+    } > /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh
 
 # Set environment defaults
 ENV SOLVENCY_DATABASE_URL=sqlite:///app/data/solvency.db
 ENV SOLVENCY_PORT=7070
 ENV SOLVENCY_HOST=0.0.0.0
 ENV RUST_LOG=info
-# Note: SOLVENCY_PASSWORD_HASH must be set at runtime
+# Note: SOLVENCY_PASSWORD_HASH must be set at runtime (auto-set in demo builds)
 
 EXPOSE 7070
 
-CMD ["/app/solvency"]
+ENTRYPOINT ["/app/entrypoint.sh"]
