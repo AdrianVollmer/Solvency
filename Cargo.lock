@@ -3627,7 +3627,7 @@ dependencies = [
 
 [[package]]
 name = "solvency"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "argon2",
  "askama",
@@ -3664,7 +3664,7 @@ dependencies = [
 
 [[package]]
 name = "solvency-desktop"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "axum",
  "dirs",
